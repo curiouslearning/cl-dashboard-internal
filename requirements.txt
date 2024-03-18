@@ -1,0 +1,12 @@
+streamlit
+pandas
+google-cloud-logging
+google-cloud-bigquery
+google.cloud
+google-cloud-secret-manager==2.0.0
+google.cloud.logging
+rich
+numpy
+millify
+plost
+plotly
