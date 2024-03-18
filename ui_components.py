@@ -315,16 +315,12 @@ def engagement_funnel_chart_compare():
     st.session_state.app = "Unity"
     LR = metrics.get_totals_by_metric(daterange, countries_list, stat="LR")
     PC = metrics.get_totals_by_metric(daterange, countries_list, "PC")
-    #  TS = metrics.get_totals_by_metric(daterange, countries_list, "TS")
-    #  SL = metrics.get_totals_by_metric(daterange, countries_list, "SL")
     LA = metrics.get_totals_by_metric(daterange, countries_list, stat="LA")
     GC = metrics.get_totals_by_metric(daterange, countries_list, "GC")
 
     funnel_data = {
         "Title": [
             "Learners Reached",
-            "Tapped Start",
-            "Selected Level",
             "Puzzle Completed",
             "Learners Acquired",
             "Game Completed",
@@ -337,16 +333,12 @@ def engagement_funnel_chart_compare():
     st.session_state.app = "CR"
     LR = metrics.get_totals_by_metric(daterange, countries_list, stat="LR")
     PC = metrics.get_totals_by_metric(daterange, countries_list, "PC")
-    #   TS = metrics.get_totals_by_metric(daterange, countries_list, "TS")
-    #   SL = metrics.get_totals_by_metric(daterange, countries_list, "SL")
     LA = metrics.get_totals_by_metric(daterange, countries_list, stat="LA")
     GC = metrics.get_totals_by_metric(daterange, countries_list, "GC")
 
     funnel_data = {
         "Title": [
             "Learners Reached",
-            "Tapped Start",
-            "Selected Level",
             "Puzzle Completed",
             "Learners Acquired",
             "Game Completed",
@@ -363,17 +355,20 @@ def cr_funnel_chart_details():
     daterange = [dt.date(2024, 3, 5), pd.to_datetime("today").date()]
     country_list = users.get_country_list()
 
-    st.subheader("Curious Reader Acquisition Starting March 5th, 2024")
+    st.subheader("Curious Reader Retention Starting March 5th, 2024")
 
     st.session_state.app = "CR"
     LR = metrics.get_totals_by_metric(daterange, country_list, stat="LR")
     LA = metrics.get_totals_by_metric(daterange, country_list, stat="LA")
     GC = metrics.get_totals_by_metric(daterange, country_list, "GC")
+    PC = metrics.get_totals_by_metric(daterange, country_list, "PC")
+    SL = metrics.get_totals_by_metric(daterange, country_list, "SL")
+    TS = metrics.get_totals_by_metric(daterange, country_list, "TS")
 
-    df = metrics.get_cr_event_counts()
-    PC = int(df.tail(1)["puzzle_completed"])
-    TS = int(df.tail(1)["tapped_start"])
-    SL = int(df.tail(1)["selected_level"])
+    # df = metrics.get_cr_event_counts()
+    # PC = int(df.tail(1)["puzzle_completed"])
+    # TS = int(df.tail(1)["tapped_start"])
+    # SL = int(df.tail(1)["selected_level"])
 
     funnel_data = {
         "Title": [
