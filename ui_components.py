@@ -365,11 +365,6 @@ def cr_funnel_chart_details():
     SL = metrics.get_totals_by_metric(daterange, country_list, "SL")
     TS = metrics.get_totals_by_metric(daterange, country_list, "TS")
 
-    # df = metrics.get_cr_event_counts()
-    # PC = int(df.tail(1)["puzzle_completed"])
-    # TS = int(df.tail(1)["tapped_start"])
-    # SL = int(df.tail(1)["selected_level"])
-
     funnel_data = {
         "Title": [
             "Learners Reached",

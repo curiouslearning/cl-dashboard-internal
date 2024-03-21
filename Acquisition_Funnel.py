@@ -12,4 +12,5 @@ settings.initialize()
 settings.init_user_list()
 
 uic.engagement_funnel_chart_compare()
+st.divider()
 uic.cr_funnel_chart_details()

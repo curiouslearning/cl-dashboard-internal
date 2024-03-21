@@ -74,7 +74,6 @@ def get_totals_by_metric(daterange, countries_list, stat="LR"):
     if stat not in ["TS", "SL", "PC"]:
         return len(df_user_list)
     else:
-        df_user_list.info()
         tapped_start = len(
             df_user_list[df_user_list["furthest_event"] == "tapped_start"]
         )

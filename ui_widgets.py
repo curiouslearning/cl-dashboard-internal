@@ -80,7 +80,7 @@ def quarter_start(month):
 def year_selector():
     this_year = dt.datetime.now().year
     report_year = st.sidebar.radio(
-        "", range(this_year, this_year - 4, -1), horizontal=True
+        "Year", range(this_year, this_year - 4, -1), horizontal=True
     )
 
     return report_year
@@ -92,10 +92,10 @@ def month_selector():
     with st.sidebar.expander("Report month"):
         this_year = dt.datetime.now().year
         this_month = dt.datetime.now().month
-        report_year = st.sidebar.selectbox("", range(this_year, this_year - 4, -1))
+        report_year = st.sidebar.selectbox("Year", range(this_year, this_year - 4, -1))
         month_abbr = month_abbr[1:]
         report_month_str = st.sidebar.radio(
-            "", month_abbr, index=this_month - 1, horizontal=True
+            "Month", month_abbr, index=this_month - 1, horizontal=True
         )
         report_month = month_abbr.index(report_month_str) + 1
 
@@ -116,7 +116,7 @@ def custom_date_selection_slider():
 
 
 def custom_date_selection():
-    date_range = st.sidebar.date_input("Pick a date", (min_date, max_date))
+    date_range = st.date_input("Pick a date", (min_date, max_date))
     return date_range
 
 
@@ -152,8 +152,8 @@ def language_selector():
     df.insert(0, "All")
 
     st.session_state.selectbox_value = st.sidebar.selectbox(
-        "Select a language",
-        df,
+        label="Select a language",
+        options=df,
         index=0,
         key="lang_key",
         on_change=update_language_session_state,
@@ -209,8 +209,8 @@ def multi_select_all(available_options, title, key):
 
 def calendar_selector():
     option = st.sidebar.radio(
-        "Select a report date range",
-        ("All time", "Select year", "Select month", "Select custom range"),
+        label="Select a report date range",
+        options=("All time", "Select year", "Select month", "Select custom range"),
         index=0,
     )
 
