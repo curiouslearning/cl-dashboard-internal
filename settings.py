@@ -37,13 +37,11 @@ def initialize():
 
 
 def init_user_list():
-    df_la, df_lr, df_pc = users.get_users_list()
-    if "df_la" not in st.session_state:
-        st.session_state["df_la"] = df_la
-    if "df_lr" not in st.session_state:
-        st.session_state["df_lr"] = df_lr
-    if "df_pc" not in st.session_state:
-        st.session_state["df_pc"] = df_pc
+    df_user_list, df_first_open = users.get_users_list()
+    if "df_user_list" not in st.session_state:
+        st.session_state["df_user_list"] = df_user_list
+    if "df_first_open" not in st.session_state:
+        st.session_state["df_first_open"] = df_first_open
 
 
 def init_campaign_data():
