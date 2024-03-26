@@ -24,16 +24,21 @@ def get_users_list():
     rows_raw = bq_client.query(sql_query)
     rows = [dict(row) for row in rows_raw]
     df_user_list = pd.DataFrame(rows)
+    df_unity_users = df_user_list[
+        df_user_list["app_id"].str.lower().str.contains("feedthemonster")
+    ]
 
     sql_query = f"""
             SELECT *
-                FROM `dataexploration-193817.user_data.user_first_open_list`
+                FROM `dataexploration-193817.user_data.user_first_open_list_cr`
             WHERE
                 first_open BETWEEN PARSE_DATE('%Y/%m/%d','{start_date}') AND CURRENT_DATE() 
             """
     rows_raw = bq_client.query(sql_query)
     rows = [dict(row) for row in rows_raw]
     df_first_open = pd.DataFrame(rows)
+    df_first_open = pd.concat([df_first_open, df_unity_users], ignore_index=True)
+    df_first_open.to_csv("first.csv")
 
     return df_user_list, df_first_open
 

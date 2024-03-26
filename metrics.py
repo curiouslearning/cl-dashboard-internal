@@ -74,30 +74,35 @@ def get_totals_by_metric(daterange, countries_list, stat="LR"):
     if stat not in ["TS", "SL", "PC", "LA"]:
         return len(df_user_list)
     else:
-        tapped_start = len(
+        tapped_start_count = len(
             df_user_list[df_user_list["furthest_event"] == "tapped_start"]
         )
-        selected_level = len(
+        selected_level_count = len(
             df_user_list[df_user_list["furthest_event"] == "selected_level"]
         )
-        puzzle_completed = len(
+        puzzle_completed_count = len(
             df_user_list[df_user_list["furthest_event"] == "puzzle_completed"]
         )
-        level_completed = len(
+        level_completed_count = len(
             df_user_list[df_user_list["furthest_event"] == "level_completed"]
         )
 
         if stat == "TS":
-            return tapped_start + selected_level + puzzle_completed + level_completed
+            return (
+                tapped_start_count
+                + selected_level_count
+                + puzzle_completed_count
+                + level_completed_count
+            )
 
         if stat == "SL":  # all PC and SL users implicitly imply those events
-            return tapped_start + puzzle_completed + level_completed
+            return tapped_start_count + puzzle_completed_count + level_completed_count
 
         if stat == "PC":
-            return puzzle_completed + level_completed
+            return puzzle_completed_count + level_completed_count
 
         if stat == "LA":
-            return level_completed
+            return level_completed_count
 
 
 def filter_user_data(daterange, countries_list, stat="LR"):
