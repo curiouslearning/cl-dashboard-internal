@@ -210,7 +210,7 @@ def multi_select_all(available_options, title, key):
 def calendar_selector():
     option = st.sidebar.radio(
         label="Select a report date range",
-        options=("All time", "Select year", "Select month", "Select custom range"),
+        options=("All time", "March 5th, 2024", "Select year", "Select month", "Select custom range"),
         index=0,
     )
 
@@ -220,6 +220,8 @@ def calendar_selector():
         selected_date = [min_date, max_date]
     elif option == "Select month":
         selected_date = month_selector()
+    elif option == "March 5th, 2024":
+        selected_date = [dt.date(2024, 3, 5), pd.to_datetime("today").date()]
     else:
         selected_date = custom_date_selection()
     return selected_date, option
