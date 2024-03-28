@@ -134,7 +134,7 @@ def filter_user_data(
         f"@daterange[0] <= first_open <= @daterange[1]",
         f"country.isin(@countries_list)",
     ]
-    print(language)
+
     if language != "All":
         conditions.append("app_language == @language")
 
