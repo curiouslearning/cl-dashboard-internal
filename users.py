@@ -4,7 +4,7 @@ from rich import print as print
 import numpy as np
 
 # How far back to obtain user data.  Currently the queries pull back to 01/01/2021
-start_date = "2021/01/01"
+start_date = "2024/02/01"
 
 
 # Firebase returns two different formats of user_pseudo_id between
@@ -82,3 +82,30 @@ def get_country_list():
         df = pd.DataFrame(rows)
         countries_list = np.array(df.values).flatten().tolist()
     return countries_list
+
+
+@st.cache_data(ttl="1d", show_spinner=False)
+def get_app_version_list():
+    app_versions = []
+    if "bq_client" in st.session_state:
+        bq_client = st.session_state.bq_client
+        sql_query = f"""
+                    SELECT *
+                    FROM `dataexploration-193817.user_data.cr_app_versions`
+                    """
+        rows_raw = bq_client.query(sql_query)
+        rows = [dict(row) for row in rows_raw]
+        if len(rows) == 0:
+            return pd.DataFrame()
+
+        df = pd.DataFrame(rows)
+        conditions = [
+            f"app_version >=  'v1.0.25'",
+        ]
+        query = " and ".join(conditions)
+        df = df.query(query)
+
+        app_versions = np.array(df.values).flatten().tolist()
+        app_versions.insert(0, "All")
+
+    return app_versions

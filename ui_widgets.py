@@ -131,12 +131,13 @@ def ads_platform_selector():
 
 
 def app_selector():
-    st.session_state.app = st.sidebar.radio(
+    app = st.sidebar.radio(
         label="Application",
         options=["Unity", "CR", "Both"],
         horizontal=True,
         index=2,
     )
+    return app
 
 
 # this is a callback for language_selector
@@ -151,13 +152,14 @@ def language_selector():
     df = users.get_language_list()
     df.insert(0, "All")
 
-    st.session_state.selectbox_value = st.sidebar.selectbox(
+    language = st.sidebar.selectbox(
         label="Select a language",
         options=df,
         index=0,
         key="lang_key",
         on_change=update_language_session_state,
     )
+    return language
 
 
 # Pass a unique key into the function in order to use this on multiple pages safely
@@ -210,7 +212,13 @@ def multi_select_all(available_options, title, key):
 def calendar_selector():
     option = st.sidebar.radio(
         label="Select a report date range",
-        options=("All time", "March 5th, 2024", "Select year", "Select month", "Select custom range"),
+        options=(
+            "All time",
+            "March 5th, 2024",
+            "Select year",
+            "Select month",
+            "Select custom range",
+        ),
         index=0,
     )
 
@@ -322,3 +330,9 @@ def stats_radio_selector():
         help=radio_markdown,
     )
     return option
+
+
+def app_version_selector(key):
+    cr_versions = st.session_state.cr_app_versions_list
+    version = st.sidebar.selectbox(label="App Version", options=cr_versions, key=key)
+    return version

@@ -68,8 +68,18 @@ def get_download_totals(daterange):
     return total
 
 
-def get_totals_by_metric(daterange, countries_list, stat="LR"):
-    df_user_list = filter_user_data(daterange, countries_list, stat)
+@st.cache_data(ttl="1d", show_spinner=False)
+def get_totals_by_metric(
+    daterange,
+    countries_list,
+    stat="LR",
+    cr_app_version="All",
+    app="Both",
+    language="All",
+):
+    df_user_list = filter_user_data(
+        daterange, countries_list, stat, cr_app_version, app=app, language=language
+    )
 
     if stat not in ["TS", "SL", "PC", "LA"]:
         return len(df_user_list)
@@ -105,30 +115,33 @@ def get_totals_by_metric(daterange, countries_list, stat="LR"):
             return level_completed_count
 
 
-def filter_user_data(daterange, countries_list, stat="LR"):
+def filter_user_data(
+    daterange=[],
+    countries_list=[],
+    stat="LR",
+    cr_app_version="All",
+    app="Both",
+    language="All",
+):
 
-    language = "All"
-    app = "Both"
     if "df_user_list" and "df_first_open" not in st.session_state:
         return pd.DataFrame()
 
     df_user_list = st.session_state.df_user_list
     df_first_open = st.session_state.df_first_open
 
-    if "language" in st.session_state:
-        language = st.session_state.language
-    if "app" in st.session_state:
-        app = st.session_state.app
-
     conditions = [
         f"@daterange[0] <= first_open <= @daterange[1]",
         f"country.isin(@countries_list)",
     ]
+    print(language)
     if language != "All":
         conditions.append("app_language == @language")
 
     if app == "CR":
         conditions.append("app_id == 'org.curiouslearning.container'")
+        if cr_app_version != "All":
+            conditions.append("app_version == @cr_app_version")
     elif app == "Unity":
         conditions.append("app_id != 'org.curiouslearning.container'")
 
