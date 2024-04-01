@@ -7,8 +7,6 @@ import users
 
 min_date = dt.datetime(2021, 1, 1).date()
 max_date = dt.date.today()
-min_date = dt.datetime(2021, 1, 1).date()
-max_date = dt.date.today()
 
 
 @st.cache_data(ttl="1d", show_spinner=False)
