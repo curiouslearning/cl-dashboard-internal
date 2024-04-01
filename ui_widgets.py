@@ -350,7 +350,6 @@ def app_version_selector(placement="side", key=""):
 def calendar_selector(placement="side", key=""):
     options = (
         "All time",
-        "March 5th, 2024",
         "Select year",
         "Select month",
         "Select custom range",
@@ -374,8 +373,6 @@ def calendar_selector(placement="side", key=""):
         elif option == "Select month":
             key = key + "x"
             selected_date = month_selector(placement, key=key)
-        elif option == "March 5th, 2024":
-            selected_date = [dt.date(2024, 3, 5), pd.to_datetime("today").date()]
         else:
             selected_date = custom_date_selection(placement, key=key)
 
