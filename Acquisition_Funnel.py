@@ -21,13 +21,12 @@ countries_list = ui.multi_select_all(
     countries_list, title="Country Selection", key="funnel_compare_key"
 )
 
-selected_date, option = ui.calendar_selector()
+selected_date, option = ui.calendar_selector(placement="side")
 daterange = ui.convert_date_to_range(selected_date, option)
 start = daterange[0].strftime("%b %d, %Y")
 end = daterange[1].strftime("%b %d, %Y")
 
 st.sidebar.divider()
-app_version = ui.app_version_selector("key-A")
 
 if len(daterange) == 2:
     st.subheader("Acquisition Funnel Comparison")
@@ -35,8 +34,9 @@ if len(daterange) == 2:
 
     col1, col2 = st.columns(2)
 
-    st.session_state.app = "Unity"
-    LR = metrics.get_totals_by_metric(daterange, countries_list, stat="LR", app="Unity",language=language)
+    LR = metrics.get_totals_by_metric(
+        daterange, countries_list, stat="LR", app="Unity", language=language
+    )
     PC = metrics.get_totals_by_metric(
         daterange, countries_list, "PC", app="Unity", language=language
     )
@@ -128,61 +128,4 @@ if len(daterange) == 2:
     }
 
     fig = uic.create_engagement_figure(funnel_data, "key-2")
-    st.plotly_chart(fig, use_container_width=True)
-
-    # Add CR only events and allow for version filtering
-    SL = metrics.get_totals_by_metric(
-        daterange,
-        countries_list,
-        "SL",
-        cr_app_version=app_version,
-        app="CR",
-        language=language,
-    )
-    TS = metrics.get_totals_by_metric(
-        daterange,
-        countries_list,
-        "TS",
-        cr_app_version=app_version,
-        app="CR",
-        language=language,
-    )
-
-    PC = metrics.get_totals_by_metric(
-        daterange,
-        countries_list,
-        "PC",
-        cr_app_version=app_version,
-        app="CR",
-        language=language,
-    )
-    LA = metrics.get_totals_by_metric(
-        daterange,
-        countries_list,
-        stat="LA",
-        cr_app_version=app_version,
-        app="CR",
-        language=language,
-    )
-    GC = metrics.get_totals_by_metric(
-        daterange,
-        countries_list,
-        "GC",
-        cr_app_version=app_version,
-        app="CR",
-        language=language,
-    )
-
-    funnel_data = {
-        "Title": [
-            "Tapped Start",
-            "Selected Level",
-            "Puzzle Completed",
-            "Learners Acquired",
-            "Game Completed",
-        ],
-        "Count": [TS, SL, PC, LA, GC],
-    }
-
-    fig = uic.create_engagement_figure(funnel_data, "key-4")
     st.plotly_chart(fig, use_container_width=True)

@@ -3,7 +3,10 @@ from rich import print
 import pandas as pd
 import numpy as np
 import datetime as dt
+import users
 
+min_date = dt.datetime(2021, 1, 1).date()
+max_date = dt.date.today()
 min_date = dt.datetime(2021, 1, 1).date()
 max_date = dt.date.today()
 
@@ -70,13 +73,17 @@ def get_download_totals(daterange):
 
 @st.cache_data(ttl="1d", show_spinner=False)
 def get_totals_by_metric(
-    daterange,
-    countries_list,
+    daterange=[min_date, max_date],
+    countries_list=[],
     stat="LR",
     cr_app_version="All",
     app="Both",
     language="All",
 ):
+    # if no list passed in then get the full list
+    if len(countries_list) == 0:
+        countries_list = users.get_country_list()
+
     df_user_list = filter_user_data(
         daterange, countries_list, stat, cr_app_version, app=app, language=language
     )
@@ -164,18 +171,22 @@ def filter_user_data(
 
 
 # Average Game Progress Percent
-def get_GPP_avg(daterange, countries_list):
+def get_GPP_avg(daterange, countries_list, app="Both", language="All"):
     # Use LA as the baseline
-    df_user_list = filter_user_data(daterange, countries_list, stat="LA")
+    df_user_list = filter_user_data(
+        daterange, countries_list, stat="LA", app=app, language=language
+    )
     df_user_list = df_user_list.fillna(0)
 
     return 0 if len(df_user_list) == 0 else np.average(df_user_list.gpc)
 
 
 # Average Game Complete
-def get_GC_avg(daterange, countries_list):
+def get_GC_avg(daterange, countries_list, app="Both", language="All"):
     # Use LA as the baseline
-    df_user_list = filter_user_data(daterange, countries_list, stat="LA")
+    df_user_list = filter_user_data(
+        daterange, countries_list, stat="LA", app=app, language=language
+    )
     df_user_list = df_user_list.fillna(0)
 
     cohort_count = len(df_user_list)
@@ -185,7 +196,7 @@ def get_GC_avg(daterange, countries_list):
 
 
 @st.cache_data(ttl="1d", show_spinner=False)
-def get_country_counts(daterange, countries_list, stat):
+def get_country_counts(daterange, countries_list, stat, app="Both", language="All"):
 
     if stat == "LR" or stat == "LA":
         if stat == "LR":
@@ -195,8 +206,12 @@ def get_country_counts(daterange, countries_list, stat):
             primary_stat = "LA"
             secondary_stat = "LR"
 
-        df_primary = filter_user_data(daterange, countries_list, primary_stat)
-        df_secondary = filter_user_data(daterange, countries_list, secondary_stat)
+        df_primary = filter_user_data(
+            daterange, countries_list, primary_stat, app=app, language=language
+        )
+        df_secondary = filter_user_data(
+            daterange, countries_list, secondary_stat, app=app, language=language
+        )
 
         primary_counts = (
             df_primary.groupby("country")
@@ -217,7 +232,9 @@ def get_country_counts(daterange, countries_list, stat):
             .sort_values(by=stat, ascending=False)
         )
     elif stat == "GPP":
-        df = filter_user_data(daterange, countries_list, stat="LA")
+        df = filter_user_data(
+            daterange, countries_list, stat="LA", app=app, language=language
+        )
         # Calculate the average GPP per country
         avg_gpc_per_country = df.groupby("country")["gpc"].mean().round(2)
         # Create a new DataFrame with the average GPC per country
@@ -233,11 +250,15 @@ def get_country_counts(daterange, countries_list, stat):
         )
 
     elif stat == "PC":
-        df = filter_user_data(daterange, countries_list, stat="PC")
+        df = filter_user_data(
+            daterange, countries_list, stat="PC", app=app, language=language
+        )
         country_counts = df.groupby("country").size().to_frame(name="PC").reset_index()
 
     elif stat == "GCA":
-        df = filter_user_data(daterange, countries_list, stat="LA")
+        df = filter_user_data(
+            daterange, countries_list, stat="LA", app=app, language=language
+        )
         gpc_gt_90_counts = (
             df[df["gpc"] >= 90].groupby("country")["user_pseudo_id"].count()
         )
@@ -263,16 +284,3 @@ def get_country_counts(daterange, countries_list, stat):
     else:
         raise Exception("Invalid stat choice")
     return country_counts
-
-
-def get_cr_event_counts():
-    start_date = dt.datetime(2024, 3, 5).date()
-    bq_client = st.session_state.bq_client
-    sql_query = f"""
-        SELECT *
-            FROM `dataexploration-193817.user_data.pre_LA_cr_event_counts`
-        
-        """
-    rows_raw = bq_client.query(sql_query)
-    rows = [dict(row) for row in rows_raw]
-    return pd.DataFrame(rows)

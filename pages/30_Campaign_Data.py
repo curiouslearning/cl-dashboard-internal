@@ -33,7 +33,7 @@ if len(daterange) == 2 > 0:
         st.header("Facebook Ads")
 
         if len(dff) > 0:
-            keys = [1, 2, 3, 4, 5]
+            keys = [2, 3, 4, 5, 6]
             ui.paginated_dataframe(dff, keys)
         else:
             st.text("No data for selected period")
@@ -42,7 +42,7 @@ if len(daterange) == 2 > 0:
         st.header("Google Ads")
 
         if len(dfg) > 0:
-            keys = [6, 7, 8, 9, 10]
+            keys = [7, 8, 9, 10, 11]
             dfg.sort_values(by="button_clicks")
             ui.paginated_dataframe(dfg, keys)
         else:
