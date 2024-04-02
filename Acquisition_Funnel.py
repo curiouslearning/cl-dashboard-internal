@@ -97,7 +97,9 @@ if len(daterange) == 2:
     st.subheader("Curious Reader")
     st.subheader(start + " to " + end)
 
-    # Add CR only events and allow for version filtering
+    DC = metrics.get_totals_by_metric(
+        daterange, countries_list, "DC", app="CR", language=language
+    )
     SL = metrics.get_totals_by_metric(
         daterange, countries_list, "SL", app="CR", language=language
     )
@@ -118,13 +120,14 @@ if len(daterange) == 2:
     funnel_data = {
         "Title": [
             "Learners Reached",
+            "Download Completed",
             "Tapped Start",
             "Selected Level",
             "Puzzle Completed",
             "Learners Acquired",
             "Game Completed",
         ],
-        "Count": [LR, TS, SL, PC, LA, GC],
+        "Count": [LR, DC, TS, SL, PC, LA, GC],
     }
 
     fig = uic.create_engagement_figure(funnel_data, "key-2")

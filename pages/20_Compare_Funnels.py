@@ -32,6 +32,12 @@ with col1:
         end = daterange[1].strftime("%b %d, %Y")
         st.caption(start + " to " + end)
 
+        DC = metrics.get_totals_by_metric(
+            daterange,
+            stat="DC",
+            cr_app_version=app_version,
+            app="CR",
+        )
         SL = metrics.get_totals_by_metric(
             daterange,
             stat="SL",
@@ -57,6 +63,12 @@ with col1:
             cr_app_version=app_version,
             app="CR",
         )
+        LR = metrics.get_totals_by_metric(
+            daterange,
+            stat="LR",
+            cr_app_version=app_version,
+            app="CR",
+        )
         GC = metrics.get_totals_by_metric(
             daterange,
             stat="GC",
@@ -66,13 +78,15 @@ with col1:
 
         funnel_data = {
             "Title": [
+                "Learner Reached",
+                "Download Completed",
                 "Tapped Start",
                 "Selected Level",
                 "Puzzle Completed",
                 "Learners Acquired",
                 "Game Completed",
             ],
-            "Count": [TS, SL, PC, LA, GC],
+            "Count": [LR, DC, TS, SL, PC, LA, GC],
         }
 
         fig = uic.create_engagement_figure(funnel_data, "funnel-1")
@@ -90,7 +104,13 @@ with col2:
         start = daterange[0].strftime("%b %d, %Y")
         end = daterange[1].strftime("%b %d, %Y")
         st.caption(start + " to " + end)
-        # Add CR only events and allow for version filtering
+
+        DC = metrics.get_totals_by_metric(
+            daterange,
+            stat="DC",
+            cr_app_version=app_version,
+            app="CR",
+        )
         SL = metrics.get_totals_by_metric(
             daterange,
             stat="SL",
@@ -116,6 +136,12 @@ with col2:
             cr_app_version=app_version,
             app="CR",
         )
+        LR = metrics.get_totals_by_metric(
+            daterange,
+            stat="LR",
+            cr_app_version=app_version,
+            app="CR",
+        )
         GC = metrics.get_totals_by_metric(
             daterange,
             stat="GC",
@@ -125,13 +151,15 @@ with col2:
 
         funnel_data = {
             "Title": [
+                "Learner Reached",
+                "Download Completed",
                 "Tapped Start",
                 "Selected Level",
                 "Puzzle Completed",
                 "Learners Acquired",
                 "Game Completed",
             ],
-            "Count": [TS, SL, PC, LA, GC],
+            "Count": [LR, DC, TS, SL, PC, LA, GC],
         }
 
         fig = uic.create_engagement_figure(funnel_data, "funnel-2")

@@ -86,9 +86,13 @@ def get_totals_by_metric(
         daterange, countries_list, stat, cr_app_version, app=app, language=language
     )
 
-    if stat not in ["TS", "SL", "PC", "LA"]:
+    if stat not in ["DC", "TS", "SL", "PC", "LA"]:
         return len(df_user_list)
     else:
+        download_completed_count = len(
+            df_user_list[df_user_list["furthest_event"] == "download_completed"]
+        )
+
         tapped_start_count = len(
             df_user_list[df_user_list["furthest_event"] == "tapped_start"]
         )
@@ -101,6 +105,15 @@ def get_totals_by_metric(
         level_completed_count = len(
             df_user_list[df_user_list["furthest_event"] == "level_completed"]
         )
+
+        if stat == "DC":
+            return (
+                download_completed_count
+                + tapped_start_count
+                + selected_level_count
+                + puzzle_completed_count
+                + level_completed_count
+            )
 
         if stat == "TS":
             return (
