@@ -97,25 +97,11 @@ def get_fb_campaign_data():
 
 @st.cache_data(ttl="1d", show_spinner=False)
 def add_campaign_country(df):
-    bq_client = st.session_state.bq_client
-    sql_query = f"""
-                SELECT *
-                FROM `dataexploration-193817.user_data.campaign_gsheet`;
-                """
-    rows_raw = bq_client.query(sql_query)
-    rows = [dict(row) for row in rows_raw]
 
-    dfcountry = pd.DataFrame(rows)
-    if len(rows) == 0:
-        return pd.DataFrame()
+    pattern = "-" + "(.*)"
 
-    merged_df = pd.merge(df, dfcountry, on="campaign_id", how="left")
-
-    # Step 2: Drop rows from DataFrame A where there's no match in DataFrame B
-    df = df[df["campaign_id"].isin(dfcountry["campaign_id"].dropna())]
-
-    # Step 3: Update DataFrame A with the values from the merged column
-    df["country"] = merged_df["country"]
+    # Extract characters following the string match and assign it as the "country"
+    df["country"] = df["campaign_name"].str.extract(pattern)
 
     return df
 
