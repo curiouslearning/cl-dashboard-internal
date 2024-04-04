@@ -45,14 +45,31 @@ def init_user_list():
 
 def init_campaign_data():
     df_fb = campaigns.get_fb_campaign_data()
+    df_fb = campaigns.rollup_campaign_data(df_fb)
+
     df_goog = campaigns.get_google_campaign_data()
+    df_goog = campaigns.rollup_campaign_data(df_goog)
+
     df_goog_conversions = campaigns.get_google_campaign_conversions()
-    df_goog = pd.concat([df_goog, df_goog_conversions])
-    df_all = pd.concat([df_fb, df_goog])
-    if "df_goog_conversions" not in st.session_state:
-        st.session_state["df_goog_conversions"] = df_goog_conversions
-    if "df_all" not in st.session_state:
-        st.session_state["df_all"] = df_all
+
+    df_merged = pd.merge(
+        df_goog,
+        df_goog_conversions,
+        on="campaign_id",
+        how="left",
+        suffixes=("", ""),
+    )
+
+    df_campaigns = pd.concat([df_merged, df_fb])
+
+    df_campaigns = campaigns.add_campaign_country(df_campaigns)
+
+    col = df_campaigns.pop("country")
+    df_campaigns.insert(2, col.name, col)
+    df_campaigns.reset_index(drop=True, inplace=True)
+
+    if "df_campaigns" not in st.session_state:
+        st.session_state["df_campaigns"] = df_campaigns
 
 
 def init_cr_app_version_list():
