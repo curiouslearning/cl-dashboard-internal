@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 from rich import print as print
+import campaigns
 
 
 @st.cache_data(show_spinner="Fetching Google Campaign Data", ttl="1d")
@@ -84,12 +85,21 @@ def get_fb_campaign_data():
 
 
 @st.cache_data(ttl="1d", show_spinner=False)
+# Looks for the string following the dash and makes that the associated country.
+# This requires a strict naming convention of "[anything without dashes] - [country]]"
 def add_campaign_country(df):
+
+    regex_pattern = r"^[^-]*-[^-]*$"  # This regex pattern matches strings containing exactly one "-"
+
+    df = df[df["campaign_name"].str.contains(regex_pattern)]
+
     # Set country to everything after the dash and remove padding
-    df["country"] = df["campaign_name"].str.extract(r"-\s*(.*)")[0].str.strip()
+    regex_pattern = r"-\s*(.*)"
+    df["country"] = df["campaign_name"].str.extract(regex_pattern)[0].str.strip()
 
     # Remove the word "Campaign" if it exists
-    extracted = df["country"].str.extract("\s*(.*)Campaign")
+    regex_pattern = "\s*(.*)Campaign"
+    extracted = df["country"].str.extract(regex_pattern)
 
     # Replace NaN values (no match) with the original values=
     df["country"] = extracted[0].fillna(df["country"])
@@ -136,3 +146,36 @@ def rollup_campaign_data(df):
     )
 
     return df
+
+
+# Get the button clicks from BigQuery, add them to the dataframe
+# and rollup the sum per campaign_id
+def add_google_button_clicks(df):
+
+    df_goog_conversions = campaigns.get_google_campaign_conversions()
+
+    df_goog = pd.merge(
+        df,
+        df_goog_conversions,
+        on="campaign_id",
+        how="left",
+        suffixes=("", ""),
+    )
+
+    df_goog = df_goog.groupby("campaign_id", as_index=False).agg(
+        {
+            "campaign_name": "last",
+            "campaign_start_date": "first",
+            "campaign_end_date": "first",
+            "mobile_app_install": "first",
+            "source": "first",
+            "button_clicks": "sum",
+            "clicks": "first",
+            "reach": "first",
+            "cost": "first",
+            "cpc": "first",
+            "impressions": "first",
+        }
+    )
+
+    return df_goog
