@@ -97,6 +97,18 @@ with col1:
         funnel_data = {
             "Title": [
                 "Learner Reached",
+            ],
+            "Count": [LR],
+        }
+
+        fig = uic.create_engagement_figure(funnel_data, "funnel-1")
+        fig.update_layout(
+            height=100,
+        )
+        st.plotly_chart(fig, use_container_width=True)
+
+        funnel_data = {
+            "Title": [
                 "Download Completed",
                 "Tapped Start",
                 "Selected Level",
@@ -104,10 +116,10 @@ with col1:
                 "Learners Acquired",
                 "Game Completed",
             ],
-            "Count": [LR, DC, TS, SL, PC, LA, GC],
+            "Count": [DC, TS, SL, PC, LA, GC],
         }
 
-        fig = uic.create_engagement_figure(funnel_data, "funnel-1")
+        fig = uic.create_engagement_figure(funnel_data, "funnel-2")
         st.plotly_chart(fig, use_container_width=True)
 
 
@@ -188,6 +200,26 @@ with col2:
         funnel_data = {
             "Title": [
                 "Learner Reached",
+            ],
+            "Count": [LR],
+        }
+
+        funnel_data = {
+            "Title": [
+                "Learner Reached",
+            ],
+            "Count": [LR],
+        }
+
+        fig = uic.create_engagement_figure(funnel_data, "funnel-3")
+        fig.update_layout(
+            height=100,
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+        funnel_data = {
+            "Title": [
                 "Download Completed",
                 "Tapped Start",
                 "Selected Level",
@@ -195,8 +227,8 @@ with col2:
                 "Learners Acquired",
                 "Game Completed",
             ],
-            "Count": [LR, DC, TS, SL, PC, LA, GC],
+            "Count": [DC, TS, SL, PC, LA, GC],
         }
 
-        fig = uic.create_engagement_figure(funnel_data, "funnel-2")
+        fig = uic.create_engagement_figure(funnel_data, "funnel-4")
         st.plotly_chart(fig, use_container_width=True)
