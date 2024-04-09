@@ -23,6 +23,10 @@ col1, col2 = st.columns(2)
 with col1:
 
     app_version = ui.app_version_selector(placement="col", key="version-1")
+    language = ui.language_selector(placement="col", key="lang-a")
+    countries_list = ui.country_selector(
+        placement="col", title="Country Selection", key="country-a"
+    )
 
     selected_date, option = ui.calendar_selector(placement="col", key="cal-1")
     daterange = ui.convert_date_to_range(selected_date, option)
@@ -36,18 +40,24 @@ with col1:
             daterange,
             stat="DC",
             cr_app_version=app_version,
+            language=language,
+            countries_list=countries_list,
             app="CR",
         )
         SL = metrics.get_totals_by_metric(
             daterange,
             stat="SL",
             cr_app_version=app_version,
+            language=language,
+            countries_list=countries_list,
             app="CR",
         )
         TS = metrics.get_totals_by_metric(
             daterange,
             stat="TS",
             cr_app_version=app_version,
+            language=language,
+            countries_list=countries_list,
             app="CR",
         )
 
@@ -55,24 +65,32 @@ with col1:
             daterange,
             stat="PC",
             cr_app_version=app_version,
+            language=language,
+            countries_list=countries_list,
             app="CR",
         )
         LA = metrics.get_totals_by_metric(
             daterange,
             stat="LA",
             cr_app_version=app_version,
+            language=language,
+            countries_list=countries_list,
             app="CR",
         )
         LR = metrics.get_totals_by_metric(
             daterange,
             stat="LR",
             cr_app_version=app_version,
+            language=language,
+            countries_list=countries_list,
             app="CR",
         )
         GC = metrics.get_totals_by_metric(
             daterange,
             stat="GC",
             cr_app_version=app_version,
+            language=language,
+            countries_list=countries_list,
             app="CR",
         )
 
@@ -96,6 +114,11 @@ with col1:
 with col2:
 
     app_version = ui.app_version_selector(placement="col", key="version-2")
+    language = ui.language_selector(placement="col", key="lang-b")
+
+    countries_list = ui.country_selector(
+        placement="col", title="Country Selection", key="country-b"
+    )
 
     selected_date, option = ui.calendar_selector(placement="col", key="cal-2")
     daterange = ui.convert_date_to_range(selected_date, option)
@@ -109,18 +132,24 @@ with col2:
             daterange,
             stat="DC",
             cr_app_version=app_version,
+            language=language,
+            countries_list=countries_list,
             app="CR",
         )
         SL = metrics.get_totals_by_metric(
             daterange,
             stat="SL",
             cr_app_version=app_version,
+            language=language,
+            countries_list=countries_list,
             app="CR",
         )
         TS = metrics.get_totals_by_metric(
             daterange,
             stat="TS",
+            language=language,
             cr_app_version=app_version,
+            countries_list=countries_list,
             app="CR",
         )
 
@@ -128,24 +157,31 @@ with col2:
             daterange,
             stat="PC",
             cr_app_version=app_version,
+            language=language,
+            countries_list=countries_list,
             app="CR",
         )
         LA = metrics.get_totals_by_metric(
             daterange,
             stat="LA",
             cr_app_version=app_version,
+            language=language,
+            countries_list=countries_list,
             app="CR",
         )
         LR = metrics.get_totals_by_metric(
             daterange,
             stat="LR",
             cr_app_version=app_version,
+            countries_list=countries_list,
             app="CR",
         )
         GC = metrics.get_totals_by_metric(
             daterange,
             stat="GC",
             cr_app_version=app_version,
+            language=language,
+            countries_list=countries_list,
             app="CR",
         )
 

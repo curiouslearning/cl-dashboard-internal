@@ -14,7 +14,7 @@ settings.initialize()
 settings.init_user_list()
 settings.init_cr_app_version_list()
 
-language = ui.language_selector()  # puts selection in session state
+language = ui.language_selector()
 
 countries_list = users.get_country_list()
 countries_list = ui.multi_select_all(
