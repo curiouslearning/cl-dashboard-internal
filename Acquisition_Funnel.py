@@ -23,12 +23,14 @@ countries_list = ui.multi_select_all(
 
 selected_date, option = ui.calendar_selector(placement="side")
 daterange = ui.convert_date_to_range(selected_date, option)
-start = daterange[0].strftime("%b %d, %Y")
-end = daterange[1].strftime("%b %d, %Y")
+
+ui.colorize_multiselect_options()
 
 st.sidebar.divider()
 
 if len(daterange) == 2:
+    start = daterange[0].strftime("%b %d, %Y")
+    end = daterange[1].strftime("%b %d, %Y")
     st.subheader("Acquisition Funnel Comparison")
     st.subheader(start + " to " + end)
 
