@@ -99,6 +99,9 @@ if len(daterange) == 2:
     st.subheader("Curious Reader")
     st.subheader(start + " to " + end)
 
+    LR = metrics.get_totals_by_metric(
+        daterange, countries_list, stat="LR", app="CR", language=language
+    )
     DC = metrics.get_totals_by_metric(
         daterange, countries_list, "DC", app="CR", language=language
     )
