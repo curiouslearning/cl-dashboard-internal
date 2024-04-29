@@ -16,8 +16,6 @@ settings.init_user_list()
 settings.init_cr_app_version_list()
 
 st.subheader("Curious Reader Funnel Comparison")
-min_date = dt.datetime(2021, 1, 1).date()
-max_date = dt.date.today()
 
 col1, col2 = st.columns(2)
 with col1:
