@@ -4,10 +4,7 @@ from rich import print as rprint
 from millify import prettify
 import ui_components as uic
 import ui_widgets as ui
-import users
-import datetime as dt
 import metrics
-import pandas as pd
 
 st.title("Curious Learning Internal")
 
@@ -95,18 +92,6 @@ with col1:
         funnel_data = {
             "Title": [
                 "Learner Reached",
-            ],
-            "Count": [LR],
-        }
-
-        fig = uic.create_engagement_figure(funnel_data, "funnel-1")
-        fig.update_layout(
-            height=100,
-        )
-        st.plotly_chart(fig, use_container_width=True)
-
-        funnel_data = {
-            "Title": [
                 "Download Completed",
                 "Tapped Start",
                 "Selected Level",
@@ -114,7 +99,7 @@ with col1:
                 "Learners Acquired",
                 "Game Completed",
             ],
-            "Count": [DC, TS, SL, PC, LA, GC],
+            "Count": [LR, DC, TS, SL, PC, LA, GC],
         }
 
         fig = uic.create_engagement_figure(funnel_data, "funnel-2")
@@ -198,26 +183,6 @@ with col2:
         funnel_data = {
             "Title": [
                 "Learner Reached",
-            ],
-            "Count": [LR],
-        }
-
-        funnel_data = {
-            "Title": [
-                "Learner Reached",
-            ],
-            "Count": [LR],
-        }
-
-        fig = uic.create_engagement_figure(funnel_data, "funnel-3")
-        fig.update_layout(
-            height=100,
-        )
-
-        st.plotly_chart(fig, use_container_width=True)
-
-        funnel_data = {
-            "Title": [
                 "Download Completed",
                 "Tapped Start",
                 "Selected Level",
@@ -225,7 +190,7 @@ with col2:
                 "Learners Acquired",
                 "Game Completed",
             ],
-            "Count": [DC, TS, SL, PC, LA, GC],
+            "Count": [LR, DC, TS, SL, PC, LA, GC],
         }
 
         fig = uic.create_engagement_figure(funnel_data, "funnel-4")

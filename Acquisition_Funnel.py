@@ -35,6 +35,14 @@ if len(daterange) == 2:
     st.subheader(start + " to " + end)
 
     col1, col2 = st.columns(2)
+    col1.markdown(
+        f"<strong><div style='text-align: center;'>Unity</div></strong>",
+        unsafe_allow_html=True,
+    )
+    col2.markdown(
+        f"<strong><div style='text-align: center;'>Curious Reader</div></strong>",
+        unsafe_allow_html=True,
+    )
 
     LR = metrics.get_totals_by_metric(
         daterange, countries_list, stat="LR", app="Unity", language=language
@@ -60,10 +68,6 @@ if len(daterange) == 2:
     }
     fig = uic.create_engagement_figure(funnel_data, "key-1")
     col1.plotly_chart(fig, use_container_width=True)
-    col1.markdown(
-        f"<strong><div style='text-align: center;'>Unity</div></strong>",
-        unsafe_allow_html=True,
-    )
 
     LR = metrics.get_totals_by_metric(
         daterange, countries_list, stat="LR", app="CR", language=language
@@ -90,10 +94,6 @@ if len(daterange) == 2:
 
     fig = uic.create_engagement_figure(funnel_data, "key-2")
     col2.plotly_chart(fig, use_container_width=True)
-    col2.markdown(
-        f"<strong><div style='text-align: center;'>Curious Reader</div></strong>",
-        unsafe_allow_html=True,
-    )
 
     st.divider()
     st.subheader("Curious Reader")

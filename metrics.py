@@ -249,3 +249,11 @@ def get_country_counts(daterange, countries_list, app="Both", language="All"):
         country_counts.merge(gca, on="country", how="left").round(2).fillna(0)
     )
     return country_counts
+
+
+def weeks_since_beginning_of_year():
+    current_date = dt.datetime.now()
+    january_1st = dt.datetime(2024, 3, 1)
+    difference = current_date - january_1st
+
+    return difference.days // 7

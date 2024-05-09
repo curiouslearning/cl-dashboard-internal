@@ -216,10 +216,6 @@ def colorize_multiselect_options() -> None:
     st.markdown(f"<style>{rules}</style>", unsafe_allow_html=True)
 
 
-# with open("style.css") as f:
-#     st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
-
-
 # Pass a unique key into the function in order to use this on multiple pages safely
 def country_selector(placement="side", title="", key="key"):
     def update_country_session_state(key):
