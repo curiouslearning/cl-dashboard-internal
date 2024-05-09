@@ -13,7 +13,7 @@ settings.initialize()
 settings.init_user_list()
 settings.init_cr_app_version_list()
 
-st.subheader("Funnel Change over Time")
+st.subheader("Funnel History")
 
 language = ui.language_selector(placement="side", key="lang-funnel-changes")
 countries_list = ui.country_selector(
