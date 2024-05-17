@@ -8,6 +8,9 @@ import metrics
 from millify import prettify
 import ui_widgets as ui
 import numpy as np
+import plost
+
+default_daterange = [dt.datetime(2021, 1, 1).date(), dt.date.today()]
 
 
 def stats_by_country_map(daterange, countries_list, app="Both", language="All"):
@@ -422,8 +425,10 @@ def levels_line_chart(daterange, countries_list, app="Both", language="All"):
 
 
 @st.cache_data(ttl="1d", show_spinner=False)
-def funnel_change_line_chart(language, countries_list, toggle):
-    weeks = metrics.weeks_since_beginning_of_year()
+def funnel_change_line_chart(
+    daterange=default_daterange, language=["All"], countries_list=["All"], toggle=""
+):
+    weeks = metrics.weeks_since(daterange)
     df = pd.DataFrame(columns=["start_date", "LR", "DC", "TS", "SL", "PC", "LA"])
     for i in range(1, weeks + 1):
         end_date = dt.datetime.now().date()
@@ -587,3 +592,91 @@ def funnel_change_line_chart(language, countries_list, toggle):
 
     except Exception as e:
         st.write("No data")
+
+
+def top_campaigns_by_downloads_barchart(n):
+    df_campaigns = st.session_state.df_campaigns
+    df = df_campaigns.filter(["campaign_name", "mobile_app_install"], axis=1)
+    pivot_df = pd.pivot_table(
+        df, index=["campaign_name"], aggfunc={"mobile_app_install": "sum"}
+    )
+
+    df = pivot_df.sort_values(by=["mobile_app_install"], ascending=False)
+    df.reset_index(inplace=True)
+    df = df.rename(
+        columns={"campaign_name": "Campaign", "mobile_app_install": "Installs"}
+    )
+    df = df.head(n)
+    plost.bar_chart(
+        data=df,
+        bar="Installs",
+        value="Campaign",
+        direction="vertical",
+        use_container_width=True,
+        legend="bottom",
+    )
+
+
+@st.cache_data(ttl="1d", show_spinner=False)
+def funnel_change_by_language_chart(
+    languages, countries_list, daterange, upper_level, bottom_level
+):
+
+    weeks = metrics.weeks_since(daterange)
+    df = pd.DataFrame(columns=["start_date"] + languages)
+
+    for i in range(1, weeks + 1):
+        end_date = dt.datetime.now().date()
+        start_date = dt.datetime.now().date() - dt.timedelta(i * 7)
+        daterange = [start_date, end_date]
+
+        for language in languages:
+            language = [language]
+
+            bottom_level_value = metrics.get_totals_by_metric(
+                daterange,
+                stat=bottom_level,
+                language=language,
+                countries_list=countries_list,
+                app="CR",
+            )
+            upper_level_value = metrics.get_totals_by_metric(
+                daterange,
+                stat=upper_level,
+                language=language,
+                countries_list=countries_list,
+                app="CR",
+            )
+
+            try:
+                df.loc[i, language] = round(
+                    (bottom_level_value / upper_level_value) * 100, 2
+                )
+            except:
+                df.loc[i, language] = 0
+            df.loc[i, "start_date"] = start_date
+
+    # Create traces for each column provided it has a value
+    traces = []
+    for column in df.columns[1:]:
+
+        traces.append(
+            go.Scatter(
+                x=df["start_date"],
+                y=df[column],
+                mode="lines+markers",
+                name=column,
+                hovertemplate="%{y}%<br>",
+            )
+        )
+
+    # Create layout
+    layout = go.Layout(
+        title="",
+        xaxis=dict(title="Date"),
+        yaxis=dict(title="Percent of upper level"),
+    )
+
+    # Create figure
+    fig = go.Figure(data=traces, layout=layout)
+    st.plotly_chart(fig, use_container_width=True)

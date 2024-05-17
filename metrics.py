@@ -5,6 +5,8 @@ import numpy as np
 import datetime as dt
 import users
 
+default_daterange = [dt.datetime(2021, 1, 1).date(), dt.date.today()]
+
 
 @st.cache_data(ttl="1d", show_spinner=False)
 def get_ave_cost_per_action(daterange):
@@ -33,7 +35,7 @@ def get_download_totals():
 
 
 def get_totals_by_metric(
-    daterange=[dt.datetime(2021, 1, 1).date(), dt.date.today()],
+    daterange=default_daterange,
     countries_list=[],
     stat="LR",
     cr_app_version="All",
@@ -98,14 +100,13 @@ def get_totals_by_metric(
 # Takes the complete user lists and filters based on input data, and returns
 # a new filtered dataset
 def filter_user_data(
-    daterange=[],
-    countries_list=[],
+    daterange=default_daterange,
+    countries_list=["All"],
     stat="LR",
     cr_app_version="All",
     app="Both",
-    language="All",
+    language=["All"],
 ):
-
     if "df_user_list" and "df_first_open" not in st.session_state:
         return pd.DataFrame()
 
@@ -123,9 +124,10 @@ def filter_user_data(
         conditions.append(
             f"country.isin(@countries_list)",
         )
-
-    if language != "All":
-        conditions.append("app_language == @language")
+    if language[0] != "All":
+        conditions.append(
+            f"app_language.isin(@language)",
+        )
 
     if app == "CR":
         conditions.append("app_id == 'org.curiouslearning.container'")
@@ -146,14 +148,8 @@ def filter_user_data(
         df = df[(df["gpc"] >= 90)]
         return df
 
-    if stat == "PC":
-        conditions.append(
-            "(furthest_event == 'puzzle_completed' or furthest_event == 'level_completed' )"
-        )
-
     # All other stat options (LA)
     query = " and ".join(conditions)
-
     df = df_user_list.query(query)
     return df
 
@@ -185,7 +181,7 @@ def get_GC_avg(daterange, countries_list, app="Both", language="All"):
 
 # Returns a DataFrame list of countries and the number of users per country
 @st.cache_data(ttl="1d", show_spinner=False)
-def get_country_counts(daterange, countries_list, app="Both", language="All"):
+def get_country_counts(daterange, countries_list, app="Both", language=["All"]):
 
     dfLR = (
         filter_user_data(daterange, countries_list, "LR", app=app, language=language)
@@ -251,9 +247,83 @@ def get_country_counts(daterange, countries_list, app="Both", language="All"):
     return country_counts
 
 
-def weeks_since_beginning_of_year():
+def weeks_since(daterange):
     current_date = dt.datetime.now()
-    january_1st = dt.datetime(2024, 3, 1)
-    difference = current_date - january_1st
+    daterange_datetime = dt.datetime.combine(daterange[0], dt.datetime.min.time())
+
+    difference = current_date - daterange_datetime
 
     return difference.days // 7
+
+
+# Returns a DataFrame list of counts by language or counts by country
+@st.cache_data(ttl="1d", show_spinner=False)
+def get_counts(
+    type="app_language",
+    daterange=default_daterange,
+    countries_list=["All"],
+    app="Both",
+    language=["All"],
+):
+    dfLR = (
+        filter_user_data(
+            daterange, countries_list, stat="LR", app=app, language=language
+        )
+        .groupby(type)
+        .size()
+        .to_frame(name="LR")
+        .reset_index()
+    )
+    dfLA = (
+        filter_user_data(daterange, countries_list, "LA", app=app, language=language)
+        .groupby(type)
+        .size()
+        .to_frame(name="LA")
+        .reset_index()
+    )
+    counts = dfLR.merge(dfLA, on=type, how="left").fillna(0)
+
+    #### GPP ###
+    #    df = filter_user_data(
+    #       daterange, countries_list, stat="LA", app=app, language=language
+    #   )
+    #  avg_gpc_per_country = df.groupby("country")["gpc"].mean().round(2)
+    #   dfGPP = pd.DataFrame(
+    #       {
+    #           "country": avg_gpc_per_country.index,
+    #          "GPP": avg_gpc_per_country.values,
+    #      }
+    #    ).fillna(0)
+
+    #   country_counts = country_counts.merge(dfGPP, on="country", how="left").fillna(0)
+
+    dfPC = (
+        filter_user_data(daterange, countries_list, "PC", app=app, language=language)
+        .groupby(type)
+        .size()
+        .to_frame(name="PC")
+        .reset_index()
+    )
+
+    counts = counts.merge(dfPC, on=type, how="left").fillna(0)
+    df = filter_user_data(
+        daterange, countries_list, stat="LA", app=app, language=language
+    )
+    gpc_gt_90_counts = df[df["gpc"] >= 90].groupby(type)["user_pseudo_id"].count()
+    total_user_counts = df.groupby(type)["user_pseudo_id"].count()
+
+    # Reset index to bring "country" back as a column
+    gpc_gt_90_counts = gpc_gt_90_counts.reset_index()
+    total_user_counts = total_user_counts.reset_index()
+
+    # Merge the counts into a single DataFrame
+    gca = pd.merge(
+        gpc_gt_90_counts.rename(columns={"user_pseudo_id": "gpc_gt_90_users"}),
+        total_user_counts.rename(columns={"user_pseudo_id": "total_users"}),
+        on=type,
+    )
+
+    # Calculate the percentage and add it as a new column
+    gca["GCA"] = gca["gpc_gt_90_users"] / gca["total_users"] * 100
+    counts = counts.merge(gca, on=type, how="left").round(2).fillna(0)
+    return counts

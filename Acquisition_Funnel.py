@@ -14,11 +14,14 @@ settings.initialize()
 settings.init_user_list()
 settings.init_cr_app_version_list()
 
-language = ui.language_selector()
+languages = users.get_language_list()
+language = ui.single_selector(
+    languages, placement="side", title="Select a language", key="acq-1"
+)
 
 countries_list = users.get_country_list()
 countries_list = ui.multi_select_all(
-    countries_list, title="Country Selection", key="funnel_compare_key"
+    countries_list, title="Country Selection", key="acq-2"
 )
 
 selected_date, option = ui.calendar_selector(placement="side")
@@ -66,7 +69,7 @@ if len(daterange) == 2:
         ],
         "Count": [LR, PC, LA, GC],
     }
-    fig = uic.create_engagement_figure(funnel_data, "key-1")
+    fig = uic.create_engagement_figure(funnel_data, "acq-3")
     col1.plotly_chart(fig, use_container_width=True)
 
     LR = metrics.get_totals_by_metric(
@@ -92,7 +95,7 @@ if len(daterange) == 2:
         "Count": [LR, PC, LA, GC],
     }
 
-    fig = uic.create_engagement_figure(funnel_data, "key-2")
+    fig = uic.create_engagement_figure(funnel_data, "acq-4")
     col2.plotly_chart(fig, use_container_width=True)
 
     st.divider()
@@ -135,5 +138,5 @@ if len(daterange) == 2:
         "Count": [LR, DC, TS, SL, PC, LA, GC],
     }
 
-    fig = uic.create_engagement_figure(funnel_data, "key-2")
+    fig = uic.create_engagement_figure(funnel_data, "acq-5")
     st.plotly_chart(fig, use_container_width=True)

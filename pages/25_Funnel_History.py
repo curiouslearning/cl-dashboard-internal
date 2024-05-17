@@ -5,7 +5,7 @@ from millify import prettify
 import ui_components as uic
 import ui_widgets as ui
 import pandas as pd
-
+import users
 
 st.title("Curious Learning Internal")
 
@@ -15,69 +15,30 @@ settings.init_cr_app_version_list()
 
 st.subheader("Funnel History")
 
-language = ui.language_selector(placement="side", key="lang-funnel-changes")
-countries_list = ui.country_selector(
-    placement="side", title="Country Selection", key="country--funnel-changes"
+ui.display_definitions_table(ui.level_percent_definitions)
+languages = users.get_language_list()
+language = ui.single_selector(
+    languages, title="Select a language", placement="side", key="fh-1"
 )
-expander = st.expander("Definitions")
-# CSS to inject contained in a string
-hide_table_row_index = """
-                <style>
-                thead tr th:first-child {display:none}
-                tbody th {display:none}
-                </style>
-                """
-# Inject CSS with Markdown
-st.markdown(hide_table_row_index, unsafe_allow_html=True)
-def_df = pd.DataFrame(
-    [
-        [
-            "DC over LR",
-            "Downloads Completed divided by Learners Reached",
-        ],
-        [
-            "TS over LR",
-            "Tapped Start divided by Learners Reached",
-        ],
-        [
-            "SL over LR",
-            "Selected Level divided by Learners Reached",
-        ],
-        [
-            "PC over LR",
-            "Puzzle Completed divided by Learners Reached",
-        ],
-        [
-            "LA over LR",
-            "Learner Acquired (Level completed) divided by Learners Reached",
-        ],
-        [
-            "GC over LR",
-            "Game Complted divided by Learners Reached",
-        ],
-    ],
-    columns=["Name", "Definition"],
+countries_list = users.get_country_list()
+country = ui.single_selector(
+    countries_list,
+    placement="side",
+    title="Country Selection",
+    key="fh-2",
 )
-expander.table(def_df)
 
-(
-    col1,
-    col2,
-) = cols = st.columns(2)
+selected_date, option = ui.calendar_selector(placement="side", key="fh-3", index=4)
+daterange = ui.convert_date_to_range(selected_date, option)
+col1, col2 = st.columns(2)
 
 col2.image(
     "funnel.jpg",
     caption="Sample Funnel",
 )
 
-toggle = col1.radio(
-    options=[
-        "Compare to Initial",
-        "Compare to Previous",
-    ],
-    label="",
-    horizontal=True,
-    index=0,
-)
-
-uic.funnel_change_line_chart(language, countries_list, toggle)
+toggle = ui.compare_funnel_level_widget(placement="middle", key="fh-4")
+with st.spinner("Calculating..."):
+    uic.funnel_change_line_chart(
+        daterange=daterange, language=language, countries_list=country, toggle=toggle
+    )
