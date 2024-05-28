@@ -49,7 +49,6 @@ def get_totals_by_metric(
     df_user_list = filter_user_data(
         daterange, countries_list, stat, cr_app_version, app=app, language=language
     )
-    print(df_user_list)
     if stat not in ["DC", "TS", "SL", "PC", "LA"]:
         return len(df_user_list)
     else:

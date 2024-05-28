@@ -8,3 +8,7 @@ Streamlit Dashboard for Internal Analysis
 3. cd to ./cl-dashboard-internal
 4. pip install -r requirements.txt
 5. streamlit run Acquisition_Funnel.py
+
+
+docker build  --no-cache --platform linux/amd64  -t gcr.io/dataexploration-193817/cl-dashboard-internal:latest . 
+docker push gcr.io/dataexploration-193817/cl-dashboard-internal:latest
