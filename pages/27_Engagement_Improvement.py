@@ -54,7 +54,7 @@ selected_date, option = ui.calendar_selector(placement="side", key="la-3", index
 daterange = ui.convert_date_to_range(selected_date, option)
 
 upper_level, bottom_level = ui.level_comparison_selector(placement="middle")
-if st.toggle(label="Load Top 10 Learners Reached"):
+if st.toggle(label="Load Top 10 Learners Reached", value=True):
     selected_languages = df_top10["app_language"].to_list()
 with st.spinner("Calculating..."):
     uic.funnel_change_by_language_chart(
