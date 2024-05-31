@@ -318,3 +318,6 @@ def get_campaigns_by_date(daterange):
     df = campaigns.add_google_button_clicks(df, daterange)
 
     return df
+
+def build_campaign_table(df):
+    
