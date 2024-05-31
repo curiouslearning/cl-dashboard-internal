@@ -330,17 +330,16 @@ def get_counts(
 
 
 @st.cache_data(ttl="1d", show_spinner=False)
-def build_campaign_data_table(daterange):
+def get_campaigns_by_date(daterange):
     df_campaigns_all = st.session_state.df_campaigns_all
-    print("hello")
-    df_campaigns_all.info()
+
     conditions = [
         f"@daterange[0] <= segment_date <= @daterange[1]",
     ]
 
     query = " and ".join(conditions)
     df_campaigns = df_campaigns_all.query(query)
-    print("hello2")
-    df_campaigns_all.info()
+
     df_campaigns = campaigns.rollup_campaign_data(df_campaigns)
-    df_campaigns.info()
+
+    return df_campaigns

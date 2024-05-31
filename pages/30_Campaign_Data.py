@@ -18,17 +18,16 @@ col1, col2 = st.columns(2)
 # In the case of datepicker, don't do anything until both start and end dates are picked
 
 
-total_fb, total_goog = metrics.get_download_totals()
+# total_fb, total_goog = metrics.get_download_totals()
 
-col1.metric(label="INSTALLS FROM FACEBOOK", value=prettify(int(total_fb)))
-col2.metric(label="GOOGLE CONVERSIONS", value=prettify(int(total_goog)))
+# col1.metric(label="INSTALLS FROM FACEBOOK", value=prettify(int(total_fb)))
+# col2.metric(label="GOOGLE CONVERSIONS", value=prettify(int(total_goog)))
 
-selected_date, option = ui.calendar_selector(placement="side", key="fh-3", index=4)
+selected_date, option = ui.calendar_selector(placement="side", key="fh-3", index=0)
 daterange = ui.convert_date_to_range(selected_date, option)
-metrics.build_campaign_data_table(daterange)
 
-if "df_campaigns" in st.session_state:
-    df_campaigns = st.session_state.df_campaigns
+if len(daterange) > 1:
+    df_campaigns = metrics.get_campaigns_by_date(daterange)
 
     col = df_campaigns.pop("country")
     df_campaigns.insert(2, col.name, col)
@@ -38,16 +37,20 @@ if "df_campaigns" in st.session_state:
     df_campaigns.insert(3, col.name, col)
     df_campaigns.reset_index(drop=True, inplace=True)
 
+    # Drop the campaigns that don't meet the naming convention
+    condition = (df_campaigns["app_language"].isna()) | (df_campaigns["country"].isna())
+    df_campaigns = df_campaigns[~condition]
+
     if platform == "Facebook" or platform == "Both":
         st.header("Facebook Ads")
 
-        dff = df_campaigns.query("source == 'Facebook'")
+    dff = df_campaigns.query("source == 'Facebook'")
 
-        if len(dff) > 0:
-            keys = [2, 3, 4, 5, 6]
-            ui.paginated_dataframe(dff, keys, sort_col="campaign_name")
-        else:
-            st.text("No data for selected period")
+    if len(dff) > 0:
+        keys = [2, 3, 4, 5, 6]
+        ui.paginated_dataframe(dff, keys, sort_col="campaign_name")
+    else:
+        st.text("No data for selected period")
 
     if platform == "Google" or platform == "Both":
         st.header("Google Ads")

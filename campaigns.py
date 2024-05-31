@@ -65,11 +65,15 @@ def get_fb_campaign_data():
             WHERE a.action_type = 'mobile_app_install'
             and
             d.start_time >= '2021-01-01'
+  #          and campaign_id in ('120205877358410195')
             order by data_date_start desc;
 
              """
 
     df = bq_client.query(sql_query).to_dataframe()
+
+    # in case the importer runs more than once on the same day, delete any duplicates
+    df = df.drop_duplicates(subset=["campaign_id", "segment_date"], keep="first")
 
     df["campaign_start_date"] = pd.to_datetime(
         df.campaign_start_date, utc=True
@@ -90,32 +94,43 @@ def get_fb_campaign_data():
 # Looks for the string following the dash and makes that the associated country.
 # This requires a strict naming convention of "[anything without dashes] - [country]]"
 def add_country_and_language(df):
-
-    # Define the regex pattern to match campaign names with the format ": text -"
-    regex_pattern = r":\s*([^-]+?)\s*-"
-
-    # Filter rows based on the regex pattern
-    df1 = df[df["campaign_name"].str.contains(regex_pattern, regex=True, na=False)]
-
-    # Set country to everything after the dash and remove padding
+    # Define the regex patterns
     country_regex_pattern = r"-\s*(.*)"
-    df1["country"] = (
-        df1["campaign_name"].str.extract(country_regex_pattern)[0].str.strip()
-    )
-
-    # Remove the word "Campaign" if it exists
-    campaign_regex_pattern = r"\s*(.*)Campaign"
-    extracted = df1["country"].str.extract(campaign_regex_pattern)
-
-    # Replace NaN values (no match) with the original values
-    df1["country"] = extracted[0].fillna(df1["country"]).str.strip()
-
-    # Set the language based on the pattern
     language_regex_pattern = r":\s*([^-]+?)\s*-"
-    df1["app_language"] = (
-        df1["campaign_name"].str.extract(language_regex_pattern)[0].str.strip()
+    campaign_regex_pattern = r"\s*(.*)Campaign"
+
+    # Extract the country
+    df["country"] = (
+        df["campaign_name"].str.extract(country_regex_pattern)[0].str.strip()
     )
-    return df1
+
+    # Remove the word "Campaign" if it exists in the country field
+    extracted = df["country"].str.extract(campaign_regex_pattern)
+    df["country"] = extracted[0].fillna(df["country"]).str.strip()
+
+    # Extract the language
+    df["app_language"] = (
+        df["campaign_name"].str.extract(language_regex_pattern)[0].str.strip()
+    )
+
+    # Set default values to None where there's no match
+    country_contains_pattern = r"-\s*(?:.*)"
+    language_contains_pattern = r":\s*(?:[^-]+?)\s*-"
+
+    df["country"] = df["country"].where(
+        df["campaign_name"].str.contains(
+            country_contains_pattern, regex=True, na=False
+        ),
+        None,
+    )
+    df["app_language"] = df["app_language"].where(
+        df["campaign_name"].str.contains(
+            language_contains_pattern, regex=True, na=False
+        ),
+        None,
+    )
+
+    return df
 
 
 @st.cache_data(ttl="1d", show_spinner=False)
@@ -155,10 +170,6 @@ def rollup_campaign_data(df):
         if col in df.columns:
             aggregation[col] = "first"
 
-    # This will roll everything up except when there is multiple campaign names
-    # for a campaign_id.  This happens when campaigns are renamed.
-    df = df.groupby(["campaign_id", "campaign_name"], as_index=False).agg(aggregation)
-
     # find duplicate campaign_ids, create a dataframe for them and remove from original
     duplicates = df[df.duplicated("campaign_id", keep=False)]
     df = df.drop_duplicates("campaign_id", keep=False)
@@ -166,30 +177,18 @@ def rollup_campaign_data(df):
     # Get the newest campaign info according to segment date and use its campaign_name
     # for the other campaign names.
     duplicates = duplicates.sort_values(by="segment_date", ascending=False)
-
     duplicates["campaign_name"] = duplicates.groupby("campaign_id")[
         "campaign_name"
     ].transform("first")
 
     # Do another rollup on the duplicates.  This time the campaign name will be the same
     # so we can take any of them
-    aggregation = {
-        "campaign_name": "first",
-        "campaign_start_date": "first",
-        "campaign_end_date": "first",
-        "mobile_app_install": "first",
-        "source": "first",
-        "clicks": "first",
-        "reach": "first",
-        "cost": "first",
-        "cpc": "first",
-        "impressions": "first",
-    }
-
+    aggregation["campaign_name"] = "first"
     combined = duplicates.groupby(["campaign_id"], as_index=False).agg(aggregation)
 
     # put it all back together
     df = pd.concat([df, combined])
+    df = df.drop(columns=["segment_date"])
 
     return df
 
