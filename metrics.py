@@ -319,5 +319,5 @@ def get_campaigns_by_date(daterange):
 
     return df
 
-def build_campaign_table(df):
-    
+
+# def build_campaign_table(df):
