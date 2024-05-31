@@ -320,4 +320,8 @@ def get_campaigns_by_date(daterange):
     return df
 
 
-# def build_campaign_table(df):
+def build_campaign_table(df):
+    # Group by country and language and sum the counts and costs
+    df = df["campaign_id", "country", "app_language", "cost"]
+    grouped_df = df.groupby(["country", "app_language"], as_index=False).sum()
+    print(grouped_df)

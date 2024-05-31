@@ -23,6 +23,9 @@ daterange = ui.convert_date_to_range(selected_date, option)
 if len(daterange) > 1:
     df_campaigns = metrics.get_campaigns_by_date(daterange)
 
+    df = metrics.build_campaign_table(df_campaigns)
+    print(df)
+
     col = df_campaigns.pop("country")
     df_campaigns.insert(2, col.name, col)
     df_campaigns.reset_index(drop=True, inplace=True)
