@@ -59,7 +59,6 @@ def get_fb_campaign_data():
             end_time as campaign_end_date,
             reach,
             "Facebook" as source,
-            0 as button_clicks,
             FROM dataexploration-193817.marketing_data.facebook_ads_data as d
             JOIN UNNEST(actions) as a
             WHERE a.action_type = 'mobile_app_install'
@@ -134,13 +133,15 @@ def add_country_and_language(df):
 
 
 @st.cache_data(ttl="1d", show_spinner=False)
-def get_google_campaign_conversions():
+def get_google_campaign_conversions(daterange):
     bq_client = st.session_state.bq_client
     sql_query = f"""
                 SELECT campaign_id,
                 metrics_conversions as button_clicks,
                 FROM `dataexploration-193817.marketing_data.ads_CampaignConversionStats_6687569935`
-                where segments_conversion_action_name like '%CTA_Gplay%';
+                where segments_conversion_action_name like '%CTA_Gplay%'
+               AND DATE(segments_date) BETWEEN '{daterange[0].strftime("%Y-%m-%d")}' AND '{daterange[1].strftime("%Y-%m-%d")}' ;
+                
                 """
 
     df = bq_client.query(sql_query).to_dataframe()
@@ -195,9 +196,9 @@ def rollup_campaign_data(df):
 
 # Get the button clicks from BigQuery, add them to the dataframe
 # and rollup the sum per campaign_id
-def add_google_button_clicks(df):
+def add_google_button_clicks(df, daterange):
 
-    df_goog_conversions = campaigns.get_google_campaign_conversions()
+    df_goog_conversions = campaigns.get_google_campaign_conversions(daterange)
 
     df_goog = pd.merge(
         df,

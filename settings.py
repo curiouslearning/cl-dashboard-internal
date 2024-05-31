@@ -5,6 +5,9 @@ import campaigns
 from rich import print
 import pandas as pd
 import users
+import datetime as dt
+
+default_daterange = [dt.datetime(2021, 1, 1).date(), dt.date.today()]
 
 
 def get_bq_client():
@@ -47,15 +50,15 @@ def init_user_list():
 
 # Get the campaign data from BigQuery, roll it up per campaign
 def init_campaign_data():
-    df_campaigns_all = campaigns.get_fb_campaign_data()
+    df_fb_all = campaigns.get_fb_campaign_data()
 
-    #  df_goog_all = campaigns.get_google_campaign_data()
-    #   df_campaigns_all = pd.concat([df_goog_all, df_fb_all])
+    df_goog_all = campaigns.get_google_campaign_data()
+    df_campaigns_all = pd.concat([df_goog_all, df_fb_all])
     df_campaigns_all = campaigns.add_country_and_language(df_campaigns_all)
 
     df_campaigns = campaigns.rollup_campaign_data(df_campaigns_all)
 
-    #  df_campaigns = campaigns.add_google_button_clicks(df_campaigns)
+    df_campaigns = campaigns.add_google_button_clicks(df_campaigns, default_daterange)
 
     if "df_campaigns" not in st.session_state:
         st.session_state["df_campaigns"] = df_campaigns

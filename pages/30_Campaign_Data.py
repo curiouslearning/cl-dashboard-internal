@@ -15,17 +15,11 @@ settings.init_campaign_data()
 platform = ui.ads_platform_selector()
 col1, col2 = st.columns(2)
 
-# In the case of datepicker, don't do anything until both start and end dates are picked
-
-
-# total_fb, total_goog = metrics.get_download_totals()
-
-# col1.metric(label="INSTALLS FROM FACEBOOK", value=prettify(int(total_fb)))
-# col2.metric(label="GOOGLE CONVERSIONS", value=prettify(int(total_goog)))
-
 selected_date, option = ui.calendar_selector(placement="side", key="fh-3", index=0)
 daterange = ui.convert_date_to_range(selected_date, option)
 
+
+# In the case of datepicker, don't do anything until both start and end dates are picked
 if len(daterange) > 1:
     df_campaigns = metrics.get_campaigns_by_date(daterange)
 

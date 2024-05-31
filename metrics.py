@@ -9,32 +9,6 @@ import campaigns
 default_daterange = [dt.datetime(2021, 1, 1).date(), dt.date.today()]
 
 
-@st.cache_data(ttl="1d", show_spinner=False)
-def get_ave_cost_per_action(daterange):
-    df_campaigns = st.session_state.df_campaigns
-
-    df = df_campaigns.query(
-        "@daterange[0] <= day <= @daterange[1] and mobile_app_install > 0"
-    )
-
-    total_downloads = df["mobile_app_install"].sum()
-    total_cost = df["cost"].sum()
-
-    if total_downloads > 0:
-        return float(total_cost) / float(total_downloads)
-
-    return 0
-
-
-def get_download_totals():
-    df_campaigns = st.session_state.df_campaigns
-    total_fb = df_campaigns["mobile_app_install"].sum()
-
-    total_goog = df_campaigns["button_clicks"].sum()
-
-    return total_fb, total_goog
-
-
 def get_totals_by_metric(
     daterange=default_daterange,
     countries_list=[],
@@ -338,8 +312,9 @@ def get_campaigns_by_date(daterange):
     ]
 
     query = " and ".join(conditions)
-    df_campaigns = df_campaigns_all.query(query)
+    df = df_campaigns_all.query(query)
 
-    df_campaigns = campaigns.rollup_campaign_data(df_campaigns)
+    df = campaigns.rollup_campaign_data(df)
+    df = campaigns.add_google_button_clicks(df, daterange)
 
-    return df_campaigns
+    return df
