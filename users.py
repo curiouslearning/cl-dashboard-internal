@@ -2,9 +2,11 @@ import streamlit as st
 import pandas as pd
 from rich import print as print
 import numpy as np
+from pyinstrument import Profiler
+
 
 # How far back to obtain user data.  Currently the queries pull back to 01/01/2021
-start_date = "2021/01/01"
+start_date = "2024/03/01"
 
 
 # Firebase returns two different formats of user_pseudo_id between
@@ -13,32 +15,33 @@ start_date = "2021/01/01"
 # This would all be unncessery if dev had included the app user id per the spec.
 @st.cache_data(ttl="1d", show_spinner="Gathering User List")
 def get_users_list():
+    p = Profiler(async_mode="disabled")
+    with p:
 
-    bq_client = st.session_state.bq_client
-    sql_query = f"""
+        bq_client = st.session_state.bq_client
+        sql_query = f"""
+                    SELECT *
+                        FROM `dataexploration-193817.user_data.all_users_progress`
+                    WHERE
+                        first_open BETWEEN PARSE_DATE('%Y/%m/%d','{start_date}') AND CURRENT_DATE() 
+                    """
+
+        df_user_list = bq_client.query(sql_query).to_dataframe()
+        df_unity_users = df_user_list[
+            df_user_list["app_id"].str.lower().str.contains("feedthemonster")
+        ]
+
+        sql_query = f"""
                 SELECT *
-                    FROM `dataexploration-193817.user_data.all_users_progress`
+                    FROM `dataexploration-193817.user_data.user_first_open_list_cr`
                 WHERE
                     first_open BETWEEN PARSE_DATE('%Y/%m/%d','{start_date}') AND CURRENT_DATE() 
                 """
-    rows_raw = bq_client.query(sql_query)
-    rows = [dict(row) for row in rows_raw]
-    df_user_list = pd.DataFrame(rows)
-    df_unity_users = df_user_list[
-        df_user_list["app_id"].str.lower().str.contains("feedthemonster")
-    ]
 
-    sql_query = f"""
-            SELECT *
-                FROM `dataexploration-193817.user_data.user_first_open_list_cr`
-            WHERE
-                first_open BETWEEN PARSE_DATE('%Y/%m/%d','{start_date}') AND CURRENT_DATE() 
-            """
-    rows_raw = bq_client.query(sql_query)
-    rows = [dict(row) for row in rows_raw]
-    df_first_open = pd.DataFrame(rows)
-    df_first_open = pd.concat([df_first_open, df_unity_users], ignore_index=True)
+        df_first_open = bq_client.query(sql_query).to_dataframe()
+        df_first_open = pd.concat([df_first_open, df_unity_users], ignore_index=True)
 
+    p.print()
     return df_user_list, df_first_open
 
 

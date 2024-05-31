@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 import datetime as dt
 import users
+import campaigns
 
 default_daterange = [dt.datetime(2021, 1, 1).date(), dt.date.today()]
 
@@ -326,3 +327,20 @@ def get_counts(
     gca["GCA"] = gca["gpc_gt_90_users"] / gca["total_users"] * 100
     counts = counts.merge(gca, on=type, how="left").round(2).fillna(0)
     return counts
+
+
+@st.cache_data(ttl="1d", show_spinner=False)
+def build_campaign_data_table(daterange):
+    df_campaigns_all = st.session_state.df_campaigns_all
+    print("hello")
+    df_campaigns_all.info()
+    conditions = [
+        f"@daterange[0] <= segment_date <= @daterange[1]",
+    ]
+
+    query = " and ".join(conditions)
+    df_campaigns = df_campaigns_all.query(query)
+    print("hello2")
+    df_campaigns_all.info()
+    df_campaigns = campaigns.rollup_campaign_data(df_campaigns)
+    df_campaigns.info()

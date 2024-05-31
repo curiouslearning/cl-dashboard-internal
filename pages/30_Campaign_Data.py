@@ -23,8 +23,21 @@ total_fb, total_goog = metrics.get_download_totals()
 col1.metric(label="INSTALLS FROM FACEBOOK", value=prettify(int(total_fb)))
 col2.metric(label="GOOGLE CONVERSIONS", value=prettify(int(total_goog)))
 
+selected_date, option = ui.calendar_selector(placement="side", key="fh-3", index=4)
+daterange = ui.convert_date_to_range(selected_date, option)
+metrics.build_campaign_data_table(daterange)
+
 if "df_campaigns" in st.session_state:
     df_campaigns = st.session_state.df_campaigns
+
+    col = df_campaigns.pop("country")
+    df_campaigns.insert(2, col.name, col)
+    df_campaigns.reset_index(drop=True, inplace=True)
+
+    col = df_campaigns.pop("app_language")
+    df_campaigns.insert(3, col.name, col)
+    df_campaigns.reset_index(drop=True, inplace=True)
+
     if platform == "Facebook" or platform == "Both":
         st.header("Facebook Ads")
 
