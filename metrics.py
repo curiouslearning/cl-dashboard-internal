@@ -17,6 +17,7 @@ def get_totals_by_metric(
     app="Both",
     language="All",
 ):
+
     # if no list passed in then get the full list
     if len(countries_list) == 0:
         countries_list = users.get_country_list()
@@ -24,6 +25,7 @@ def get_totals_by_metric(
     df_user_list = filter_user_data(
         daterange, countries_list, stat, cr_app_version, app=app, language=language
     )
+
     if stat not in ["DC", "TS", "SL", "PC", "LA"]:
         return len(df_user_list)
     else:
@@ -82,6 +84,7 @@ def filter_user_data(
     language=["All"],
 ):
     if "df_user_list" and "df_first_open" not in st.session_state:
+        print("PROBLEM!")
         return pd.DataFrame()
 
     df_user_list = st.session_state.df_user_list
@@ -320,8 +323,35 @@ def get_campaigns_by_date(daterange):
     return df
 
 
-def build_campaign_table(df):
-    # Group by country and language and sum the counts and costs
-    df = df["campaign_id", "country", "app_language", "cost"]
-    grouped_df = df.groupby(["country", "app_language"], as_index=False).sum()
-    print(grouped_df)
+@st.cache_data(ttl="1d", show_spinner=True)
+def build_campaign_table(df, daterange):
+
+    df = (
+        df.groupby(["country", "app_language"], as_index=False)
+        .agg(
+            {
+                "cost": "mean",
+            }
+        )
+        .round(2)
+    )
+    stats = ["LR", "PC", "LA"]
+    for idx, row in df.iterrows():
+        country_list = [row["country"]]
+        language = [row["app_language"].lower()]
+
+        for stat in stats:
+
+            result = get_totals_by_metric(
+                countries_list=country_list,
+                language=language,
+                daterange=daterange,
+                stat=stat,
+                app="CR",
+            )
+            df.at[idx, stat] = result
+            df.at[idx, stat + "C"] = (
+                (df.at[idx, "cost"] / result).round(2) if result != 0 else 0
+            )
+
+    return df

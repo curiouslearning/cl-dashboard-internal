@@ -11,6 +11,7 @@ st.set_page_config(layout="wide")
 st.title("Curious Learning Dashboard")
 settings.initialize()
 settings.init_campaign_data()
+settings.init_user_list()
 
 platform = ui.ads_platform_selector()
 col1, col2 = st.columns(2)
@@ -23,8 +24,9 @@ daterange = ui.convert_date_to_range(selected_date, option)
 if len(daterange) > 1:
     df_campaigns = metrics.get_campaigns_by_date(daterange)
 
-    df = metrics.build_campaign_table(df_campaigns)
-    print(df)
+    # Drop the campaigns that don't meet the naming convention
+    condition = (df_campaigns["app_language"].isna()) | (df_campaigns["country"].isna())
+    df_campaigns = df_campaigns[~condition]
 
     col = df_campaigns.pop("country")
     df_campaigns.insert(2, col.name, col)
@@ -34,9 +36,10 @@ if len(daterange) > 1:
     df_campaigns.insert(3, col.name, col)
     df_campaigns.reset_index(drop=True, inplace=True)
 
-    # Drop the campaigns that don't meet the naming convention
-    condition = (df_campaigns["app_language"].isna()) | (df_campaigns["country"].isna())
-    df_campaigns = df_campaigns[~condition]
+    st.header("Marketing Performance Table")
+    df = metrics.build_campaign_table(df_campaigns, daterange)
+    keys = [12, 13, 14, 15, 16]
+    ui.paginated_dataframe(df, keys, sort_col="country")
 
     if platform == "Facebook" or platform == "Both":
         st.header("Facebook Ads")

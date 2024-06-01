@@ -6,7 +6,7 @@ from pyinstrument import Profiler
 
 
 # How far back to obtain user data.  Currently the queries pull back to 01/01/2021
-start_date = "2024/03/01"
+start_date = "2021/01/01"
 
 
 # Firebase returns two different formats of user_pseudo_id between
@@ -41,7 +41,6 @@ def get_users_list():
         df_first_open = bq_client.query(sql_query).to_dataframe()
         df_first_open = pd.concat([df_first_open, df_unity_users], ignore_index=True)
 
-    p.print()
     return df_user_list, df_first_open
 
 
