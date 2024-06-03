@@ -46,29 +46,28 @@ def get_google_campaign_data():
 def get_fb_campaign_data():
     bq_client = st.session_state.bq_client
     sql_query = f"""
-            SELECT 
-            campaign_id,
-            data_date_start as segment_date ,
-            campaign_name,
-            PARSE_NUMERIC(a.value) as mobile_app_install,  
-            clicks,
-            impressions,
-            spend as cost,
-            cpc,
-            start_time as campaign_start_date, 
-            end_time as campaign_end_date,
-            reach,
-            "Facebook" as source,
-            FROM dataexploration-193817.marketing_data.facebook_ads_data as d
-            JOIN UNNEST(actions) as a
-            WHERE a.action_type = 'mobile_app_install'
-            and
-            d.start_time >= '2021-01-01'
-  #          and campaign_id in ('120205877358410195')
-            order by data_date_start desc;
-
-             """
-
+        SELECT 
+            d.campaign_id,
+            d.data_date_start as segment_date,
+            d.campaign_name,
+            COALESCE(
+                (SELECT PARSE_NUMERIC(a.value)
+                 FROM UNNEST(d.actions) as a
+                 WHERE a.action_type = 'mobile_app_install'
+                 LIMIT 1), 0) as mobile_app_install,
+            d.clicks,
+            d.impressions,
+            d.spend as cost,
+            d.cpc,
+            d.start_time as campaign_start_date, 
+            d.end_time as campaign_end_date,
+            d.reach,
+            "Facebook" as source
+        FROM dataexploration-193817.marketing_data.facebook_ads_data as d
+        WHERE d.start_time >= '2021-01-01'
+        #        and d.campaign_id in ('120206573803000195')
+        ORDER BY d.data_date_start DESC;
+        """
     df = bq_client.query(sql_query).to_dataframe()
 
     # in case the importer runs more than once on the same day, delete any duplicates
@@ -93,6 +92,7 @@ def get_fb_campaign_data():
 # Looks for the string following the dash and makes that the associated country.
 # This requires a strict naming convention of "[anything without dashes] - [country]]"
 def add_country_and_language(df):
+
     # Define the regex patterns
     country_regex_pattern = r"-\s*(.*)"
     language_regex_pattern = r":\s*([^-]+?)\s*-"
@@ -128,7 +128,6 @@ def add_country_and_language(df):
         ),
         None,
     )
-
     return df
 
 

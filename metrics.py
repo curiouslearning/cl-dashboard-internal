@@ -330,11 +330,12 @@ def build_campaign_table(df, daterange):
         df.groupby(["country", "app_language"], as_index=False)
         .agg(
             {
-                "cost": "mean",
+                "cost": "sum",
             }
         )
         .round(2)
     )
+
     stats = ["LR", "PC", "LA"]
     for idx, row in df.iterrows():
         country_list = [row["country"]]
@@ -353,5 +354,19 @@ def build_campaign_table(df, daterange):
             df.at[idx, stat + "C"] = (
                 (df.at[idx, "cost"] / result).round(2) if result != 0 else 0
             )
+            if stat == "LR":
+                LR = result
+            elif stat == "PC":
+                PC = result
+            else:
+                LA = result
+        try:
+            LA_LR = round(LA / LR, 2) * 100
+            PC_LR = round(PC / LR, 2) * 100
+        except ZeroDivisionError:
+            LA_LR = 0
+            PC_LR = 0
+        df.at[idx, "PC_LR"] = PC_LR
+        df.at[idx, "LA_LR"] = LA_LR
 
     return df

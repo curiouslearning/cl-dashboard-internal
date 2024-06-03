@@ -19,7 +19,6 @@ col1, col2 = st.columns(2)
 selected_date, option = ui.calendar_selector(placement="side", key="fh-3", index=0)
 daterange = ui.convert_date_to_range(selected_date, option)
 
-
 # In the case of datepicker, don't do anything until both start and end dates are picked
 if len(daterange) > 1:
     df_campaigns = metrics.get_campaigns_by_date(daterange)
