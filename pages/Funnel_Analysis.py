@@ -90,7 +90,7 @@ if len(selected_languages) > 0:
         option="LR",
     )
 st.divider()
-st.subheader("Sideways Funnels by Language")
+st.subheader("Levels Across Time")
 st.markdown(
     """
     :red-background[NOTE:]
