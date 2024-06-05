@@ -382,30 +382,23 @@ def build_funnel_dataframe(
             app="CR",
         )
 
+        entry = {
+            "LR": LR,
+            "DC": DC,
+            "TS": TS,
+            "SL": SL,
+            "PC": PC,
+            "LA": LA,
+            "GC": GC,
+        }
+
         if index_col == "language":
-            entry = {
-                "language": language[0],
-                "LR": LR,
-                "DC": DC,
-                "TS": TS,
-                "SL": SL,
-                "PC": PC,
-                "LA": LA,
-                "GC": GC,
-            }
+            entry["language"] = language[0]
         else:
-            entry = {
-                "start_date": start_date,
-                "LR": LR,
-                "DC": DC,
-                "TS": TS,
-                "SL": SL,
-                "PC": PC,
-                "LA": LA,
-                "GC": GC,
-            }
+            entry["start_date"] = start_date
 
         results.append(entry)
+
     df = pd.DataFrame(results)
-    print(df)
+
     return df

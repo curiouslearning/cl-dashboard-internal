@@ -649,6 +649,11 @@ def funnel_change_by_language_chart(
 
     # Create figure
     fig = go.Figure(data=traces, layout=layout)
+    fig.update_layout(
+        margin=dict(l=10, r=1, b=0, t=10, pad=4),
+        geo=dict(bgcolor="rgba(0,0,0,0)"),
+    )
+
     st.plotly_chart(fig, use_container_width=True)
 
 
@@ -677,6 +682,8 @@ def top_tilted_funnel(languages, countries_list, daterange, option):
         legend_title="Levels",
         template="plotly_white",
         title_text=title,
+        margin=dict(l=10, r=1, b=0, t=10, pad=4),
+        geo=dict(bgcolor="rgba(0,0,0,0)"),
     )
 
     st.plotly_chart(fig, use_container_width=True)
