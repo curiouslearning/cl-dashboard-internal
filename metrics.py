@@ -307,6 +307,7 @@ def get_counts(
     return counts
 
 
+@st.cache_data(ttl="1d", show_spinner=False)
 def build_funnel_dataframe(
     index_col="language",
     daterange=default_daterange,
