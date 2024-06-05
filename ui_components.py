@@ -427,80 +427,21 @@ def levels_line_chart(daterange, countries_list, app="Both", language="All"):
 
 # @st.cache_data(ttl="1d", show_spinner=False)
 def funnel_change_line_chart(
-    daterange=default_daterange, language=["All"], countries_list=["All"], toggle=""
+    daterange=default_daterange, languages=["All"], countries_list=["All"], toggle=""
 ):
     weeks = metrics.weeks_since(daterange)
-    df = pd.DataFrame(columns=["start_date", "LR", "DC", "TS", "SL", "PC", "LA"])
+
     for i in range(1, weeks + 1):
         end_date = dt.datetime.now().date()
         start_date = dt.datetime.now().date() - dt.timedelta(i * 7)
         daterange = [start_date, end_date]
 
-        DC = metrics.get_totals_by_metric(
-            daterange,
-            stat="DC",
-            language=language,
+        df = metrics.build_funnel_dataframe(
+            index_col="start_date",
+            daterange=daterange,
+            languages=languages,
             countries_list=countries_list,
-            app="CR",
         )
-        SL = metrics.get_totals_by_metric(
-            daterange,
-            stat="SL",
-            language=language,
-            countries_list=countries_list,
-            app="CR",
-        )
-        TS = metrics.get_totals_by_metric(
-            daterange,
-            stat="TS",
-            language=language,
-            countries_list=countries_list,
-            app="CR",
-        )
-
-        PC = metrics.get_totals_by_metric(
-            daterange,
-            stat="PC",
-            language=language,
-            countries_list=countries_list,
-            app="CR",
-        )
-        LA = metrics.get_totals_by_metric(
-            daterange,
-            stat="LA",
-            language=language,
-            countries_list=countries_list,
-            app="CR",
-        )
-        LR = metrics.get_totals_by_metric(
-            daterange,
-            stat="LR",
-            language=language,
-            countries_list=countries_list,
-            app="CR",
-        )
-        GC = metrics.get_totals_by_metric(
-            daterange,
-            stat="GC",
-            language=language,
-            countries_list=countries_list,
-            app="CR",
-        )
-
-        entry = pd.DataFrame.from_dict(
-            {
-                "start_date": [start_date],
-                "LR": [LR],
-                "DC": [DC],
-                "TS": [TS],
-                "SL": [SL],
-                "PC": [PC],
-                "LA": [LA],
-                "GC": [GC],
-            }
-        )
-
-        df = pd.concat([df.reset_index(drop=True), entry], ignore_index=True)
 
     df["start_date"] = df["start_date"]
     try:
@@ -622,9 +563,6 @@ def funnel_change_line_chart(
     st.plotly_chart(fig, use_container_width=True)
 
 
-#   st.dataframe(df, hide_index=True)
-
-
 def top_campaigns_by_downloads_barchart(n):
     df_campaigns = st.session_state.df_campaigns
     df = df_campaigns.filter(["campaign_name", "mobile_app_install"], axis=1)
@@ -711,4 +649,41 @@ def funnel_change_by_language_chart(
 
     # Create figure
     fig = go.Figure(data=traces, layout=layout)
+    fig.update_layout(
+        margin=dict(l=10, r=1, b=0, t=10, pad=4),
+        geo=dict(bgcolor="rgba(0,0,0,0)"),
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+
+
+def top_tilted_funnel(languages, countries_list, daterange, option):
+
+    df = metrics.build_funnel_dataframe(
+        index_col="language",
+        daterange=daterange,
+        languages=languages,
+        countries_list=countries_list,
+    )
+
+    fig = go.Figure()
+
+    # Adding each metric as a bar
+    levels = ["LR", "DC", "TS", "PC", "LA", "GC"]
+    for level in levels:
+        fig.add_trace(go.Bar(x=df["language"], y=df[level], name=level))
+
+    title = "Top 10 Countries by " + str(option)
+    fig.update_layout(
+        barmode="group",
+        title="Language Metrics",
+        xaxis_title="Language",
+        yaxis_title="Total",
+        legend_title="Levels",
+        template="plotly_white",
+        title_text=title,
+        margin=dict(l=10, r=1, b=0, t=10, pad=4),
+        geo=dict(bgcolor="rgba(0,0,0,0)"),
+    )
+
     st.plotly_chart(fig, use_container_width=True)
