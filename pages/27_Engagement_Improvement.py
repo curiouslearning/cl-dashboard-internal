@@ -16,9 +16,9 @@ settings.init_cr_app_version_list()
 
 ui.display_definitions_table(ui.level_percent_definitions)
 st.subheader("Engagement Improvement by Level")
-col1, col2 = st.columns(2)
+col1, col2, col3 = st.columns(3)
 
-col2.image(
+col3.image(
     "funnel.jpg",
     caption="Sample Funnel",
 )
@@ -35,25 +35,27 @@ df_top10 = (
 
 
 df = users.get_language_list()
-
-selected_languages = ui.multi_select_all(
-    df, placement="side", title="Select languages", key="la-1"
-)
+with col2:
+    selected_languages = ui.multi_select_all(
+        df, placement="side", title="Select languages", key="la-1"
+    )
 if "la_first_run" not in st.session_state:
     st.session_state["la_first_run"] = "true"
     selected_languages = df_top10["app_language"].to_list()
 
 countries_list = users.get_country_list()
-country = ui.single_selector(
-    countries_list,
-    placement="side",
-    title="Country Selection",
-    key="la-2",
-)
+with col1:
+    country = ui.single_selector(
+        countries_list,
+        placement="side",
+        title="Country Selection",
+        key="la-2",
+    )
 selected_date, option = ui.calendar_selector(placement="side", key="la-3", index=4)
 daterange = ui.convert_date_to_range(selected_date, option)
 
-upper_level, bottom_level = ui.level_comparison_selector(placement="middle")
+with col1:
+    upper_level, bottom_level = ui.level_comparison_selector(placement="middle")
 if st.toggle(label="Load Top 10 Learners Reached", value=True):
     selected_languages = df_top10["app_language"].to_list()
 with st.spinner("Calculating..."):
@@ -64,3 +66,12 @@ with st.spinner("Calculating..."):
         bottom_level=bottom_level,
         daterange=daterange,
     )
+
+st.divider()
+selected_languages = df_top10["app_language"].to_list()
+uic.top_tilted_funnel(
+    languages=selected_languages,
+    countries_list=countries_list,
+    daterange=daterange,
+    option="LR",
+)

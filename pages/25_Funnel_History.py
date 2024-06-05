@@ -36,9 +36,9 @@ col2.image(
     "funnel.jpg",
     caption="Sample Funnel",
 )
-
-toggle = ui.compare_funnel_level_widget(placement="middle", key="fh-4")
+with col1:
+    toggle = ui.compare_funnel_level_widget(placement="middle", key="fh-4")
 with st.spinner("Calculating..."):
     uic.funnel_change_line_chart(
-        daterange=daterange, language=language, countries_list=country, toggle=toggle
+        daterange=daterange, languages=language, countries_list=country, toggle=toggle
     )
