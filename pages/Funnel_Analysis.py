@@ -7,6 +7,7 @@ import ui_widgets as ui
 import pandas as pd
 import users
 import metrics
+from pyinstrument import Profiler
 
 st.title("Curious Learning Internal")
 
@@ -18,7 +19,7 @@ ui.display_definitions_table(ui.level_percent_definitions)
 st.subheader("Engagement Improvement by Level")
 st.markdown(
     """
-    :red-background[NOTE:]
+    :green-background[NOTE:]
     :green[This chart lets you compare one specific level across the languages selected.
     It compares the selected level % drop from the selected upper level.]
     """
@@ -40,7 +41,6 @@ df_top10 = (
     df_languages[["app_language", "LR"]].sort_values(by="LR", ascending=False).head(10)
 )
 
-
 if st.sidebar.toggle(label="Use Top 10 LR Languages", value=True):
     selected_languages = df_top10["app_language"].to_list()
 else:
@@ -48,7 +48,6 @@ else:
     selected_languages = ui.multi_select_all(
         df, placement="side", title="Select languages", key="fa-1"
     )
-
 
 countries_list = users.get_country_list()
 with col1:
@@ -63,15 +62,21 @@ daterange = ui.convert_date_to_range(selected_date, option)
 
 with col1:
     upper_level, bottom_level = ui.level_comparison_selector(placement="middle")
-
-with st.spinner("Calculating..."):
-    uic.funnel_change_by_language_chart(
-        selected_languages,
-        country,
-        upper_level=upper_level,
-        bottom_level=bottom_level,
-        daterange=daterange,
+if len(selected_languages) == 0 or len(selected_languages) > 40:
+    st.markdown(
+        """
+    :red[Please select one or more languages.  "All" is not an acceptable selection for this chart.]
+    """
     )
+else:
+    with st.spinner("Calculating..."):
+        uic.funnel_change_by_language_chart(
+            selected_languages,
+            country,
+            upper_level=upper_level,
+            bottom_level=bottom_level,
+            daterange=daterange,
+        )
 
 st.divider()
 
@@ -82,13 +87,24 @@ st.markdown(
     :green[This chart lets you compare the funnels of selected languages]
     """
 )
-if len(selected_languages) > 0:
-    uic.top_tilted_funnel(
-        languages=selected_languages,
-        countries_list=countries_list,
-        daterange=daterange,
-        option="LR",
+
+if (
+    len(selected_languages) == 0 or len(selected_languages) > 40
+):  # 40 is an arbitrary choice
+    st.markdown(
+        """
+    :red[Please select one or more languages.  "All" is not an acceptable selection for this chart.]
+    """
     )
+else:
+    with st.spinner("Calculating..."):
+        uic.top_tilted_funnel(
+            languages=selected_languages,
+            countries_list=countries_list,
+            daterange=daterange,
+            option="LR",
+        )
+
 st.divider()
 st.subheader("Levels Across Time")
 st.markdown(

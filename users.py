@@ -15,31 +15,31 @@ start_date = "2021/01/01"
 # This would all be unncessery if dev had included the app user id per the spec.
 @st.cache_data(ttl="1d", show_spinner="Gathering User List")
 def get_users_list():
-    p = Profiler(async_mode="disabled")
-    with p:
+    #   p = Profiler(async_mode="disabled")
+    #   with p:
 
-        bq_client = st.session_state.bq_client
-        sql_query = f"""
-                    SELECT *
-                        FROM `dataexploration-193817.user_data.all_users_progress`
-                    WHERE
-                        first_open BETWEEN PARSE_DATE('%Y/%m/%d','{start_date}') AND CURRENT_DATE() 
-                    """
-
-        df_user_list = bq_client.query(sql_query).to_dataframe()
-        df_unity_users = df_user_list[
-            df_user_list["app_id"].str.lower().str.contains("feedthemonster")
-        ]
-
-        sql_query = f"""
+    bq_client = st.session_state.bq_client
+    sql_query = f"""
                 SELECT *
-                    FROM `dataexploration-193817.user_data.user_first_open_list_cr`
+                    FROM `dataexploration-193817.user_data.all_users_progress`
                 WHERE
                     first_open BETWEEN PARSE_DATE('%Y/%m/%d','{start_date}') AND CURRENT_DATE() 
                 """
 
-        df_first_open = bq_client.query(sql_query).to_dataframe()
-        df_first_open = pd.concat([df_first_open, df_unity_users], ignore_index=True)
+    df_user_list = bq_client.query(sql_query).to_dataframe()
+    df_unity_users = df_user_list[
+        df_user_list["app_id"].str.lower().str.contains("feedthemonster")
+    ]
+
+    sql_query = f"""
+            SELECT *
+                FROM `dataexploration-193817.user_data.user_first_open_list_cr`
+            WHERE
+                first_open BETWEEN PARSE_DATE('%Y/%m/%d','{start_date}') AND CURRENT_DATE() 
+            """
+
+    df_first_open = bq_client.query(sql_query).to_dataframe()
+    df_first_open = pd.concat([df_first_open, df_unity_users], ignore_index=True)
 
     return df_user_list, df_first_open
 
