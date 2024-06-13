@@ -133,4 +133,7 @@ st.markdown(
     users from previous level]
     """
 )
-uic.bottom_languages_per_level()
+selection = st.radio(
+    label="Choose view", options=["Top performing", "Worst performing"], horizontal=True
+)
+uic.bottom_languages_per_level(selection)
