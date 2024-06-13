@@ -16,7 +16,8 @@ settings.init_user_list()
 settings.init_cr_app_version_list()
 
 ui.display_definitions_table(ui.level_percent_definitions)
-st.subheader("Engagement Improvement by Level")
+st.header("Page purpose: Examine various views of the funnel data")
+st.subheader("Funnel Performance by Level")
 st.markdown(
     """
     :green-background[NOTE:]
@@ -123,4 +124,13 @@ if len(selected_languages) > 0:
             toggle=toggle,
         )
 
+st.divider()
+st.subheader("Top and worst level drop off percentages")
+st.markdown(
+    """
+    :red-background[NOTE:]
+    :green[The best and worst performing funnel levels.  Percentage of remaining 
+    users from previous level]
+    """
+)
 uic.bottom_languages_per_level()

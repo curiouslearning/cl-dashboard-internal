@@ -627,36 +627,42 @@ def top_tilted_funnel(languages, countries_list, daterange, option):
 
 
 def bottom_languages_per_level():
+    selection = st.radio(label="Choose view", options=["Top performing","Worst performing"],horizontal=True)
+    if selection == "Top performing":
+        ascending = False
+    else:
+        ascending = True
+    
     languages = users.get_language_list()
     df = metrics.build_funnel_dataframe(index_col="language", languages=languages)
     # Remove anything where Learners Reached = 0
     df = df[df["LR"] != 0]
 
     df = metrics.add_level_percents(df)
-#   df.to_csv("df1.csv")
+
     dfDCLR = (
-        df.sort_values(by="DC over LR", ascending=True)
+        df.sort_values(by="DC over LR", ascending=ascending)
         .head(10)
         .loc[:, ["DC over LR", "language"]]
     ).reset_index(drop=True)
 
     dfTSDC = (
-        df.sort_values(by="TS over DC", ascending=True)
+        df.sort_values(by="TS over DC", ascending=ascending)
         .head(10)
         .loc[:, ["TS over DC", "language"]]
     ).reset_index(drop=True)
     dfSLTS = (
-        df.sort_values(by="SL over TS", ascending=True)
+        df.sort_values(by="SL over TS", ascending=ascending)
         .head(10)
         .loc[:, ["SL over TS", "language"]]
     ).reset_index(drop=True)
     dfPCSL = (
-        df.sort_values(by="PC over SL", ascending=True)
+        df.sort_values(by="PC over SL", ascending=ascending)
         .head(10)
         .loc[:, ["PC over SL", "language"]]
     ).reset_index(drop=True)
     dfLAPC = (
-        df.sort_values(by="LA over PC", ascending=True)
+        df.sort_values(by="LA over PC", ascending=ascending)
         .head(10)
         .loc[:, ["LA over PC", "language"]]
     ).reset_index(drop=True)
