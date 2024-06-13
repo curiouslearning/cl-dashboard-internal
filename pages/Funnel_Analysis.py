@@ -113,11 +113,7 @@ st.markdown(
     :green[This chart lets you see the individual levels in the funnel across time]
     """
 )
-
-col1, col2 = st.columns(2)
-
-with col1:
-    toggle = ui.compare_funnel_level_widget(placement="middle", key="fa-4")
+toggle = ui.compare_funnel_level_widget(placement="middle", key="fa-4")
 if len(selected_languages) > 0:
     with st.spinner("Calculating..."):
         uic.funnel_change_line_chart(
@@ -126,3 +122,5 @@ if len(selected_languages) > 0:
             countries_list=country,
             toggle=toggle,
         )
+
+uic.bottom_languages_per_level()
