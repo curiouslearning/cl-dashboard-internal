@@ -3,6 +3,7 @@ FROM python:3.12.3-bookworm
 
 WORKDIR /cl-dashboard-internal
 
+
 RUN apt-get update && apt-get install -y \
     build-essential \
     curl \
