@@ -14,8 +14,6 @@ RUN git clone https://github.com/curiouslearning/cl-dashboard-internal.git .
 
 RUN pip3 install -r requirements.txt
 
-COPY .streamlit/secrets.toml .streamlit/secrets.toml
-
 EXPOSE 8080
 
-CMD ["streamlit", "run", "Acquisition_Funnel.py", "--server.port=8080"]
+CMD ["streamlit", "run", "Engagement.py", "--server.port=8080"]
