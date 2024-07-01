@@ -17,4 +17,4 @@ RUN pip3 install -r requirements.txt
 
 EXPOSE 8080
 
-CMD ["streamlit", "run", "Acquisition_Funney.py", "--server.port=8080"]
+CMD ["streamlit", "run", "Acquisition_Funnel.py", "--server.port=8080"]
