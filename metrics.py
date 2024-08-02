@@ -13,7 +13,7 @@ def get_totals_by_metric(
     daterange=default_daterange,
     countries_list=[],
     stat="LR",
-    cr_app_version="All",
+    cr_app_versions="All",
     app="Both",
     language="All",
 ):
@@ -23,7 +23,7 @@ def get_totals_by_metric(
         countries_list = users.get_country_list()
 
     df_user_list = filter_user_data(
-        daterange, countries_list, stat, cr_app_version, app=app, language=language
+        daterange, countries_list, stat, cr_app_versions, app=app, language=language
     )
 
     if stat not in ["DC", "TS", "SL", "PC", "LA"]:
@@ -79,7 +79,7 @@ def filter_user_data(
     daterange=default_daterange,
     countries_list=["All"],
     stat="LR",
-    cr_app_version="All",
+    cr_app_versions="All",
     app="Both",
     language=["All"],
 ):
@@ -106,10 +106,11 @@ def filter_user_data(
             f"app_language.isin(@language)",
         )
 
+
     if app == "CR":
         conditions.append("app_id == 'org.curiouslearning.container'")
-        if cr_app_version != "All":
-            conditions.append("app_version == @cr_app_version")
+        if cr_app_versions != "All":
+            conditions.append("app_version == @cr_app_versions")
     elif app == "Unity":
         conditions.append("app_id != 'org.curiouslearning.container'")
 

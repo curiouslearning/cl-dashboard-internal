@@ -20,7 +20,7 @@ countries_list = users.get_country_list()
 col1, col2 = st.columns(2)
 with col1:
 
-    app_version = ui.app_version_selector(placement="col", key="cf-1")
+    app_versions = ui.app_version_selector(placement="col", key="cf-1")
 
     language = ui.single_selector(
         languages, placement="col", title="Select a language", key="cf-2"
@@ -41,7 +41,7 @@ with col1:
         DC = metrics.get_totals_by_metric(
             daterange,
             stat="DC",
-            cr_app_version=app_version,
+            cr_app_versions=app_versions,
             language=language,
             countries_list=selected_country,
             app="CR",
@@ -49,7 +49,7 @@ with col1:
         SL = metrics.get_totals_by_metric(
             daterange,
             stat="SL",
-            cr_app_version=app_version,
+            cr_app_versions=app_versions,
             language=language,
             countries_list=selected_country,
             app="CR",
@@ -57,7 +57,7 @@ with col1:
         TS = metrics.get_totals_by_metric(
             daterange,
             stat="TS",
-            cr_app_version=app_version,
+            cr_app_versions=app_versions,
             language=language,
             countries_list=selected_country,
             app="CR",
@@ -66,7 +66,7 @@ with col1:
         PC = metrics.get_totals_by_metric(
             daterange,
             stat="PC",
-            cr_app_version=app_version,
+            cr_app_versions=app_versions,
             language=language,
             countries_list=selected_country,
             app="CR",
@@ -74,7 +74,7 @@ with col1:
         LA = metrics.get_totals_by_metric(
             daterange,
             stat="LA",
-            cr_app_version=app_version,
+            cr_app_versions=app_versions,
             language=language,
             countries_list=selected_country,
             app="CR",
@@ -82,7 +82,7 @@ with col1:
         LR = metrics.get_totals_by_metric(
             daterange,
             stat="LR",
-            cr_app_version=app_version,
+            cr_app_versions=app_versions,
             language=language,
             countries_list=selected_country,
             app="CR",
@@ -90,7 +90,7 @@ with col1:
         GC = metrics.get_totals_by_metric(
             daterange,
             stat="GC",
-            cr_app_version=app_version,
+            cr_app_versions=app_versions,
             language=language,
             countries_list=selected_country,
             app="CR",
@@ -115,7 +115,7 @@ with col1:
 
 with col2:
 
-    app_version = ui.app_version_selector(placement="col", key="cf-6")
+    app_versions = ui.app_version_selector(placement="col", key="cf-6")
 
     language = ui.single_selector(
         languages, placement="col", title="Select a language", key="cf-7"
@@ -136,7 +136,7 @@ with col2:
         DC = metrics.get_totals_by_metric(
             daterange,
             stat="DC",
-            cr_app_version=app_version,
+            cr_app_versions=app_versions,
             language=language,
             countries_list=selected_country,
             app="CR",
@@ -144,7 +144,7 @@ with col2:
         SL = metrics.get_totals_by_metric(
             daterange,
             stat="SL",
-            cr_app_version=app_version,
+            cr_app_versions=app_versions,
             language=language,
             countries_list=selected_country,
             app="CR",
@@ -153,7 +153,7 @@ with col2:
             daterange,
             stat="TS",
             language=language,
-            cr_app_version=app_version,
+            cr_app_versions=app_versions,
             countries_list=selected_country,
             app="CR",
         )
@@ -161,7 +161,7 @@ with col2:
         PC = metrics.get_totals_by_metric(
             daterange,
             stat="PC",
-            cr_app_version=app_version,
+            cr_app_versions=app_versions,
             language=language,
             countries_list=selected_country,
             app="CR",
@@ -169,7 +169,7 @@ with col2:
         LA = metrics.get_totals_by_metric(
             daterange,
             stat="LA",
-            cr_app_version=app_version,
+            cr_app_versions=app_versions,
             language=language,
             countries_list=selected_country,
             app="CR",
@@ -177,7 +177,7 @@ with col2:
         LR = metrics.get_totals_by_metric(
             daterange,
             stat="LR",
-            cr_app_version=app_version,
+            cr_app_versions=app_versions,
             language=language,
             countries_list=selected_country,
             app="CR",
@@ -185,7 +185,7 @@ with col2:
         GC = metrics.get_totals_by_metric(
             daterange,
             stat="GC",
-            cr_app_version=app_version,
+            cr_app_versions=app_versions,
             language=language,
             countries_list=selected_country,
             app="CR",
