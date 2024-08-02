@@ -199,13 +199,27 @@ def year_selector(placement="side", key=""):
     return report_year
 
 
-def ads_platform_selector():
-    platform = st.sidebar.radio(
-        label="Ads Platform",
-        options=["Facebook", "Google", "Both"],
-        horizontal=True,
-        index=2,
+def ads_platform_selector(placement="side"):
+    label="Ads Platform"
+    options=["Facebook", "Google", "Both"]
+    horizontal=True
+    index=2
+    
+    if placement == 'side':
+        platform = st.sidebar.radio(
+            label=label,
+            options=options,
+            horizontal=horizontal,
+            index=index,
+        )
+    else:
+        platform = st.radio(
+            label=label,
+            options=options,
+            horizontal=horizontal,
+            index=index,
     )
+
     return platform
 
 
@@ -383,11 +397,13 @@ def stats_radio_selector():
 def app_version_selector(placement="side", key=""):
     cr_versions = st.session_state.cr_app_versions_list
 
-    selected_options = st.multiselect("Select versions:",cr_versions,key=key ,default='All')
-    if 'All' in selected_options:
-        selected_options = 'All'
-
-    return selected_options
+    if placement == "side":
+        version = st.sidebar.selectbox(
+            label="App Version", options=cr_versions, key=key
+        )
+    else:
+        version = st.selectbox(label="App Version", options=cr_versions, key=key)
+    return version
 
 
 def calendar_selector(placement="side", key="", index=0):
