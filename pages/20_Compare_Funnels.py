@@ -17,7 +17,6 @@ st.subheader("Curious Reader Funnel Comparison")
 languages = users.get_language_list()
 countries_list = users.get_country_list()
 
-
 col1, col2 = st.columns(2)
 with col1:
     app_versionsA = ui.app_version_selector(placement="col", key="cf-1")
