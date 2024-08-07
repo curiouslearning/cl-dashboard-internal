@@ -534,7 +534,7 @@ def compare_funnel_level_widget(placement="side", key=""):
 
 def level_comparison_selector(placement="side"):
     col1, col2 = st.columns(2)
-    levels = ["LR", "DC", "TS", "SL", "PC", "LA", "GC"]
+    levels = ["LR", "DC", "TS", "SL", "PC", "LA", "RA","GC"]
     upper_level = bottom_level = ""
     if placement == "side":
         bottom_level = st.sidebar.selectbox(
