@@ -258,7 +258,7 @@ def build_campaign_table(df, daterange):
         .round(2)
     )
 
-    stats = ["LR", "PC", "LA"]
+    stats = ["LR", "PC", "LA","RA"]
     for idx, row in df.iterrows():
         country_list = [row["country"]]
         language = [row["app_language"].lower()]
@@ -280,15 +280,20 @@ def build_campaign_table(df, daterange):
                 LR = result
             elif stat == "PC":
                 PC = result
-            else:
+            elif stat == "LA":
                 LA = result
+            else:
+                RA = result
         try:
             LA_LR = round(LA / LR, 2) * 100
             PC_LR = round(PC / LR, 2) * 100
+            RA_LR = round(RA / LR, 2) * 100
         except ZeroDivisionError:
             LA_LR = 0
             PC_LR = 0
-        df.at[idx, "PC_LR"] = PC_LR
-        df.at[idx, "LA_LR"] = LA_LR
+            RA_LR = 0
+        df.at[idx, "PC_LR %"] = PC_LR
+        df.at[idx, "LA_LR %"] = LA_LR
+        df.at[idx, "RA_LR %"] = RA_LR
 
     return df

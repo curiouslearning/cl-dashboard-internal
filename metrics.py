@@ -250,7 +250,7 @@ def build_funnel_dataframe(
     languages=["All"],
     countries_list=["All"],
 ):
-    df = pd.DataFrame(columns=[index_col, "LR", "DC", "TS", "SL", "PC", "LA"])
+    df = pd.DataFrame(columns=[index_col, "LR", "DC", "TS", "SL", "PC", "RA", "LA"])
     if index_col == "start_date":
         weeks = metrics.weeks_since(daterange)
         iteration = range(1, weeks + 1)
@@ -310,6 +310,13 @@ def build_funnel_dataframe(
             language=language,
             countries_list=countries_list,
             app="CR",
+        )        
+        RA = metrics.get_totals_by_metric(
+            daterange,
+            stat="RA",
+            language=language,
+            countries_list=countries_list,
+            app="CR",
         )
         GC = metrics.get_totals_by_metric(
             daterange,
@@ -326,6 +333,7 @@ def build_funnel_dataframe(
             "SL": SL,
             "PC": PC,
             "LA": LA,
+            "RA": RA,
             "GC": GC,
         }
 
@@ -379,6 +387,17 @@ def add_level_percents(df):
         df["PC over LR"] = 0
 
     try:
+        df["RA over LR"] = np.where(df["LR"] == 0, 0, (df["RA"] / df["LR"]) * 100)
+        df["RA over LR"] = df["RA over LR"].astype(int)
+    except ZeroDivisionError:
+        df["RA over LR"] = 0
+    try:
+        df["RA over LA"] = np.where(df["LA"] == 0, 0, (df["RA"] / df["LA"]) * 100)
+        df["RA over LA"] = df["RA over LA"].astype(int)
+    except ZeroDivisionError:
+        df["RA over LA"] = 0
+
+    try:
         df["PC over SL"] = np.where(df["SL"] == 0, 0, (df["PC"] / df["SL"]) * 100)
         df["PC over SL"] = df["PC over SL"].astype(int)
     except ZeroDivisionError:
@@ -403,9 +422,9 @@ def add_level_percents(df):
         df["GC over LR"] = 0
 
     try:
-        df["GC over LA"] = np.where(df["LA"] == 0, 0, (df["GC"] / df["LA"]) * 100)
-        df["GC over LA"] = df["GC over LA"].astype(int)
+        df["GC over RA"] = np.where(df["RA"] == 0, 0, (df["GC"] / df["RA"]) * 100)
+        df["GC over RA"] = df["GC over RA"].astype(int)
     except ZeroDivisionError:
-        df["GC over LA"] = 0
+        df["GC over RA"] = 0
         
     return df
