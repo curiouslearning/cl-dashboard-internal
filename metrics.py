@@ -97,6 +97,9 @@ def filter_user_data(
     if stat == "LA":
         conditions.append("max_user_level >= 1")
 
+    if stat == "RA":
+        conditions.append("max_user_level >= 25")
+
     if countries_list[0] != "All":
         conditions.append(
             f"country.isin(@countries_list)",

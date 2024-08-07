@@ -56,6 +56,9 @@ if len(daterange) == 2:
     LA = metrics.get_totals_by_metric(
         daterange, countries_list, stat="LA", app="Unity", language=language
     )
+    RA = metrics.get_totals_by_metric(
+        daterange, countries_list, stat="RA", app="Unity", language=language
+    )
     GC = metrics.get_totals_by_metric(
         daterange, countries_list, "GC", app="Unity", language=language
     )
@@ -65,9 +68,10 @@ if len(daterange) == 2:
             "Learners Reached",
             "Puzzle Completed",
             "Learners Acquired",
+            "Readers Acquired",
             "Game Completed",
         ],
-        "Count": [LR, PC, LA, GC],
+        "Count": [LR, PC, LA, RA, GC],
     }
     fig = uic.create_engagement_figure(funnel_data, "acq-3")
     col1.plotly_chart(fig, use_container_width=True)
@@ -84,15 +88,19 @@ if len(daterange) == 2:
     GC = metrics.get_totals_by_metric(
         daterange, countries_list, "GC", app="CR", language=language
     )
+    RA = metrics.get_totals_by_metric(
+        daterange, countries_list, "RA", app="CR", language=language
+    )
 
     funnel_data = {
         "Title": [
             "Learners Reached",
             "Puzzle Completed",
             "Learners Acquired",
+            "Readers Acquired",
             "Game Completed",
         ],
-        "Count": [LR, PC, LA, GC],
+        "Count": [LR, PC, LA,RA, GC],
     }
 
     fig = uic.create_engagement_figure(funnel_data, "acq-4")
@@ -121,6 +129,9 @@ if len(daterange) == 2:
     LA = metrics.get_totals_by_metric(
         daterange, countries_list, stat="LA", app="CR", language=language
     )
+    RA = metrics.get_totals_by_metric(
+        daterange, countries_list, stat="RA", app="CR", language=language
+    )
     GC = metrics.get_totals_by_metric(
         daterange, countries_list, "GC", app="CR", language=language
     )
@@ -133,9 +144,10 @@ if len(daterange) == 2:
             "Selected Level",
             "Puzzle Completed",
             "Learners Acquired",
+            "Readers Acquired",
             "Game Completed",
         ],
-        "Count": [LR, DC, TS, SL, PC, LA, GC],
+        "Count": [LR, DC, TS, SL, PC, LA, RA,GC],
     }
 
     fig = uic.create_engagement_figure(funnel_data, "acq-5")
