@@ -50,11 +50,13 @@ def initialize():
 
 
 def init_user_list():
-    df_user_list, df_first_open = users.get_users_list()
-    if "df_user_list" not in st.session_state:
-        st.session_state["df_user_list"] = df_user_list
+    df_user_list, df_first_open, df_first_open_cr = users.get_users_list()
+    if "df_first_open_cr" not in st.session_state:
+        st.session_state["df_first_open_cr"] = df_first_open_cr
     if "df_first_open" not in st.session_state:
         st.session_state["df_first_open"] = df_first_open
+    if "df_user_list" not in st.session_state:
+        st.session_state["df_user_list"] = df_user_list
 
 
 # Get the campaign data from BigQuery, roll it up per campaign

@@ -113,6 +113,9 @@ if len(daterange) == 2:
     LR = metrics.get_totals_by_metric(
         daterange, countries_list, stat="LR", app="CR", language=language
     )
+    FO = metrics.get_totals_by_metric(
+        daterange, countries_list, stat="FO", app="CR", language=language
+    )
     DC = metrics.get_totals_by_metric(
         daterange, countries_list, "DC", app="CR", language=language
     )
@@ -138,7 +141,8 @@ if len(daterange) == 2:
 
     funnel_data = {
         "Title": [
-            "Learners Reached",
+            "First Open",
+            "Learners Reached (app_launch)",
             "Download Completed",
             "Tapped Start",
             "Selected Level",
@@ -147,7 +151,7 @@ if len(daterange) == 2:
             "Readers Acquired",
             "Game Completed",
         ],
-        "Count": [LR, DC, TS, SL, PC, LA, RA,GC],
+        "Count": [FO,LR, DC, TS, SL, PC, LA, RA,GC],
     }
 
     fig = uic.create_engagement_figure(funnel_data, "acq-5")

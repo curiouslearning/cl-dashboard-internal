@@ -19,6 +19,16 @@ def get_users_list():
     #   with p:
 
     bq_client = st.session_state.bq_client
+
+    sql_query = f"""
+            SELECT *
+                FROM `dataexploration-193817.user_data.first_open_cr`
+            WHERE
+                first_open BETWEEN PARSE_DATE('%Y/%m/%d','{start_date}') AND CURRENT_DATE() 
+            """
+
+    df_first_open_cr = bq_client.query(sql_query).to_dataframe()
+
     sql_query = f"""
                 SELECT *
                     FROM `dataexploration-193817.user_data.all_users_progress`
@@ -41,8 +51,18 @@ def get_users_list():
 
     df_cr_users = bq_client.query(sql_query).to_dataframe()
 
-    df_first_open = pd.concat([df_cr_users, df_unity_users], ignore_index=True)
+    ### TEMP
+    #username_counts = df_cr_users.groupby(['user_pseudo_id', 'country']).size().reset_index(name='count')
 
+    #username_counts.info()
+    #username_counts.to_csv("df.csv")
+
+    # Eliminate duplicate cr users (multiple language combinations) - just keep the first one
+    df_cr_users_temp = df_cr_users.drop_duplicates(subset='user_pseudo_id',keep="first")
+    
+    df_first_open = pd.concat([df_cr_users_temp, df_unity_users], ignore_index=True)
+
+    #fix data typos
     df_first_open["app_language"] = df_first_open["app_language"].replace(
         "ukranian", "ukrainian"
     )
@@ -56,7 +76,10 @@ def get_users_list():
         "malgache", "malagasy"
     )
 
-    return df_user_list, df_first_open
+   # cr_user_list = df_user_list.query("app_id == 'org.curiouslearning.container'")
+    df_user_list = df_user_list.loc[df_user_list.groupby('user_pseudo_id')['max_user_level'].idxmax()].reset_index(drop=True)
+
+    return df_user_list, df_first_open, df_first_open_cr
 
 
 @st.cache_data(ttl="1d", show_spinner=False)

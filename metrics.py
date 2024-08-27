@@ -27,7 +27,7 @@ def get_totals_by_metric(
     )
 
     if stat not in ["DC", "TS", "SL", "PC", "LA"]:
-        return len(df_user_list)
+        return len(df_user_list) #All LR or FO
     else:
         download_completed_count = len(
             df_user_list[df_user_list["furthest_event"] == "download_completed"]
@@ -83,16 +83,27 @@ def filter_user_data(
     app="Both",
     language=["All"],
 ):
-    if "df_user_list" and "df_first_open" not in st.session_state:
+    if "df_user_list" and "df_first_open" and "df_first_open_cr" not in st.session_state:
         print("PROBLEM!")
         return pd.DataFrame()
 
     df_user_list = st.session_state.df_user_list
     df_first_open = st.session_state.df_first_open
+    df_first_open_cr = st.session_state.df_first_open_cr
 
     conditions = [
         f"@daterange[0] <= first_open <= @daterange[1]",
     ]
+
+    if countries_list[0] != "All":
+        conditions.append(
+            f"country.isin(@countries_list)",
+        )
+
+    if stat == "FO":
+        query = " and ".join(conditions)
+        df = df_first_open_cr.query(query)
+        return df
 
     if stat == "LA":
         conditions.append("max_user_level >= 1")
@@ -100,15 +111,11 @@ def filter_user_data(
     if stat == "RA":
         conditions.append("max_user_level >= 25")
 
-    if countries_list[0] != "All":
-        conditions.append(
-            f"country.isin(@countries_list)",
-        )
-    if language[0] != "All":
+
+    if language[0] != "All" and stat != "FO":
         conditions.append(
             f"app_language.isin(@language)",
         )
-
 
     if app == "CR":
         conditions.append("app_id == 'org.curiouslearning.container'")
@@ -121,6 +128,7 @@ def filter_user_data(
         query = " and ".join(conditions)
         df = df_first_open.query(query)
         return df
+    
 
     if stat == "GC":  # game completed
         conditions.append("max_user_level >= 1")
