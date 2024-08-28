@@ -408,8 +408,7 @@ def calendar_selector(placement="side", key="", index=0):
         "Presets",
     )
 
-    st.write("Select a Date Range")
-    with st.expander("Date"):
+    with st.expander("Select a Date"):
 
         if placement == "side":
             option = st.sidebar.radio(
@@ -513,15 +512,16 @@ def compare_funnel_level_widget(placement="side", key=""):
             horizontal=True,
             index=0,
             key=key,
+            
         )
     else:
         toggle = st.radio(
             options=[
-                "Compare to Initial",
+                "Compare to LR",
                 "Compare to Previous",
             ],
-            label="",
-            horizontal=True,
+            label="Compare",
+            horizontal=False,
             index=0,
             key=key,
         )

@@ -45,7 +45,7 @@ if len(daterange) == 2:
 
     start = daterange[0].strftime("%b %d, %Y")
     end = daterange[1].strftime("%b %d, %Y")
-    col1.subheader(start + " to " + end)
+    col1.write(start + " to " + end)
 
     LR = metrics.get_totals_by_metric(
         daterange, countries_list, stat="LR", app="Unity", language=language
