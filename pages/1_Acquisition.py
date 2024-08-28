@@ -6,8 +6,6 @@ import ui_components as uic
 import ui_widgets as ui
 import users
 
-st.title("Curious Learning Dashboard")
-
 
 settings.initialize()
 settings.init_campaign_data()

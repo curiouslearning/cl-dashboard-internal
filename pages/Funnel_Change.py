@@ -4,12 +4,9 @@ from rich import print as rprint
 from millify import prettify
 import ui_components as uic
 import ui_widgets as ui
-import pandas as pd
 import users
 import metrics
-from pyinstrument import Profiler
 
-st.title("Curious Learning Internal")
 
 settings.initialize()
 settings.init_user_list()
@@ -78,62 +75,3 @@ else:
             bottom_level=bottom_level,
             daterange=daterange,
         )
-
-st.divider()
-
-st.subheader("Sideways Funnels by Language")
-st.markdown(
-    """
-    :red-background[NOTE:]
-    :green[This chart lets you compare the funnels of selected languages]
-    """
-)
-
-if (
-    len(selected_languages) == 0 or len(selected_languages) > 40
-):  # 40 is an arbitrary choice
-    st.markdown(
-        """
-    :red[Please select one or more languages.  "All" is not an acceptable selection for this chart.]
-    """
-    )
-else:
-    with st.spinner("Calculating..."):
-        uic.top_tilted_funnel(
-            languages=selected_languages,
-            countries_list=countries_list,
-            daterange=daterange,
-            option="LR",
-        )
-
-st.divider()
-st.subheader("Levels Across Time")
-st.markdown(
-    """
-    :red-background[NOTE:]
-    :green[This chart lets you see the individual levels in the funnel across time]
-    """
-)
-toggle = ui.compare_funnel_level_widget(placement="middle", key="fa-4")
-if len(selected_languages) > 0:
-    with st.spinner("Calculating..."):
-        uic.funnel_change_line_chart(
-            daterange=daterange,
-            languages=selected_languages,
-            countries_list=country,
-            toggle=toggle,
-        )
-
-st.divider()
-st.subheader("Top and worst level drop off percentages")
-st.markdown(
-    """
-    :red-background[NOTE:]
-    :green[The best and worst performing funnel levels.  Percentage of remaining 
-    users from previous level]
-    """
-)
-selection = st.radio(
-    label="Choose view", options=["Top performing", "Worst performing"], horizontal=True
-)
-uic.bottom_languages_per_level(selection)

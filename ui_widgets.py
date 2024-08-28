@@ -408,6 +408,7 @@ def calendar_selector(placement="side", key="", index=0):
         "Presets",
     )
 
+    st.write("Select a Date Range")
     with st.expander("Date"):
 
         if placement == "side":

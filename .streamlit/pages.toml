@@ -1,0 +1,55 @@
+[[pages]]
+name = "Internal Dashboard"
+icon = ":house:"
+is_section = true
+
+[[pages]]
+path = "Unity_vs_CR.py"
+name = "Unity vs Curious Reader Funnel"
+icon = ":small_orange_diamond:"
+
+[[pages]]
+path = "Acquisition_Funnel.py"
+name = "Curious Reader Funnel"
+icon = ":small_orange_diamond:"
+
+[[pages]]
+path = "pages/1_Acquisition.py"
+name = "Acquisition"
+icon = ":small_orange_diamond:"
+
+[[pages]]
+path = "pages/20_Compare_Funnels.py"
+name = "Compare CR Funnels"
+icon = ":small_orange_diamond:"
+
+[[pages]]
+path = "pages/30_Campaign_Data.py"
+name = "Campaign Data"
+icon = ":small_orange_diamond:"
+
+[[pages]]
+name = "Funnel Analysis"
+icon = ":large_brown_circle:"
+is_section = true
+
+[[pages]]
+path = "pages/Funnel_Change.py"
+name = "Funnel Change by Language"
+icon = ":small_orange_diamond:"
+
+[[pages]]
+path = "pages/Sideways_Funnel.py"
+name = "Sideways Funnel by Language"
+icon = ":small_orange_diamond:"
+
+[[pages]]
+path = "pages/Levels_Across_Time.py"
+name = "Levels Across Time"
+icon = ":small_orange_diamond:"
+
+[[pages]]
+path = "pages/Best_Languages.py"
+name = "Best and Worst Performing Languages"
+icon = ":small_orange_diamond:"
+

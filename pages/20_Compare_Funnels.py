@@ -7,7 +7,6 @@ import ui_widgets as ui
 import metrics
 import users
 
-st.title("Curious Learning Internal")
 
 settings.initialize()
 settings.init_user_list()

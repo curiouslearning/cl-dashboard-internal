@@ -5,19 +5,17 @@ import campaigns
 
 import ui_widgets as ui
 
-st.set_page_config(layout="wide")
 
 ## UI ##
-st.title("Curious Learning Dashboard")
 settings.initialize()
 settings.init_campaign_data()
 settings.init_user_list()
 
-platform = ui.ads_platform_selector()
-col1, col2 = st.columns(2)
 
-selected_date, option = ui.calendar_selector(placement="side", key="fh-3", index=0)
-daterange = ui.convert_date_to_range(selected_date, option)
+col1, col2, col3 = st.columns(3)
+with col1:
+    selected_date, option = ui.calendar_selector(placement="middle", key="fh-3", index=0)
+    daterange = ui.convert_date_to_range(selected_date, option)
 
 # In the case of datepicker, don't do anything until both start and end dates are picked
 if len(daterange) > 1:
@@ -40,9 +38,6 @@ if len(daterange) > 1:
     keys = [12, 13, 14, 15, 16]
     ui.paginated_dataframe(df, keys, sort_col="country")
 
-    if platform == "Facebook" or platform == "Both":
-        st.header("Facebook Ads")
-
     dff = df_campaigns.query("source == 'Facebook'")
 
     if len(dff) > 0:
@@ -51,13 +46,13 @@ if len(daterange) > 1:
     else:
         st.text("No data for selected period")
 
-    if platform == "Google" or platform == "Both":
-        st.header("Google Ads")
-        dfg = df_campaigns.query("source == 'Google'")
 
-        if len(dfg) > 0:
-            keys = [7, 8, 9, 10, 11]
-            dfg.sort_values(by="button_clicks")
-            ui.paginated_dataframe(dfg, keys, sort_col="campaign_name")
-        else:
-            st.text("No data for selected period")
+    st.header("Google Ads")
+    dfg = df_campaigns.query("source == 'Google'")
+
+    if len(dfg) > 0:
+        keys = [7, 8, 9, 10, 11]
+        dfg.sort_values(by="button_clicks")
+        ui.paginated_dataframe(dfg, keys, sort_col="campaign_name")
+    else:
+        st.text("No data for selected period")

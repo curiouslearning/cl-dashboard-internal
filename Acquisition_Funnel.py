@@ -6,109 +6,38 @@ import ui_components as uic
 import ui_widgets as ui
 import users
 import metrics
+from st_pages import add_page_title, get_nav_from_toml
 
-
-st.title("Curious Learning Internal")
 
 settings.initialize()
 settings.init_user_list()
 settings.init_cr_app_version_list()
 
-languages = users.get_language_list()
-language = ui.single_selector(
-    languages, placement="side", title="Select a language", key="acq-1"
-)
-
 countries_list = users.get_country_list()
-countries_list = ui.multi_select_all(
-    countries_list, title="Country Selection", key="acq-2"
-)
-
-selected_date, option = ui.calendar_selector(placement="side")
-daterange = ui.convert_date_to_range(selected_date, option)
 
 ui.colorize_multiselect_options()
 
-st.sidebar.divider()
+col1, col2 = st.columns((1,3),gap="large")
+
+
+with col1:
+    selected_date, option = ui.calendar_selector(placement="middle")
+    daterange = ui.convert_date_to_range(selected_date, option)
+
+    languages = users.get_language_list()
+    language = ui.single_selector(
+        languages, placement="middle", title="Select a language", key="acq-1"
+    )
+    countries_list = ui.multi_select_all(
+    countries_list, title="Country Selection", key="acq-2",placement="middle"
+)
 
 if len(daterange) == 2:
     start = daterange[0].strftime("%b %d, %Y")
     end = daterange[1].strftime("%b %d, %Y")
-    st.subheader("Acquisition Funnel Comparison")
-    st.subheader(start + " to " + end)
 
-    col1, col2 = st.columns(2)
-    col1.markdown(
-        f"<strong><div style='text-align: center;'>Unity</div></strong>",
-        unsafe_allow_html=True,
-    )
-    col2.markdown(
-        f"<strong><div style='text-align: center;'>Curious Reader</div></strong>",
-        unsafe_allow_html=True,
-    )
 
-    LR = metrics.get_totals_by_metric(
-        daterange, countries_list, stat="LR", app="Unity", language=language
-    )
-    PC = metrics.get_totals_by_metric(
-        daterange, countries_list, "PC", app="Unity", language=language
-    )
-    LA = metrics.get_totals_by_metric(
-        daterange, countries_list, stat="LA", app="Unity", language=language
-    )
-    RA = metrics.get_totals_by_metric(
-        daterange, countries_list, stat="RA", app="Unity", language=language
-    )
-    GC = metrics.get_totals_by_metric(
-        daterange, countries_list, "GC", app="Unity", language=language
-    )
-
-    funnel_data = {
-        "Title": [
-            "Learners Reached",
-            "Puzzle Completed",
-            "Learners Acquired",
-            "Readers Acquired",
-            "Game Completed",
-        ],
-        "Count": [LR, PC, LA, RA, GC],
-    }
-    fig = uic.create_engagement_figure(funnel_data, "acq-3")
-    col1.plotly_chart(fig, use_container_width=True)
-
-    LR = metrics.get_totals_by_metric(
-        daterange, countries_list, stat="LR", app="CR", language=language
-    )
-    PC = metrics.get_totals_by_metric(
-        daterange, countries_list, "PC", app="CR", language=language
-    )
-    LA = metrics.get_totals_by_metric(
-        daterange, countries_list, stat="LA", app="CR", language=language
-    )
-    GC = metrics.get_totals_by_metric(
-        daterange, countries_list, "GC", app="CR", language=language
-    )
-    RA = metrics.get_totals_by_metric(
-        daterange, countries_list, "RA", app="CR", language=language
-    )
-
-    funnel_data = {
-        "Title": [
-            "Learners Reached",
-            "Puzzle Completed",
-            "Learners Acquired",
-            "Readers Acquired",
-            "Game Completed",
-        ],
-        "Count": [LR, PC, LA,RA, GC],
-    }
-
-    fig = uic.create_engagement_figure(funnel_data, "acq-4")
-    col2.plotly_chart(fig, use_container_width=True)
-
-    st.divider()
-    st.subheader("Curious Reader")
-    st.subheader(start + " to " + end)
+    col2.subheader(start + " to " + end)
 
     LR = metrics.get_totals_by_metric(
         daterange, countries_list, stat="LR", app="CR", language=language
@@ -151,4 +80,4 @@ if len(daterange) == 2:
     }
 
     fig = uic.create_engagement_figure(funnel_data, "acq-5")
-    st.plotly_chart(fig, use_container_width=True)
+    col2.plotly_chart(fig, use_container_width=True)
