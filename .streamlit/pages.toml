@@ -9,22 +9,22 @@ name = "Unity vs Curious Reader Funnel"
 icon = ":small_orange_diamond:"
 
 [[pages]]
-path = "Acquisition_Funnel.py"
+path = "app_pages/CR_Funnel.py"
 name = "Curious Reader Funnel"
 icon = ":small_orange_diamond:"
 
 [[pages]]
-path = "pages/1_Acquisition.py"
+path = "app_pages/1_Acquisition.py"
 name = "Acquisition"
 icon = ":small_orange_diamond:"
 
 [[pages]]
-path = "pages/20_Compare_Funnels.py"
+path = "app_pages/20_Compare_Funnels.py"
 name = "Compare CR Funnels"
 icon = ":small_orange_diamond:"
 
 [[pages]]
-path = "pages/30_Campaign_Data.py"
+path = "app_pages/30_Campaign_Data.py"
 name = "Campaign Data"
 icon = ":small_orange_diamond:"
 
@@ -34,22 +34,22 @@ icon = ":large_brown_circle:"
 is_section = true
 
 [[pages]]
-path = "pages/Funnel_Change.py"
+path = "app_pages/Funnel_Change.py"
 name = "Funnel Change by Language"
 icon = ":small_orange_diamond:"
 
 [[pages]]
-path = "pages/Sideways_Funnel.py"
+path = "app_pages/Sideways_Funnel.py"
 name = "Sideways Funnel by Language"
 icon = ":small_orange_diamond:"
 
 [[pages]]
-path = "pages/Levels_Across_Time.py"
+path = "app_pages/Levels_Across_Time.py"
 name = "Levels Across Time"
 icon = ":small_orange_diamond:"
 
 [[pages]]
-path = "pages/Best_Languages.py"
+path = "app_pages/Best_Languages.py"
 name = "Best and Worst Performing Languages"
 icon = ":small_orange_diamond:"
 

@@ -12,8 +12,7 @@ settings.init_user_list()
 settings.init_cr_app_version_list()
 
 ui.display_definitions_table(ui.level_percent_definitions)
-st.header("Page purpose: Examine various views of the funnel data")
-st.subheader("Funnel Performance by Level")
+
 st.markdown(
     """
     :green-background[NOTE:]

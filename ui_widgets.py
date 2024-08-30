@@ -408,7 +408,7 @@ def calendar_selector(placement="side", key="", index=0):
         "Presets",
     )
 
-    with st.expander("Select a Date"):
+    with st.expander("Date"):
 
         if placement == "side":
             option = st.sidebar.radio(

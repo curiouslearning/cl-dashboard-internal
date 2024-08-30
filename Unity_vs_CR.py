@@ -15,27 +15,33 @@ countries_list = users.get_country_list()
 
 ui.colorize_multiselect_options()
 
-col1, col2,col3  = st.columns((2,3,3),gap="large")
 
-
+col1, col2, col3   = st.columns((1,1,1),gap="large")
+col1.caption("Select a Date")
 with col1:
     selected_date, option = ui.calendar_selector(placement="middle")
     daterange = ui.convert_date_to_range(selected_date, option)
-
+with col2:
     languages = users.get_language_list()
     language = ui.single_selector(
         languages, placement="middle", title="Select a language", key="acq-1"
     )
+with col3:
     countries_list = ui.multi_select_all(
     countries_list, title="Country Selection", key="acq-2",placement="middle"
-)
+    )
 
+if len(daterange) == 2:
+    start = daterange[0].strftime("%b %d, %Y")
+    end = daterange[1].strftime("%b %d, %Y")
+    st.write(start + " to " + end)
 
-col2.markdown(
+col1, col2  = st.columns((1,1),gap="large")
+col1.markdown(
 f"<strong><div style='text-align: center;'>Unity</div></strong>",
 unsafe_allow_html=True,
 )
-col3.markdown(
+col2.markdown(
 f"<strong><div style='text-align: center;'>Curious Reader</div></strong>",
 unsafe_allow_html=True,
 )
@@ -43,13 +49,10 @@ unsafe_allow_html=True,
 
 if len(daterange) == 2:
 
-    start = daterange[0].strftime("%b %d, %Y")
-    end = daterange[1].strftime("%b %d, %Y")
-    col1.write(start + " to " + end)
-
     LR = metrics.get_totals_by_metric(
         daterange, countries_list, stat="LR", app="Unity", language=language
     )
+
     PC = metrics.get_totals_by_metric(
         daterange, countries_list, "PC", app="Unity", language=language
     )
@@ -74,7 +77,7 @@ if len(daterange) == 2:
         "Count": [LR, PC, LA, RA, GC],
     }
     fig = uic.create_engagement_figure(funnel_data, "acq-3")
-    col2.plotly_chart(fig, use_container_width=True)
+    col1.plotly_chart(fig, use_container_width=True)
 
     LR = metrics.get_totals_by_metric(
         daterange, countries_list, stat="LR", app="CR", language=language
@@ -104,6 +107,6 @@ if len(daterange) == 2:
     }
 
     fig = uic.create_engagement_figure(funnel_data, "acq-4")
-    col3.plotly_chart(fig, use_container_width=True)
+    col2.plotly_chart(fig, use_container_width=True)
 
  

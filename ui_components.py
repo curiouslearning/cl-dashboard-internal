@@ -825,7 +825,7 @@ def create_funnels(countries_list, languages,key_prefix,app_versions,displayLR=T
         st.caption(start + " to " + end)
 
         metrics_data = {}
-        for stat in ["DC", "SL", "TS", "PC", "LA", "LR", "RA" ,"GC"]:
+        for stat in ["DC", "SL", "TS", "PC", "LA", "LR", "RA" ,"GC","FO"]:
             metrics_data[stat] = metrics.get_totals_by_metric(
                 daterange,
                 stat=stat,
@@ -835,8 +835,8 @@ def create_funnels(countries_list, languages,key_prefix,app_versions,displayLR=T
                 app="CR",
             )
 
-        funnel_titles_all = [
-            "Learner Reached", "Download Completed", "Tapped Start", 
+        funnel_titles_all = ["First Open",
+            "Learner Reached (app_launch)", "Download Completed", "Tapped Start", 
             "Selected Level", "Puzzle Completed", "Learners Acquired", "Readers Acquired", "Game Completed"
         ]
         funnel_titles_not_all = [
@@ -850,7 +850,7 @@ def create_funnels(countries_list, languages,key_prefix,app_versions,displayLR=T
         if displayLR:
             funnel_data = {
                 "Title": funnel_titles_all,
-                "Count": [metrics_data[stat] for stat in ["LR", "DC", "TS", "SL", "PC", "LA", "RA","GC"]],
+                "Count": [metrics_data[stat] for stat in ["FO","LR", "DC", "TS", "SL", "PC", "LA", "RA","GC"]],
             }
         else:
             funnel_data = {
