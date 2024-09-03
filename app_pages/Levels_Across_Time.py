@@ -7,6 +7,7 @@ import ui_widgets as ui
 import pandas as pd
 import users
 import metrics
+from pyinstrument import Profiler
 
 
 settings.initialize()
@@ -14,6 +15,7 @@ settings.init_user_list()
 settings.init_cr_app_version_list()
 
 ui.display_definitions_table(ui.level_percent_definitions)
+p = Profiler(async_mode="disabled")
 
 st.markdown(
     """
@@ -60,13 +62,14 @@ with col3:
 with col2:
     toggle = ui.compare_funnel_level_widget(placement="middle", key="fa-4")
 
-
-if len(selected_languages) > 0:
-    with st.spinner("Calculating..."):
-        uic.funnel_change_line_chart(
-            daterange=daterange,
-            languages=selected_languages,
-            countries_list=country,
-            toggle=toggle,
-        )
+with p:
+    if len(selected_languages) > 0:
+        with st.spinner("Calculating..."):
+            uic.funnel_change_line_chart(
+                daterange=daterange,
+                languages=selected_languages,
+                countries_list=country,
+                toggle=toggle,
+            )
+p.print()
 
