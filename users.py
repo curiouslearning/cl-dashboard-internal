@@ -3,6 +3,7 @@ import pandas as pd
 from rich import print as print
 import numpy as np
 from pyinstrument import Profiler
+import logging
 
 
 # How far back to obtain user data.  Currently the queries pull back to 01/01/2021
@@ -82,11 +83,11 @@ def get_users_list():
 
         max_level_indices = df_cr_users.groupby('user_pseudo_id')['max_user_level'].idxmax()
         df_cr_users = df_cr_users.loc[max_level_indices].reset_index()
-        
+
         max_level_indices = df_unity_users.groupby('user_pseudo_id')['max_user_level'].idxmax()
         df_unity_users = df_unity_users.loc[max_level_indices].reset_index()
 
-    p.print()
+    logging.debug(p.print())
     return df_cr_users, df_unity_users, df_cr_first_open, df_cr_app_launch
 
 
