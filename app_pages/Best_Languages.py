@@ -26,4 +26,4 @@ st.markdown(
 selection = st.radio(
     label="Choose view", options=["Top performing", "Worst performing"], horizontal=True
 )
-uic.bottom_languages_per_level(selection)
+uic.top_and_bottom_languages_per_level(selection)
