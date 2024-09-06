@@ -11,6 +11,7 @@ import users
 settings.initialize()
 settings.init_user_list()
 settings.init_cr_app_version_list()
+ui.display_definitions_table("Data Notes",ui.data_notes)
 
 st.subheader("Curious Reader Funnel Comparison")
 languages = users.get_language_list()

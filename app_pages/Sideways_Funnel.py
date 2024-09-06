@@ -11,7 +11,7 @@ settings.initialize()
 settings.init_user_list()
 settings.init_cr_app_version_list()
 
-ui.display_definitions_table(ui.level_percent_definitions)
+ui.display_definitions_table("Definitions",ui.level_percent_definitions)
 
 st.markdown(
     """
