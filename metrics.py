@@ -91,8 +91,12 @@ def filter_user_data(
 
     # Select the appropriate dataframe based on app and stat
     if app == "Unity":
-        df = st.session_state.df_unity_users
-    elif app == "Both":
+        df = st.session_state.df_unity_users #Unity users are in one table only
+    elif app == "Both" and stat == "LR":
+        df1 = st.session_state.df_unity_users
+        df2 = st.session_state.df_cr_app_launch
+        df =  pd.concat([df1, df2], axis=0)
+    elif app == "Both" and stat != "LR":
         df1 = st.session_state.df_unity_users
         df2 = st.session_state.df_cr_users
         df =  pd.concat([df1, df2], axis=0)
@@ -346,26 +350,18 @@ def build_funnel_dataframe(
 def add_level_percents(df):
 
     try:
-        # Set DC to LR where DC > LR (rare)
-        df.loc[df["DC"] > df["LR"], "DC"] = df["LR"]
-
-        # Calculate "DC over LR"
         df["DC over LR"] = np.where(df["LR"] == 0, 0, (df["DC"] / df["LR"]) * 100)
         df["DC over LR"] = df["DC over LR"].astype(int)
     except ZeroDivisionError:
         df["DC over LR"] = 0
 
     try:
-        # Set TS to LR where TS > LR (rare)
-        df.loc[df["TS"] > df["LR"], "TS"] = df["LR"]
-
         df["TS over LR"] = np.where(df["LR"] == 0, 0, (df["TS"] / df["LR"]) * 100)
         df["TS over LR"] = df["TS over LR"].astype(int)
     except ZeroDivisionError:
         df["TS over LR"] = 0
 
     try:
-        df.loc[df["TS"] > df["DC"], "TS"] = df["DC"]
         df["TS over DC"] = np.where(df["DC"] == 0, 0, (df["TS"] / df["DC"]) * 100)
         df["TS over DC"] = df["TS over DC"].astype(int)
     except ZeroDivisionError:
