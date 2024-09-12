@@ -159,3 +159,25 @@ def get_app_version_list():
         app_versions.insert(0, "All")
 
     return app_versions
+
+
+@st.cache_data(ttl="1d", show_spinner=False)
+def get_funnel_snapshots(daterange,languages):
+
+    if "bq_client" in st.session_state:
+        bq_client = st.session_state.bq_client
+    else:
+        st.write ("No database connection")
+        return
+    
+    sql_query = f"""
+                SELECT *
+                FROM `dataexploration-193817.user_data.funnel_snapshots`
+             #   WHERE
+             #    date BETWEEN '{daterange[0].strftime("%Y-%m-%d")}' AND '{daterange[1].strftime("%Y-%m-%d")}' ;
+                
+                """
+
+    df = bq_client.query(sql_query).to_dataframe() 
+
+    return df

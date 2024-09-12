@@ -44,8 +44,8 @@ name = "Sideways Funnel by Language"
 icon = ":small_orange_diamond:"
 
 [[pages]]
-path = "app_pages/Levels_Across_Time.py"
-name = "Levels Across Time"
+path = "app_pages/Funnel_Snapshots_Over_Time.py"
+name = "Funnel Snapshots Over Time"
 icon = ":small_orange_diamond:"
 
 [[pages]]

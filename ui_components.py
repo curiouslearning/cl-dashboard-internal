@@ -497,78 +497,61 @@ def levels_line_chart(daterange, countries_list, app="Both", language="All"):
 
 
 @st.cache_data(ttl="1d", show_spinner=False)
-def funnel_change_line_chart(
-    daterange=default_daterange, languages=["All"], countries_list=["All"], toggle=""
-):
-    weeks = metrics.weeks_since(daterange)
-    end_date = dt.datetime.now().date()
+def funnel_change_line_chart(df):
 
-    # Collect data in a list 
-    data = []
-    for i in range(1, weeks + 1):
-        start_date = end_date - dt.timedelta(i * 7)
-        end_date = start_date + dt.timedelta(days=30)
-        if end_date > dt.datetime.now().date():
-            end_date = dt.datetime.now().date()
-        daterange = [start_date, end_date]
-        # Use a loop to fetch all metrics
-        metrics_list = ["LR", "DC", "TS", "SL", "PC", "LA", "RA", "GC"]
-        metrics_data = {
-            stat: metrics.get_totals_by_metric(
-                daterange, stat=stat, language=languages, countries_list=countries_list, app="CR"
-            )
-            for stat in metrics_list
-        }
-        metrics_data["start_date"] = start_date
-        data.append(metrics_data)
-    print(data)
-    # Create DataFrame once after the loop
-    df = pd.DataFrame(data)
+    # Convert the column to date only (remove timestamp)
+    df['date'] = df['date'].dt.date
+    grouped = df.groupby('date').sum().reset_index()
+    columns = ['LR', 'DC', 'TS', 'SL', 'PC', 'LA', 'RA', 'GC']
 
-    # Calculations for percentage columns
-    over_pairs = [
-        ("DC", "LR"), ("TS", "LR"), ("TS", "DC"),
-        ("SL", "LR"), ("SL", "TS"), ("PC", "LR"),
-        ("PC", "SL"), ("LA", "LR"), ("LA", "PC"),
-        ("GC", "LR"), ("GC", "LA")
-    ]
+    # Calculate percent of previous level for the hover data
+    grouped['DC_percent'] = (grouped['DC'] / grouped['LR'] * 100).round(2)
+    grouped['TS_percent'] = (grouped['TS'] / grouped['DC'] * 100).round(2)
+    grouped['SL_percent'] = (grouped['SL'] / grouped['TS'] * 100).round(2)
+    grouped['PC_percent'] = (grouped['PC'] / grouped['SL'] * 100).round(2)
+    grouped['LA_percent'] = (grouped['LA'] / grouped['PC'] * 100).round(2)
+    grouped['RA_percent'] = (grouped['RA'] / grouped['LA'] * 100).round(2)
+    grouped['GC_percent'] = (grouped['GC'] / grouped['RA'] * 100).round(2)
 
-    for num, denom in over_pairs:
-        col_name = f"{num} over {denom}"
-        df[col_name] = np.where(df[denom] == 0, 0, (df[num] / df[denom]) * 100).astype(int)
 
-    # Select columns based on toggle
-    if toggle == "Compare to Previous":
-        selected_columns = ["start_date"] + [f"{num} over {denom}" for num, denom in over_pairs[1::2]]
-    else:
-        selected_columns = ["start_date"] + [f"{num} over LR" for num in ["DC", "TS", "SL", "PC", "LA", "GC"]]
+    percent_columns = ['LR', 'DC_percent', 'TS_percent', 'SL_percent', 'PC_percent', 'LA_percent', 'RA_percent', 'GC_percent']
 
-    df2 = df[selected_columns]
-    df2["start_date"] = pd.to_datetime(df2["start_date"])
+    fig = go.Figure()
+    for i, col in enumerate(columns):
+        if i > 0:
+            prev_col = columns[i-1]
+            percent_col = percent_columns[i]
+        else:
+            prev_col = None
+            percent_col = None
+            
+        fig.add_trace(go.Scatter(
+            x=grouped['date'],
+            y=grouped[col],
+            mode='lines+markers',
+            name=col,
+            hovertemplate=f'<b>Date:</b> %{{x}}<br><b>{col}:</b> %{{y:,}}<br><b>% of {prev_col}:</b> %{{customdata}}%<extra></extra>' if prev_col else f'<b>Date:</b> %{{x}}<br><b>{col}:</b> %{{y:,}}<extra></extra>',
+            customdata=grouped[percent_col] if percent_col else None
+        ))
 
-    # Create traces for each column
-    traces = [
-        go.Scatter(
-            x=df2["start_date"],
-            y=df2[column],
-            mode="lines+markers",
-            name=column,
-            hovertemplate="%{y}%<br>",
-        )
-        for column in df2.columns[1:]
-    ]
 
-    # Create layout and figure
-    layout = go.Layout(
-        title="Line Chart",
-        xaxis=dict(title="Date"),
-        yaxis=dict(title="Percent"),
+    fig.update_layout(
+        title='Funnel Snapshot by Date',
+        xaxis_title='Date',
+        yaxis_title='Sum',
+        xaxis_tickangle=-45,
+        xaxis=dict(
+            type='category',  # Change the axis type to 'category' to remove intermediate time markers
+            tickformat='%Y-%m-%d'  # Specify the date format
+            ),
+
+        template='plotly',
+
+        legend_title_text='Columns'
     )
-    fig = go.Figure(data=traces, layout=layout)
     
     # Plotly chart and data display
     st.plotly_chart(fig, use_container_width=True)
-    st.dataframe(df, hide_index=True)
 
 
 @st.cache_data(ttl="1d", show_spinner=False)
