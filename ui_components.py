@@ -468,7 +468,7 @@ def levels_line_chart(daterange, countries_list, app="Both", language="All"):
         .reset_index(name="count")
     )
 
-    # Calculate percent drop for hover text
+    # Calculate Percent remaining for hover text
     df["percent_drop"] = df.groupby("app_language")["count"].pct_change() * 100
 
     # Create separate traces for each app_language
@@ -479,7 +479,7 @@ def levels_line_chart(daterange, countries_list, app="Both", language="All"):
             y=data["count"],
             mode="lines+markers",
             name=app_language,
-            hovertemplate="Max Level: %{x}<br>Count: %{y}<br>Percent Drop: %{customdata:.2f}%<br>App Language: %{text}",
+            hovertemplate="Max Level: %{x}<br>Count: %{y}<br>Percent remaining: %{customdata:.2f}%<br>App Language: %{text}",
             customdata=data["percent_drop"],
             text=data["app_language"],  # Include app_language in hover text
         )
@@ -533,21 +533,21 @@ def funnel_change_line_chart(df, graph_type='sum'):
     hover_labels = [('DC', 'LR'), ('TS', 'DC'), ('SL', 'TS'), ('PC', 'SL'), ('LA', 'PC'), ('RA', 'LA'), ('GC', 'RA')]
 
     # Select the columns to plot based on the graph_type parameter
-    if graph_type == 'Percent drop':
+    if graph_type == 'Percent remaining':
         columns_to_plot = percent_columns
-        y_axis_title = 'Percent drop'
+        y_axis_title = 'Percent remaining'
     else:
         columns_to_plot = sum_columns
         y_axis_title = 'Totals'
 
     for i, col in enumerate(columns_to_plot):
-        if graph_type == 'Percent drop':
-            # Only assign percent_col and nom_den_col if graph_type is 'Percent drop'
+        if graph_type == 'Percent remaining':
+            # Only assign percent_col and nom_den_col if graph_type is 'Percent remaining'
             percent_col = percent_columns[i] if i > 0 else None
             nom_den_col = nom_den_columns[i] if i > 0 else None
             nom_label, den_label = hover_labels[i] if i > 0 else (None, None)
         else:
-            # If graph_type is not 'Percent drop', don't reference percent_columns and related lists
+            # If graph_type is not 'Percent remaining', don't reference percent_columns and related lists
             percent_col = None
             nom_den_col = None
             nom_label, den_label = None, None
@@ -556,7 +556,7 @@ def funnel_change_line_chart(df, graph_type='sum'):
         y_values = grouped[columns_to_plot[i]]
         
         # Conditional hovertemplate based on graph_type
-        if graph_type == 'Percent drop' and i > 0:  # Only apply customdata (nom/den) for traces after the first one
+        if graph_type == 'Percent remaining' and i > 0:  # Only apply customdata (nom/den) for traces after the first one
             fig.add_trace(go.Scatter(
                 x=grouped['date'],
                 y=y_values,

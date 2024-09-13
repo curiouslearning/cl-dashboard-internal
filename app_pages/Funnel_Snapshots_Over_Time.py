@@ -31,7 +31,7 @@ selected_languages = ui.multi_select_all(
 toggle = st.radio(
             options=[
                 "Funnel totals",
-                "Percent drop",
+                "Percent remaining",
             ],
             label="Graph option",
             horizontal=True,
