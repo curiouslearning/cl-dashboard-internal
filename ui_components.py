@@ -468,7 +468,7 @@ def levels_line_chart(daterange, countries_list, app="Both", language="All"):
         .reset_index(name="count")
     )
 
-    # Calculate percent drop for hover text
+    # Calculate Percent remaining for hover text
     df["percent_drop"] = df.groupby("app_language")["count"].pct_change() * 100
 
     # Create separate traces for each app_language
@@ -479,7 +479,7 @@ def levels_line_chart(daterange, countries_list, app="Both", language="All"):
             y=data["count"],
             mode="lines+markers",
             name=app_language,
-            hovertemplate="Max Level: %{x}<br>Count: %{y}<br>Percent Drop: %{customdata:.2f}%<br>App Language: %{text}",
+            hovertemplate="Max Level: %{x}<br>Count: %{y}<br>Percent remaining: %{customdata:.2f}%<br>App Language: %{text}",
             customdata=data["percent_drop"],
             text=data["app_language"],  # Include app_language in hover text
         )
@@ -497,61 +497,106 @@ def levels_line_chart(daterange, countries_list, app="Both", language="All"):
 
 
 @st.cache_data(ttl="1d", show_spinner=False)
-def funnel_change_line_chart(df):
-
+def funnel_change_line_chart(df, graph_type='sum'):
     # Convert the column to date only (remove timestamp)
     df['date'] = df['date'].dt.date
+
     grouped = df.groupby('date').sum().reset_index()
-    columns = ['LR', 'DC', 'TS', 'SL', 'PC', 'LA', 'RA', 'GC']
-
-    # Calculate percent of previous level for the hover data
-    grouped['DC_percent'] = (grouped['DC'] / grouped['LR'] * 100).round(2)
-    grouped['TS_percent'] = (grouped['TS'] / grouped['DC'] * 100).round(2)
-    grouped['SL_percent'] = (grouped['SL'] / grouped['TS'] * 100).round(2)
-    grouped['PC_percent'] = (grouped['PC'] / grouped['SL'] * 100).round(2)
-    grouped['LA_percent'] = (grouped['LA'] / grouped['PC'] * 100).round(2)
-    grouped['RA_percent'] = (grouped['RA'] / grouped['LA'] * 100).round(2)
-    grouped['GC_percent'] = (grouped['GC'] / grouped['RA'] * 100).round(2)
-
-
-    percent_columns = ['LR', 'DC_percent', 'TS_percent', 'SL_percent', 'PC_percent', 'LA_percent', 'RA_percent', 'GC_percent']
 
     fig = go.Figure()
-    for i, col in enumerate(columns):
-        if i > 0:
-            prev_col = columns[i-1]
-            percent_col = percent_columns[i]
+
+    # Define the columns for sum and percent
+    sum_columns = ['LR', 'DC', 'TS', 'SL', 'PC', 'LA', 'RA', 'GC']
+
+    # Calculate percent of previous level for the hover data
+    grouped['DC over LR'] = (grouped['DC'] / grouped['LR'] * 100).round(2)
+    grouped['TS over DC'] = (grouped['TS'] / grouped['DC'] * 100).round(2)
+    grouped['SL over TS'] = (grouped['SL'] / grouped['TS'] * 100).round(2)
+    grouped['PC over SL'] = (grouped['PC'] / grouped['SL'] * 100).round(2)
+    grouped['LA over PC'] = (grouped['LA'] / grouped['PC'] * 100).round(2)
+    grouped['RA over LA'] = (grouped['RA'] / grouped['LA'] * 100).round(2)
+    grouped['GC over RA'] = (grouped['GC'] / grouped['RA'] * 100).round(2)
+    
+    # Adding nominator and denominator for hover display
+    grouped['DC_LR_nom_den'] = grouped[['DC', 'LR']].values.tolist()
+    grouped['TS_DC_nom_den'] = grouped[['TS', 'DC']].values.tolist()
+    grouped['SL_TS_nom_den'] = grouped[['SL', 'TS']].values.tolist()
+    grouped['PC_SL_nom_den'] = grouped[['PC', 'SL']].values.tolist()
+    grouped['LA_PC_nom_den'] = grouped[['LA', 'PC']].values.tolist()
+    grouped['RA_LA_nom_den'] = grouped[['RA', 'LA']].values.tolist()
+    grouped['GC_RA_nom_den'] = grouped[['GC', 'RA']].values.tolist()
+
+    percent_columns = ['DC over LR', 'TS over DC', 'SL over TS', 'PC over SL', 'LA over PC', 'RA over LA', 'GC over RA']
+    nom_den_columns = ['DC_LR_nom_den', 'TS_DC_nom_den', 'SL_TS_nom_den', 'PC_SL_nom_den', 'LA_PC_nom_den', 'RA_LA_nom_den', 'GC_RA_nom_den']
+    
+    # Column names for the hover labels (nominator/denominator)
+    hover_labels = [('DC', 'LR'), ('TS', 'DC'), ('SL', 'TS'), ('PC', 'SL'), ('LA', 'PC'), ('RA', 'LA'), ('GC', 'RA')]
+
+    # Select the columns to plot based on the graph_type parameter
+    if graph_type == 'Percent remaining':
+        columns_to_plot = percent_columns
+        y_axis_title = 'Percent remaining'
+    else:
+        columns_to_plot = sum_columns
+        y_axis_title = 'Totals'
+
+    for i, col in enumerate(columns_to_plot):
+        if graph_type == 'Percent remaining':
+            # Only assign percent_col and nom_den_col if graph_type is 'Percent remaining'
+            percent_col = percent_columns[i] if i > 0 else None
+            nom_den_col = nom_den_columns[i] if i > 0 else None
+            nom_label, den_label = hover_labels[i] if i > 0 else (None, None)
         else:
-            prev_col = None
+            # If graph_type is not 'Percent remaining', don't reference percent_columns and related lists
             percent_col = None
-            
-        fig.add_trace(go.Scatter(
-            x=grouped['date'],
-            y=grouped[col],
-            mode='lines+markers',
-            name=col,
-            hovertemplate=f'<b>Date:</b> %{{x}}<br><b>{col}:</b> %{{y:,}}<br><b>% of {prev_col}:</b> %{{customdata}}%<extra></extra>' if prev_col else f'<b>Date:</b> %{{x}}<br><b>{col}:</b> %{{y:,}}<extra></extra>',
-            customdata=grouped[percent_col] if percent_col else None
-        ))
+            nom_den_col = None
+            nom_label, den_label = None, None
 
+        # Select y values based on graph_type
+        y_values = grouped[columns_to_plot[i]]
+        
+        # Conditional hovertemplate based on graph_type
+        if graph_type == 'Percent remaining' and i > 0:  # Only apply customdata (nom/den) for traces after the first one
+            fig.add_trace(go.Scatter(
+                x=grouped['date'],
+                y=y_values,
+                mode='lines+markers',
+                name=col,
+                hovertemplate=(
+                    f'<b>Date:</b> %{{x}}<br><b>{col}:</b> %{{y:,}}%' +
+                    f'<br><b>{nom_label}:</b> %{{customdata[0]:,}}<br><b>{den_label}:</b> %{{customdata[1]:,}}<extra></extra>'
+                ),
+                customdata=grouped[nom_den_col]
+            ))
+        else:
+            # For sum or the first trace, use a simpler hovertemplate
+            fig.add_trace(go.Scatter(
+                x=grouped['date'],
+                y=y_values,
+                mode='lines+markers',
+                name=col,
+                hovertemplate=(
+                    f'<b>Date:</b> %{{x}}<br><b>{col}:</b> %{{y:,}}<extra></extra>'
+                )
+            ))
 
+    # Customize the layout to display only the date
     fig.update_layout(
-        title='Funnel Snapshot by Date',
+        title=f'{y_axis_title} of Each Column for Each Date',
         xaxis_title='Date',
-        yaxis_title='Sum',
+        yaxis_title=y_axis_title,
         xaxis_tickangle=-45,
         xaxis=dict(
             type='category',  # Change the axis type to 'category' to remove intermediate time markers
-            tickformat='%Y-%m-%d'  # Specify the date format
-            ),
-
+            tickformat='%m-%d-%Y'  # Specify the date format
+        ),
         template='plotly',
-
         legend_title_text='Columns'
     )
-    
+
     # Plotly chart and data display
     st.plotly_chart(fig, use_container_width=True)
+
 
 
 @st.cache_data(ttl="1d", show_spinner=False)
@@ -690,7 +735,7 @@ def top_and_bottom_languages_per_level(selection, min_LR):
     
     languages = users.get_language_list()
     df = metrics.build_funnel_dataframe(index_col="language", languages=languages)
-    print(df)
+
     # Remove anything where Learners Reached is less than 5000 (arbitrary to have a decent sample size)
     df = df[df["LR"] > min_LR]
 

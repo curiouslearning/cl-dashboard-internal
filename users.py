@@ -169,15 +169,19 @@ def get_funnel_snapshots(daterange,languages):
     else:
         st.write ("No database connection")
         return
-    
+
+    languages_str = ', '.join([f"'{lang}'" for lang in languages])
+
     sql_query = f"""
-                SELECT *
-                FROM `dataexploration-193817.user_data.funnel_snapshots`
-             #   WHERE
-             #    date BETWEEN '{daterange[0].strftime("%Y-%m-%d")}' AND '{daterange[1].strftime("%Y-%m-%d")}' ;
-                
-                """
+            SELECT *
+            FROM `dataexploration-193817.user_data.funnel_snapshots`
+            WHERE language IN ({languages_str})
+            AND
+            DATE(date) BETWEEN '{daterange[0].strftime("%Y-%m-%d")}' AND '{daterange[1].strftime("%Y-%m-%d")}' ;
+
+            """
 
     df = bq_client.query(sql_query).to_dataframe() 
+    df['date'] = pd.to_datetime(df['date'], errors='coerce')
 
     return df
