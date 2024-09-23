@@ -58,16 +58,14 @@ def stats_by_country_map(daterange, countries_list, app="Both", language="All", 
 
 
 @st.cache_data(ttl="1d", show_spinner=False)
-def campaign_gantt_chart(daterange):
+def campaign_gantt_chart():
     
-    df1 = st.session_state.df_campaigns
+    df1 = campaigns.get_name_compliant_campaigns()
+
     df1["campaign_start_date"] = pd.to_datetime(df1["campaign_start_date"]).dt.date
 
-    # Define the chart start date
-    chart_start = daterange[0]
-
     # Query the DataFrame
-    df1 = df1.query("campaign_start_date > @chart_start")
+   # df1 = df1.query("campaign_start_date > @chart_start")
 
     # Converting columns to datetime format
     df1["start_date"] = pd.to_datetime(df1["campaign_start_date"])
@@ -78,9 +76,8 @@ def campaign_gantt_chart(daterange):
     one_year_from_today = today + dt.timedelta(days=365)
     df1 = df1[df1["end_date"] <= one_year_from_today]
 
-
     df1["campaign_name_short"] = df1["campaign_name"].str[
-        :20
+        :30
     ]  # cut the title to fit the chart
 
     df1 = df1[
@@ -117,7 +114,7 @@ def campaign_gantt_chart(daterange):
         ],
         color_discrete_sequence=px.colors.qualitative.Vivid,
         color="cost",
-        custom_data=[df1["campaign_name"], df1["cost"]],
+        custom_data=[df1["campaign_name"], df1["cost"], df1["start_date"], df1["end_date"]],
     )
     
     fig.update_yaxes(autorange="reversed")
@@ -143,7 +140,8 @@ def campaign_gantt_chart(daterange):
         ),
     )
 
-    hovertemp = "<b>Date: </b> %{x} <br>"
+    hovertemp = "<b>Start Date: </b> %{customdata[2]|%m-%d-%Y } <br>"
+    hovertemp += "<b>End Date: </b> %{customdata[3]|%m-%d-%Y} <br>"
     hovertemp += "<b>Campaign: </b> %{customdata[0]} <br>"
     hovertemp += "<b>Cost: </b> %{customdata[1]:$,.2f}<br>"
     fig.update_traces(hoverinfo="text", hovertemplate=hovertemp)
@@ -288,22 +286,22 @@ def LR_LA_line_chart_over_time(
 
 
 @st.cache_data(ttl="1d", show_spinner=False)
-def lrc_scatter_chart(daterange,option,display_category):
-    df_campaigns = st.session_state.df_campaigns
+def lrc_scatter_chart(option,display_category):
+    df_campaigns = campaigns.get_name_compliant_campaigns()
 
     if display_category == "Country":
         display_group = "country"
         countries_list = df_campaigns["country"].unique()
         countries_list = list(countries_list)
         df_counts = metrics.get_counts(
-            daterange=daterange,type=display_group,countries_list=countries_list
+            daterange=[dt.datetime(2021, 1, 1).date(), dt.date.today()],type=display_group,countries_list=countries_list
         )
     elif display_category == "Language":
         display_group = "app_language"   
         language =  df_campaigns["app_language"].unique()  
         language = list(language)
         df_counts = metrics.get_counts(
-            daterange=daterange,type=display_group,language=language
+            daterange=[dt.datetime(2021, 1, 1).date(), dt.date.today()],type=display_group,language=language
         )
 
     x = "LR" if option == "LRC" else "LA"
@@ -349,19 +347,15 @@ def lrc_scatter_chart(daterange,option,display_category):
 
 
 @st.cache_data(ttl="1d", show_spinner=False)
-def spend_by_country_map(daterange,source):
-
-    df_campaigns = campaigns.get_campaigns_by_date(daterange)
-
-    # Drop the campaigns that don't meet the naming convention
-    condition = (df_campaigns["app_language"].isna()) | (df_campaigns["country"].isna())
-    df_campaigns = df_campaigns[~condition]
-
+def spend_by_country_map(source):
+    df_campaigns = campaigns.get_name_compliant_campaigns()
+    
     if source == 'Both':
         df_campaigns = df_campaigns.groupby("country", as_index=False)["cost"].sum().round(2)
     else:
         df_campaigns = df_campaigns[df_campaigns["source"] == source]
         df_campaigns = df_campaigns.groupby("country", as_index=False)["cost"].sum().round(2)
+    
 
     total_cost = df_campaigns["cost"].sum().round(2)
     value = "$" + prettify(total_cost)

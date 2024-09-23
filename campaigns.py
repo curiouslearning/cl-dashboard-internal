@@ -127,7 +127,8 @@ def add_country_and_language(df):
             language_contains_pattern, regex=True, na=False
         ),
         None,
-    )
+    ).str.lower()
+
     return df
 
 
@@ -297,3 +298,17 @@ def build_campaign_table(df, daterange):
         df.at[idx, "RA_LR %"] = RA_LR
 
     return df
+
+
+# Use only campaigns that have met the naming convention criteria which adds the country and language.
+# Start at beginning of 2024 to remove very old campaigns which may have had : and - in them but weren't 
+# signifying country or language
+def get_name_compliant_campaigns():
+    df_campaigns = st.session_state.df_campaigns
+    reference_date = pd.to_datetime('2023/10/01', format='%Y/%m/%d')
+    df_campaigns['campaign_start_date'] = pd.to_datetime(df_campaigns['campaign_start_date'], format='%Y/%m/%d')
+
+    df_campaigns = df_campaigns[(df_campaigns['country'].notna()) & (df_campaigns['country'] != '') &
+                (df_campaigns['app_language'].notna()) & (df_campaigns['app_language'] != '') & 
+                (df_campaigns['campaign_start_date'] >= reference_date)]
+    return df_campaigns
