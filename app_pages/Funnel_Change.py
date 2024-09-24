@@ -65,6 +65,9 @@ if len(selected_languages) == 0 or len(selected_languages) > 40:
     )
 else:
     with st.spinner("Calculating..."):
+        start = daterange[0].strftime("%b %d, %Y")
+        end = daterange[1].strftime("%b %d, %Y")
+        st.write("Timerange: " + start + " to " + end)
         uic.funnel_change_by_language_chart(
             selected_languages,
             country,

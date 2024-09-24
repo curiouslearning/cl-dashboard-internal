@@ -5,7 +5,7 @@ from millify import prettify
 import ui_components as uic
 import ui_widgets as ui
 import users
-
+import datetime as dt
 
 
 settings.initialize()
@@ -41,6 +41,12 @@ toggle = st.radio(
         )
 
 if len(selected_languages) > 0 and len(daterange) == 2:
+    # Funnel snapshots started 9/11/2024
+    daterange[0] = max(daterange[0], dt.date(2024, 9, 11))
+    
+    start = daterange[0].strftime("%b %d, %Y")
+    end = daterange[1].strftime("%b %d, %Y")
+    st.write("Timerange: " + start + " to " + end)
     df = users.get_funnel_snapshots(daterange=daterange,languages=selected_languages)
     with st.spinner("Calculating..."):
         uic.funnel_change_line_chart(df,toggle)
