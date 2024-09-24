@@ -625,11 +625,21 @@ def funnel_change_by_language_chart(
     weeks = metrics.weeks_since(daterange)
     end_date = dt.datetime.now().date()
 
-    # Precompute date ranges
-    date_ranges = [
-        (end_date - dt.timedelta(i * 7), end_date - dt.timedelta((i - 1) * 7))
-        for i in range(1, weeks + 1)
-    ]
+    if weeks <= 4:
+        # Use days if weeks are <= 4
+        days = weeks * 7
+        date_ranges = [
+            (end_date - dt.timedelta(i), end_date - dt.timedelta(i - 1))
+            for i in range(1, days + 1)
+        ]
+        x_axis_label = "Day"
+    else:
+        # Use weeks otherwise
+        date_ranges = [
+            (end_date - dt.timedelta(i * 7), end_date - dt.timedelta((i - 1) * 7))
+            for i in range(1, weeks + 1)
+        ]
+        x_axis_label = "Week"
 
     df = pd.DataFrame(columns=["start_date"] + languages)
 
@@ -674,7 +684,7 @@ def funnel_change_by_language_chart(
     # Create layout
     layout = go.Layout(
         title="",
-        xaxis=dict(title="Date"),
+        xaxis=dict(title=x_axis_label),
         yaxis=dict(title="Percent of upper level"),
         legend={"traceorder": "normal"},
     )
