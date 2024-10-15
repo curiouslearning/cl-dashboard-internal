@@ -2,15 +2,15 @@ import streamlit as st
 import settings
 from millify import prettify
 import campaigns
-
+import metrics
 import ui_widgets as ui
+import ui_components as uic
 
 
 ## UI ##
 settings.initialize()
 settings.init_campaign_data()
 settings.init_user_list()
-
 
 col1, col2, col3 = st.columns(3)
 with col1:
@@ -19,11 +19,8 @@ with col1:
 
 # In the case of datepicker, don't do anything until both start and end dates are picked
 if len(daterange) > 1:
-    df_campaigns = campaigns.get_campaigns_by_date(daterange)
 
-    # Drop the campaigns that don't meet the naming convention
-    condition = (df_campaigns["app_language"].isna()) | (df_campaigns["country"].isna())
-    df_campaigns = df_campaigns[~condition]
+    df_campaigns = metrics.filter_campaigns(daterange=daterange) 
 
     col = df_campaigns.pop("country")
     df_campaigns.insert(2, col.name, col)
@@ -38,6 +35,7 @@ if len(daterange) > 1:
     keys = [12, 13, 14, 15, 16]
     ui.paginated_dataframe(df, keys, sort_col="country")
 
+    st.header("Facebook Ads")
     dff = df_campaigns.query("source == 'Facebook'")
 
     if len(dff) > 0:
@@ -56,3 +54,7 @@ if len(daterange) > 1:
         ui.paginated_dataframe(dfg, keys, sort_col="campaign_name")
     else:
         st.text("No data for selected period")
+
+st.divider()
+st.subheader("Campaign Timelines")
+uic.campaign_gantt_chart()

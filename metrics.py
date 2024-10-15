@@ -4,7 +4,8 @@ import pandas as pd
 import numpy as np
 import datetime as dt
 import users
-import metrics
+import campaigns
+
 
 default_daterange = [dt.datetime(2021, 1, 1).date(), dt.date.today()]
 
@@ -251,7 +252,7 @@ def build_funnel_dataframe(
 ):
     df = pd.DataFrame(columns=[index_col, "LR", "DC", "TS", "SL", "PC", "RA", "LA"])
     if index_col == "start_date":
-        weeks = metrics.weeks_since(daterange)
+        weeks = weeks_since(daterange)
         iteration = range(1, weeks + 1)
     elif index_col == "language":
         iteration = languages
@@ -267,21 +268,21 @@ def build_funnel_dataframe(
             start_date = dt.datetime.now().date() - dt.timedelta(i * 7)
             daterange = [start_date, end_date]
 
-        DC = metrics.get_totals_by_metric(
+        DC = get_totals_by_metric(
             daterange,
             stat="DC",
             language=language,
             countries_list=countries_list,
             app="CR",
         )
-        SL = metrics.get_totals_by_metric(
+        SL = get_totals_by_metric(
             daterange,
             stat="SL",
             language=language,
             countries_list=countries_list,
             app="CR",
         )
-        TS = metrics.get_totals_by_metric(
+        TS = get_totals_by_metric(
             daterange,
             stat="TS",
             language=language,
@@ -289,35 +290,35 @@ def build_funnel_dataframe(
             app="CR",
         )
 
-        PC = metrics.get_totals_by_metric(
+        PC = get_totals_by_metric(
             daterange,
             stat="PC",
             language=language,
             countries_list=countries_list,
             app="CR",
         )
-        LA = metrics.get_totals_by_metric(
+        LA = get_totals_by_metric(
             daterange,
             stat="LA",
             language=language,
             countries_list=countries_list,
             app="CR",
         )
-        LR = metrics.get_totals_by_metric(
+        LR = get_totals_by_metric(
             daterange,
             stat="LR",
             language=language,
             countries_list=countries_list,
             app="CR",
         )        
-        RA = metrics.get_totals_by_metric(
+        RA = get_totals_by_metric(
             daterange,
             stat="RA",
             language=language,
             countries_list=countries_list,
             app="CR",
         )
-        GC = metrics.get_totals_by_metric(
+        GC = get_totals_by_metric(
             daterange,
             stat="GC",
             language=language,
@@ -427,3 +428,35 @@ def add_level_percents(df):
         df["GC over RA"] = 0
         
     return df
+
+
+# Get the campaign data and filter by date, language, and country selections
+def filter_campaigns(daterange,selected_languages=["All"],countries_list=["All"]):
+    df_campaigns_all = st.session_state.df_campaigns_all
+
+    # Drop the campaigns that don't meet the naming convention
+    condition = (df_campaigns_all["app_language"].isna()) | (df_campaigns_all["country"].isna())
+    df_campaigns = df_campaigns_all[~condition]
+
+    mask = (df_campaigns['segment_date'].dt.date >= daterange[0]) & (df_campaigns['segment_date'].dt.date <= daterange[1])
+
+    # Apply country filter if not "All"
+    if countries_list[0] != "All":
+        mask &= df_campaigns['country'].isin(set(countries_list))
+
+    # Apply language filter if not "All" and stat is not "FO"
+    if selected_languages[0] != "All" :
+        mask &= df_campaigns['app_language'].isin(set(selected_languages))
+
+    df_campaigns = df_campaigns.loc[mask]
+
+    col = df_campaigns.pop("country")
+    df_campaigns.insert(2, col.name, col)
+    df_campaigns.reset_index(drop=True, inplace=True)
+
+    col = df_campaigns.pop("app_language")
+    df_campaigns.insert(3, col.name, col)
+    df_campaigns.reset_index(drop=True, inplace=True)
+    df_campaigns.to_csv(str(daterange) + ".csv")
+
+    return df_campaigns

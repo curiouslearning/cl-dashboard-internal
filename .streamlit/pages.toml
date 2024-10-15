@@ -14,13 +14,18 @@ name = "Curious Reader Funnel"
 icon = ":small_orange_diamond:"
 
 [[pages]]
+path = "app_pages/20_Compare_Funnels.py"
+name = "Compare CR Funnels"
+icon = ":small_orange_diamond:"
+
+[[pages]]
 path = "app_pages/1_Acquisition.py"
 name = "Acquisition"
 icon = ":small_orange_diamond:"
 
 [[pages]]
-path = "app_pages/20_Compare_Funnels.py"
-name = "Compare CR Funnels"
+path = "app_pages/Marketing_Data.py"
+name = "Marketing Data"
 icon = ":small_orange_diamond:"
 
 [[pages]]

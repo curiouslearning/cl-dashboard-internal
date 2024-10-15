@@ -87,6 +87,4 @@ if (len(countries_list)) > 0 and (len(daterange) == 2):
     )
 
 
-st.divider()
-st.subheader("Campaign Timelines")
-uic.campaign_gantt_chart()
+
