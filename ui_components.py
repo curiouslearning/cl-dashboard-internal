@@ -286,22 +286,21 @@ def LR_LA_line_chart_over_time(
 
 
 @st.cache_data(ttl="1d", show_spinner=False)
-def lrc_scatter_chart(option,display_category):
-    df_campaigns = campaigns.get_name_compliant_campaigns()
+def lrc_scatter_chart(option,display_category,df_campaigns,daterange):
 
     if display_category == "Country":
         display_group = "country"
         countries_list = df_campaigns["country"].unique()
         countries_list = list(countries_list)
         df_counts = metrics.get_counts(
-            daterange=[dt.datetime(2021, 1, 1).date(), dt.date.today()],type=display_group,countries_list=countries_list
+            daterange=daterange,type=display_group,countries_list=countries_list
         )
     elif display_category == "Language":
         display_group = "app_language"   
         language =  df_campaigns["app_language"].unique()  
         language = list(language)
         df_counts = metrics.get_counts(
-            daterange=[dt.datetime(2021, 1, 1).date(), dt.date.today()],type=display_group,language=language
+            daterange=daterange,type=display_group,language=language
         )
 
     x = "LR" if option == "LRC" else "LA"

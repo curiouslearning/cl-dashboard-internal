@@ -31,16 +31,6 @@ data_notes = pd.DataFrame(
 
 ui.display_definitions_table("Data Notes",data_notes)
 
-c1, c2, c3,c4 = st.columns(4)
-with c1:
-    option = st.radio("Select a statistic", ("LRC", "LAC"), index=0, horizontal=True)
-with c2:
-    display_category = st.radio(
-        "Display by", ("Country", "Language"), index=0, horizontal=True, key="e-4"
-    )
-
-uic.lrc_scatter_chart(option,display_category)
-st.divider()
 
 
 st.divider()

@@ -81,7 +81,18 @@ if len(daterange) == 2 and len(countries_list) > 0:
     uic.spend_by_country_map(df_campaigns,source)
     
     st.divider()
-    st.subheader("Total Spend per Country")
+    st.subheader("LRC / LAC")
+    c1, c2, c3,c4 = st.columns(4)
+    with c1:
+        option = st.radio("Select a statistic", ("LRC", "LAC"), index=0, horizontal=True)
+    with c2:
+        display_category = st.radio(
+            "Display by", ("Country", "Language"), index=0, horizontal=True, key="e-4"
+        )
+
+    uic.lrc_scatter_chart(option,display_category,df_campaigns,daterange)
+    
+    st.divider()    
     col = df_campaigns.pop("country")
     df_campaigns.insert(2, col.name, col)
     df_campaigns.reset_index(drop=True, inplace=True)
@@ -90,7 +101,11 @@ if len(daterange) == 2 and len(countries_list) > 0:
     df_campaigns.insert(3, col.name, col)
     df_campaigns.reset_index(drop=True, inplace=True)
 
-    st.header("Marketing Performance Table")
+    st.subheader("Marketing metrics table")
     df = campaigns.build_campaign_table(df_campaigns, daterange)
     keys = [12, 13, 14, 15, 16]
     ui.paginated_dataframe(df, keys, sort_col="country")
+
+
+    
+    st.divider()
