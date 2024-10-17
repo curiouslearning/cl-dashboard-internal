@@ -29,11 +29,6 @@ name = "Marketing Data"
 icon = ":small_orange_diamond:"
 
 [[pages]]
-path = "app_pages/30_Campaign_Data.py"
-name = "Campaign Data"
-icon = ":small_orange_diamond:"
-
-[[pages]]
 name = "Funnel Analysis"
 icon = ":large_brown_circle:"
 is_section = true

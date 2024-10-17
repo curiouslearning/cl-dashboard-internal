@@ -41,9 +41,7 @@ with c2:
 
 uic.lrc_scatter_chart(option,display_category)
 st.divider()
-st.subheader("Total Spend per Country")
-source = ui.ads_platform_selector(placement="middle")
-uic.spend_by_country_map(source)
+
 
 st.divider()
 st.subheader("Learners Over Time")

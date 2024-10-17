@@ -72,8 +72,6 @@ def init_campaign_data():
 
     df_campaigns = campaigns.add_country_and_language(df_campaigns)
 
-    df_campaigns = campaigns.add_google_button_clicks(df_campaigns, default_daterange)
-
     if "df_campaigns" not in st.session_state:
         st.session_state["df_campaigns"] = df_campaigns
 

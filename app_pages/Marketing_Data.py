@@ -7,6 +7,7 @@ import ui_components as uic
 import ui_widgets as ui
 import users
 import datetime as dt
+import campaigns
 
 ui.display_definitions_table("Data Notes",ui.data_notes)
 settings.initialize()
@@ -15,6 +16,17 @@ settings.init_campaign_data()
 
 ui.colorize_multiselect_options()
 
+
+languages = users.get_language_list()
+language = ui.single_selector(
+    languages, title="Select a language", placement="side", key="e-1"
+)
+
+countries_list = users.get_country_list()
+countries_list = ui.multi_select_all(
+    countries_list, title="Country Selection", key="e-2"
+)
+
 selected_date, option = ui.calendar_selector()
 daterange = ui.convert_date_to_range(selected_date, option)
 
@@ -22,15 +34,6 @@ daterange = ui.convert_date_to_range(selected_date, option)
 #implemented in April
 daterange[0] = max(daterange[0], dt.datetime(2024, 4, 1).date())
 
-languages = users.get_language_list()
-language = ui.single_selector(
-    languages, placement="side", title="Select a language", key="md-1"
-)
-
-countries_list = users.get_country_list()
-countries_list = ui.multi_select_all(
-    countries_list, title="Country Selection", key="md-2"
-)
 # In the case of datepicker, don't do anything until both start and end dates are picked
 if len(daterange) == 2 and len(countries_list) > 0:
     date_start = daterange[0].strftime("%Y-%m-%d")
@@ -73,3 +76,21 @@ if len(daterange) == 2 and len(countries_list) > 0:
     col1.metric(label="Cost", value=f"${prettify(int(cost))}")
 
     st.divider()
+    st.subheader("Total Spend per Country")
+    source = ui.ads_platform_selector(placement="middle")       
+    uic.spend_by_country_map(df_campaigns,source)
+    
+    st.divider()
+    st.subheader("Total Spend per Country")
+    col = df_campaigns.pop("country")
+    df_campaigns.insert(2, col.name, col)
+    df_campaigns.reset_index(drop=True, inplace=True)
+
+    col = df_campaigns.pop("app_language")
+    df_campaigns.insert(3, col.name, col)
+    df_campaigns.reset_index(drop=True, inplace=True)
+
+    st.header("Marketing Performance Table")
+    df = campaigns.build_campaign_table(df_campaigns, daterange)
+    keys = [12, 13, 14, 15, 16]
+    ui.paginated_dataframe(df, keys, sort_col="country")

@@ -347,8 +347,7 @@ def lrc_scatter_chart(option,display_category):
 
 
 @st.cache_data(ttl="1d", show_spinner=False)
-def spend_by_country_map(source):
-    df_campaigns = campaigns.get_name_compliant_campaigns()
+def spend_by_country_map(df_campaigns,source):
     
     if source == 'Both':
         df_campaigns = df_campaigns.groupby("country", as_index=False)["cost"].sum().round(2)

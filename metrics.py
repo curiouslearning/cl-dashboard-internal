@@ -457,6 +457,6 @@ def filter_campaigns(daterange,selected_languages=["All"],countries_list=["All"]
     col = df_campaigns.pop("app_language")
     df_campaigns.insert(3, col.name, col)
     df_campaigns.reset_index(drop=True, inplace=True)
-    df_campaigns.to_csv(str(daterange) + ".csv")
+ #   df_campaigns.to_csv(str(daterange) + ".csv")
 
     return df_campaigns

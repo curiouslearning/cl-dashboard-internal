@@ -13,27 +13,21 @@ def get_google_campaign_data():
         metrics.campaign_id,
         metrics.segments_date as segment_date,
         campaigns.campaign_name,
-        0 as mobile_app_install,
-        metrics_clicks as clicks,
-        metrics_impressions as impressions,
         metrics_cost_micros as cost,
-        metrics_average_cpc as cpc,
         campaigns.campaign_start_date,
         campaigns.campaign_end_date, 
-        0 as reach,
         "Google" as source
         FROM dataexploration-193817.marketing_data.p_ads_CampaignStats_6687569935 as metrics
         inner join dataexploration-193817.marketing_data.ads_Campaign_6687569935 as campaigns
         on metrics.campaign_id = campaigns.campaign_id
         and campaigns.campaign_start_date >= '2021-01-01'
-        group by 1,2,3,4,5,6,7,8,9,10   
+        group by 1,2,3,4,5,6
     """
 
     df = bq_client.query(sql_query).to_dataframe()
 
     df["campaign_id"] = df["campaign_id"].astype(str).str.replace(",", "")
     df["cost"] = df["cost"].divide(1000000).round(2)
-    df["cpc"] = df["cpc"].divide(1000000)
     df["segment_date"] = pd.to_datetime(df["segment_date"])
     df["segment_date"] = df["segment_date"].values.astype("datetime64[D]")
 
@@ -50,18 +44,9 @@ def get_fb_campaign_data():
             d.campaign_id,
             d.data_date_start as segment_date,
             d.campaign_name,
-            COALESCE(
-                (SELECT PARSE_NUMERIC(a.value)
-                 FROM UNNEST(d.actions) as a
-                 WHERE a.action_type = 'mobile_app_install'
-                 LIMIT 1), 0) as mobile_app_install,
-            d.clicks,
-            d.impressions,
             d.spend as cost,
-            d.cpc,
             d.start_time as campaign_start_date, 
             d.end_time as campaign_end_date,
-            d.reach,
             "Facebook" as source
         FROM dataexploration-193817.marketing_data.facebook_ads_data as d
         WHERE d.start_time >= '2021-01-01'
@@ -82,8 +67,6 @@ def get_fb_campaign_data():
 
     df["segment_date"] = pd.to_datetime(df["segment_date"])
     df["segment_date"] = df["segment_date"].values.astype("datetime64[D]")
-
-    df["mobile_app_install"] = pd.to_numeric(df["mobile_app_install"])
 
     return df
 
@@ -158,13 +141,8 @@ def rollup_campaign_data(df):
         "segment_date": "last",
         "campaign_start_date": "first",
         "campaign_end_date": "first",
-        "mobile_app_install": "sum",
         "source": "first",
-        "clicks": "sum",
-        "reach": "sum",
         "cost": "sum",
-        "cpc": "sum",
-        "impressions": "sum",
     }
     optional_columns = ["country", "app_language"]
     for col in optional_columns:
@@ -193,40 +171,6 @@ def rollup_campaign_data(df):
 
     return df
 
-
-# Get the button clicks from BigQuery, add them to the dataframe
-# and rollup the sum per campaign_id
-def add_google_button_clicks(df, daterange):
-
-    df_goog_conversions = campaigns.get_google_campaign_conversions(daterange)
-
-    df_goog = pd.merge(
-        df,
-        df_goog_conversions,
-        on="campaign_id",
-        how="left",
-        suffixes=("", ""),
-    )
-
-    df_goog = df_goog.groupby("campaign_id", as_index=False).agg(
-        {
-            "campaign_name": "last",
-            "app_language": "first",
-            "country": "first",
-            "campaign_start_date": "first",
-            "campaign_end_date": "first",
-            "mobile_app_install": "first",
-            "source": "first",
-            "button_clicks": "sum",
-            "clicks": "first",
-            "reach": "first",
-            "cost": "first",
-            "cpc": "first",
-            "impressions": "first",
-        }
-    )
-
-    return df_goog
 
 
 @st.cache_data(ttl="1d", show_spinner=False)
