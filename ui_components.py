@@ -276,7 +276,7 @@ def LR_LA_line_chart_over_time(
         grouped_df,
         x=groupby,
         y=option,
-        height=300,
+#        height=300,
         color=color,
         markers=False,
         title=title,
