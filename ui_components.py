@@ -894,3 +894,53 @@ def create_funnels(countries_list, languages,key_prefix,app_versions,displayLR=T
         st.plotly_chart(fig, use_container_width=True)
 
 
+def lr_lrc_bar_chart(df_total_LR_per_month):
+
+    # Create bar chart for Total Learners Reached
+    bar_chart = go.Bar(
+        x=df_total_LR_per_month["month"],
+        y=df_total_LR_per_month["total"],
+        name='Total Learners Reached',
+        marker_color='indianred',
+        text=df_total_LR_per_month["total"],  # Show learners reached value on hover
+        textposition='auto'
+)
+
+    # Create line chart for Average LRC
+    line_chart = go.Scatter(
+        x=df_total_LR_per_month["month"],
+        y=df_total_LR_per_month["LRC"],
+        name='Average LRC',
+        mode='lines+markers+text',
+        yaxis='y2',  # Assign to second y-axis
+        text=[f'${val:.2f}' for val in df_total_LR_per_month["LRC"]],  # Show cost on hover
+        textposition='top center',
+        line=dict(color='blue', width=2)
+    )
+
+    # Combine the two charts into a figure
+    fig = go.Figure()
+
+    # Add bar chart and line chart
+    fig.add_trace(bar_chart)
+    fig.add_trace(line_chart)
+
+# Set up layout
+    fig.update_layout(
+        title='Total LRs and Average LRC',
+        xaxis=dict(title='Month'),
+        yaxis=dict(title='Total Learners Reached', showgrid=False),
+        yaxis2=dict(
+            title='Average LRC',
+            overlaying='y',
+            side='right',
+            showgrid=False,
+            tickprefix='$',  # Add dollar sign for LRC axis
+            range=[0, 1]  # Adjust as needed based on LRC values
+        ),
+        legend=dict(x=0.1, y=1.1, orientation='h'),
+        barmode='group'
+    )
+
+    # Show the figure
+    st.plotly_chart(fig, use_container_width=True)

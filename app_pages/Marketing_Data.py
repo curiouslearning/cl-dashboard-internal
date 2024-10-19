@@ -59,7 +59,6 @@ if len(daterange) == 2 and len(countries_list) > 0:
     )
     col3.metric(label="Readers Acquired", value=prettify(int(total)))
 
-
     total = metrics.get_totals_by_metric(
         daterange, countries_list, "GC",  language=language
     )
@@ -71,9 +70,10 @@ if len(daterange) == 2 and len(countries_list) > 0:
     total = metrics.get_GC_avg(daterange, countries_list, language=language)
     col3.metric(label="Game Completion Avg", value=f"{total:.2f}%")
 
-    df_campaigns = metrics.filter_campaigns(daterange,language,countries_list)
-    cost = df_campaigns["cost"].sum()
-    col1.metric(label="Cost", value=f"${prettify(int(cost))}")
+  #  df_campaigns = metrics.filter_campaigns(daterange,language,countries_list)
+    df_campaigns = st.session_state["df_campaigns_all"]
+  #  cost = df_campaigns["cost"].sum()
+   # col1.metric(label="Cost", value=f"${prettify(int(cost))}")
 
     st.divider()
     st.subheader("Total Spend per Country")
@@ -107,5 +107,8 @@ if len(daterange) == 2 and len(countries_list) > 0:
     ui.paginated_dataframe(df, keys, sort_col="country")
 
 
-    
     st.divider()
+
+    df_total_LR_per_month = metrics.get_totals_per_month(daterange,stat="LR",countries_list=countries_list,language=language)
+    print(df_total_LR_per_month)
+    uic.lr_lrc_bar_chart(df_total_LR_per_month)

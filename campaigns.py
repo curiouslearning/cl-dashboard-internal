@@ -50,7 +50,6 @@ def get_fb_campaign_data():
             "Facebook" as source
         FROM dataexploration-193817.marketing_data.facebook_ads_data as d
         WHERE d.start_time >= '2021-01-01'
-        #        and d.campaign_id in ('120206573803000195')
         ORDER BY d.data_date_start DESC;
         """
     df = bq_client.query(sql_query).to_dataframe()
