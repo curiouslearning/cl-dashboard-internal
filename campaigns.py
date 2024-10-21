@@ -65,7 +65,7 @@ def get_fb_campaign_data():
     ).dt.strftime("%Y/%m/%d")
 
     df["segment_date"] = pd.to_datetime(df["segment_date"])
-    df["segment_date"] = df["segment_date"].values.astype("datetime64[D]")
+#    df["segment_date"] = df["segment_date"].values.astype("datetime64[D]")
 
     return df
 

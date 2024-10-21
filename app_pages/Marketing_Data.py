@@ -30,12 +30,12 @@ countries_list = ui.multi_select_all(
 selected_date, option = ui.calendar_selector()
 daterange = ui.convert_date_to_range(selected_date, option)
 
-#Cost calculations can only be reliable after naming conventions were 
-#implemented in April
-daterange[0] = max(daterange[0], dt.datetime(2024, 4, 1).date())
-
 # In the case of datepicker, don't do anything until both start and end dates are picked
 if len(daterange) == 2 and len(countries_list) > 0:
+
+    #Cost calculations can only be reliable after naming conventions were 
+    #implemented in May
+    daterange[0] = max(daterange[0], dt.datetime(2024, 5, 1).date())
     date_start = daterange[0].strftime("%Y-%m-%d")
     date_end = daterange[1].strftime("%Y-%m-%d")
     st.subheader("General Engagement")
@@ -110,5 +110,5 @@ if len(daterange) == 2 and len(countries_list) > 0:
     st.divider()
 
     df_total_LR_per_month = metrics.get_totals_per_month(daterange,stat="LR",countries_list=countries_list,language=language)
-    print(df_total_LR_per_month)
+
     uic.lr_lrc_bar_chart(df_total_LR_per_month)

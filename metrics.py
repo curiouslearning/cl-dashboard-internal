@@ -432,8 +432,6 @@ def add_level_percents(df):
 
 # Get the campaign data and filter by date, language, and country selections
 def filter_campaigns(daterange,selected_languages,countries_list):
-    print("filter campaigns daterange = ")
-    print(daterange)
 
     df_campaigns_all = st.session_state["df_campaigns_all"]
 
@@ -442,7 +440,7 @@ def filter_campaigns(daterange,selected_languages,countries_list):
     df_campaigns = df_campaigns_all[~condition]
 
     mask = (df_campaigns['segment_date'].dt.date >= daterange[0]) & (df_campaigns['segment_date'].dt.date <= daterange[1])
-
+    df_campaigns = df_campaigns.loc[mask]
     # Apply country filter if not "All"
     if countries_list[0] != "All":
         mask &= df_campaigns['country'].isin(set(countries_list))
@@ -460,6 +458,18 @@ def filter_campaigns(daterange,selected_languages,countries_list):
     col = df_campaigns.pop("app_language")
     df_campaigns.insert(3, col.name, col)
     df_campaigns.reset_index(drop=True, inplace=True)
+
+    return df_campaigns
+
+def filter_campaigns2(df_campaigns,daterange):
+
+
+    # Drop the campaigns that don't meet the naming convention
+    df_campaigns = df_campaigns.query("app_language.notna() & country.notna()")
+    df_campaigns["segment_date"] = pd.to_datetime(df_campaigns["segment_date"]).dt.date
+
+    df_campaigns = df_campaigns.query("@daterange[0] <= segment_date <= @daterange[1]")
+
 
     return df_campaigns
 
@@ -481,7 +491,7 @@ def get_month_ranges(start_date, end_date):
 def get_totals_per_month(daterange,stat,countries_list,language):
 
     #First get all campaign data
-    df_campaigns = st.session_state.df_campaigns_all
+    df_campaigns_all = st.session_state["df_campaigns_all"]
 
     # Get the list of (start_date, end_date) tuples for each month
     month_ranges = get_month_ranges(daterange[0], daterange[1])
@@ -490,21 +500,14 @@ def get_totals_per_month(daterange,stat,countries_list,language):
     totals_by_month = []
 
     # Loop over each month and call the function
-    i = 0
     for start_date, end_date in month_ranges:
+        df_campaigns = df_campaigns_all
         daterange=[start_date, end_date]
         total = get_totals_by_metric(
             daterange=daterange, countries_list=countries_list,stat=stat, language=language
         )
 
-        df_campaigns = filter_campaigns(daterange=daterange,countries_list=countries_list,selected_languages=language
-        )
-        if i == 0:
-            print("start: " + str(start_date) + " end: " + str(end_date))
-            print(daterange)
-            print("Countries = " + str(countries_list))
-            print("languages = " + str(language))
-            df_campaigns.to_csv("df.csv")
+        df_campaigns = filter_campaigns(daterange,language,countries_list)
 
         cost = df_campaigns["cost"].sum()
 
@@ -516,7 +519,6 @@ def get_totals_per_month(daterange,stat,countries_list,language):
             "cost": cost,
             "LRC": lrc
         })
-        i = i + 1
 
     # Convert the results to a DataFrame
     df_totals = pd.DataFrame(totals_by_month)

@@ -65,7 +65,7 @@ def campaign_gantt_chart():
     df1["campaign_start_date"] = pd.to_datetime(df1["campaign_start_date"]).dt.date
 
     # Query the DataFrame
-   # df1 = df1.query("campaign_start_date > @chart_start")
+    df1 = df1.query("campaign_start_date > @chart_start")
 
     # Converting columns to datetime format
     df1["start_date"] = pd.to_datetime(df1["campaign_start_date"])
@@ -894,26 +894,26 @@ def create_funnels(countries_list, languages,key_prefix,app_versions,displayLR=T
         st.plotly_chart(fig, use_container_width=True)
 
 
-def lr_lrc_bar_chart(df_total_LR_per_month):
+def lr_lrc_bar_chart(df_totals_per_month):
 
     # Create bar chart for Total Learners Reached
     bar_chart = go.Bar(
-        x=df_total_LR_per_month["month"],
-        y=df_total_LR_per_month["total"],
+        x=df_totals_per_month["month"],
+        y=df_totals_per_month["total"],
         name='Total Learners Reached',
         marker_color='indianred',
-        text=df_total_LR_per_month["total"],  # Show learners reached value on hover
+        text=df_totals_per_month["total"],  # Show learners reached value on hover
         textposition='auto'
 )
 
     # Create line chart for Average LRC
     line_chart = go.Scatter(
-        x=df_total_LR_per_month["month"],
-        y=df_total_LR_per_month["LRC"],
+        x=df_totals_per_month["month"],
+        y=df_totals_per_month["LRC"],
         name='Average LRC',
         mode='lines+markers+text',
         yaxis='y2',  # Assign to second y-axis
-        text=[f'${val:.2f}' for val in df_total_LR_per_month["LRC"]],  # Show cost on hover
+        text=[f'${val:.2f}' for val in df_totals_per_month["LRC"]],  # Show cost on hover
         textposition='top center',
         line=dict(color='blue', width=2)
     )
