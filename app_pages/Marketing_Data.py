@@ -92,6 +92,11 @@ if len(daterange) == 2 and len(countries_list) > 0:
 
     uic.lrc_scatter_chart(option,display_category,df_campaigns,daterange)
     
+    st.divider()
+    #LR and LRC by month chart
+    df_total_LR_per_month = metrics.get_totals_per_month(daterange,stat="LR",countries_list=countries_list,language=language)
+    uic.lr_lrc_bar_chart(df_total_LR_per_month)
+
     st.divider()    
     col = df_campaigns.pop("country")
     df_campaigns.insert(2, col.name, col)
@@ -107,8 +112,3 @@ if len(daterange) == 2 and len(countries_list) > 0:
     ui.paginated_dataframe(df, keys, sort_col="country")
 
 
-    st.divider()
-
-    df_total_LR_per_month = metrics.get_totals_per_month(daterange,stat="LR",countries_list=countries_list,language=language)
-
-    uic.lr_lrc_bar_chart(df_total_LR_per_month)
