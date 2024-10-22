@@ -67,10 +67,12 @@ def init_campaign_data():
     df_goog_all = campaigns.get_google_campaign_data()
     df_campaigns_all = pd.concat([df_goog_all, df_fb_all])
     df_campaigns_all = campaigns.add_country_and_language(df_campaigns_all)
+    df_campaigns_all = df_campaigns_all.reset_index(drop=True)
 
     df_campaigns = campaigns.rollup_campaign_data(df_campaigns_all)
 
     df_campaigns = campaigns.add_country_and_language(df_campaigns)
+    df_campaigns = df_campaigns_all.reset_index(drop=True)
 
     if "df_campaigns" not in st.session_state:
         st.session_state["df_campaigns"] = df_campaigns

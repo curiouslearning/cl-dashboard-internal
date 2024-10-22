@@ -36,11 +36,12 @@ if len(daterange) == 2 and len(countries_list) > 0:
     #Cost calculations can only be reliable after naming conventions were 
     #implemented in May
     daterange[0] = max(daterange[0], dt.datetime(2024, 5, 1).date())
-    date_start = daterange[0].strftime("%Y-%m-%d")
-    date_end = daterange[1].strftime("%Y-%m-%d")
+    date_start = daterange[0].strftime("%m-%d-%Y")
+    date_end = daterange[1].strftime("%m-%d-%Y")
     st.subheader("General Engagement")
-    st.markdown("**Selected Range:**")
-    st.text(date_start + " to " + date_end)
+    header = (f"**Selected date range:    :green[{date_start} to {date_end}]**" )
+    st.markdown(header)
+
 
     col1, col2, col3 = st.columns(3)
 
@@ -70,18 +71,33 @@ if len(daterange) == 2 and len(countries_list) > 0:
     total = metrics.get_GC_avg(daterange, countries_list, language=language)
     col3.metric(label="Game Completion Avg", value=f"{total:.2f}%")
 
-  #  df_campaigns = metrics.filter_campaigns(daterange,language,countries_list)
-    df_campaigns = st.session_state["df_campaigns_all"]
-  #  cost = df_campaigns["cost"].sum()
-   # col1.metric(label="Cost", value=f"${prettify(int(cost))}")
+    df_campaigns_all = st.session_state["df_campaigns_all"]
 
+    df_campaigns = metrics.filter_campaigns(df_campaigns_all,daterange,language,countries_list)
+
+    cost = df_campaigns["cost"].sum()
+    col1.metric(label="Cost", value=f"${prettify(int(cost))}")
+
+    # LR vs LRC chart
     st.divider()
+
+    st.markdown(header)
+
+    df_total_LR_per_month = metrics.get_totals_per_month(daterange,stat="LR",countries_list=countries_list,language=language)
+
+    uic.lr_lrc_bar_chart(df_total_LR_per_month)
+    st.divider()
+
     st.subheader("Total Spend per Country")
+    st.markdown(header)
+
     source = ui.ads_platform_selector(placement="middle")       
     uic.spend_by_country_map(df_campaigns,source)
     
     st.divider()
     st.subheader("LRC / LAC")
+    st.markdown(header)
+
     c1, c2, c3,c4 = st.columns(4)
     with c1:
         option = st.radio("Select a statistic", ("LRC", "LAC"), index=0, horizontal=True)
@@ -92,7 +108,9 @@ if len(daterange) == 2 and len(countries_list) > 0:
 
     uic.lrc_scatter_chart(option,display_category,df_campaigns,daterange)
     
-    st.divider()    
+    st.divider()   
+    st.markdown(header)
+ 
     col = df_campaigns.pop("country")
     df_campaigns.insert(2, col.name, col)
     df_campaigns.reset_index(drop=True, inplace=True)
@@ -107,8 +125,3 @@ if len(daterange) == 2 and len(countries_list) > 0:
     ui.paginated_dataframe(df, keys, sort_col="country")
 
 
-    st.divider()
-
-    df_total_LR_per_month = metrics.get_totals_per_month(daterange,stat="LR",countries_list=countries_list,language=language)
-
-    uic.lr_lrc_bar_chart(df_total_LR_per_month)

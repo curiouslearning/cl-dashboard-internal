@@ -431,9 +431,7 @@ def add_level_percents(df):
 
 
 # Get the campaign data and filter by date, language, and country selections
-def filter_campaigns(daterange,selected_languages,countries_list):
-
-    df_campaigns_all = st.session_state["df_campaigns_all"]
+def filter_campaigns(df_campaigns_all,daterange,selected_languages,countries_list):
 
     # Drop the campaigns that don't meet the naming convention
     condition = (df_campaigns_all["app_language"].isna()) | (df_campaigns_all["country"].isna())
@@ -442,8 +440,9 @@ def filter_campaigns(daterange,selected_languages,countries_list):
     mask = (df_campaigns['segment_date'].dt.date >= daterange[0]) & (df_campaigns['segment_date'].dt.date <= daterange[1])
     df_campaigns = df_campaigns.loc[mask]
     # Apply country filter if not "All"
+
     if countries_list[0] != "All":
-        mask &= df_campaigns['country'].isin(set(countries_list))
+      mask &= df_campaigns['country'].isin(set(countries_list))
 
     # Apply language filter if not "All" and stat is not "FO"
     if selected_languages[0] != "All" :
@@ -458,18 +457,6 @@ def filter_campaigns(daterange,selected_languages,countries_list):
     col = df_campaigns.pop("app_language")
     df_campaigns.insert(3, col.name, col)
     df_campaigns.reset_index(drop=True, inplace=True)
-
-    return df_campaigns
-
-def filter_campaigns2(df_campaigns,daterange):
-
-
-    # Drop the campaigns that don't meet the naming convention
-    df_campaigns = df_campaigns.query("app_language.notna() & country.notna()")
-    df_campaigns["segment_date"] = pd.to_datetime(df_campaigns["segment_date"]).dt.date
-
-    df_campaigns = df_campaigns.query("@daterange[0] <= segment_date <= @daterange[1]")
-
 
     return df_campaigns
 
@@ -507,11 +494,12 @@ def get_totals_per_month(daterange,stat,countries_list,language):
             daterange=daterange, countries_list=countries_list,stat=stat, language=language
         )
 
-        df_campaigns = filter_campaigns(daterange,language,countries_list)
+        df_campaigns = filter_campaigns(df_campaigns,daterange,language,countries_list)
 
         cost = df_campaigns["cost"].sum()
 
-        lrc = (cost / total).round(2)
+        lrc = (cost / total).round(2) if total != 0 else 0
+
         # Store the total along with the month start
         totals_by_month.append({
             "month": start_date.strftime("%B-%Y"),  # Format the date as 'YYYY-MM' for the month
