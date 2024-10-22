@@ -4,6 +4,9 @@ from rich import print as print
 import campaigns
 import metrics
 
+# Starting 05/01/2024, campaign names were changed to support an indication of 
+# both language and country through a naming convention.  So we are only collecting
+# and reporting on daily campaign segment data from that day forward.
 
 @st.cache_data(show_spinner="Fetching Google Campaign Data", ttl="1d")
 def get_google_campaign_data():
@@ -20,7 +23,7 @@ def get_google_campaign_data():
         FROM dataexploration-193817.marketing_data.p_ads_CampaignStats_6687569935 as metrics
         inner join dataexploration-193817.marketing_data.ads_Campaign_6687569935 as campaigns
         on metrics.campaign_id = campaigns.campaign_id
-        and campaigns.campaign_start_date >= '2021-01-01'
+        and metrics.segments_date >= '2024-05-01'
         group by 1,2,3,4,5,6
     """
 
@@ -49,7 +52,7 @@ def get_fb_campaign_data():
             d.end_time as campaign_end_date,
             "Facebook" as source
         FROM dataexploration-193817.marketing_data.facebook_ads_data as d
-        WHERE d.start_time >= '2021-01-01'
+        WHERE d.data_date_start >= '2024-05-01'
         ORDER BY d.data_date_start DESC;
         """
     df = bq_client.query(sql_query).to_dataframe()
@@ -65,7 +68,6 @@ def get_fb_campaign_data():
     ).dt.strftime("%Y/%m/%d")
 
     df["segment_date"] = pd.to_datetime(df["segment_date"])
-#    df["segment_date"] = df["segment_date"].values.astype("datetime64[D]")
 
     return df
 
@@ -110,25 +112,6 @@ def add_country_and_language(df):
         ),
         None,
     ).str.lower()
-
-    return df
-
-
-@st.cache_data(ttl="1d", show_spinner=False)
-def get_google_campaign_conversions(daterange):
-    bq_client = st.session_state.bq_client
-    sql_query = f"""
-                SELECT campaign_id,
-                metrics_conversions as button_clicks,
-                FROM `dataexploration-193817.marketing_data.ads_CampaignConversionStats_6687569935`
-                where segments_conversion_action_name like '%CTA_Gplay%'
-               AND DATE(segments_date) BETWEEN '{daterange[0].strftime("%Y-%m-%d")}' AND '{daterange[1].strftime("%Y-%m-%d")}' ;
-                
-                """
-
-    df = bq_client.query(sql_query).to_dataframe()
-
-    df["campaign_id"] = df["campaign_id"].astype(str).str.replace(",", "")
 
     return df
 
@@ -241,17 +224,3 @@ def build_campaign_table(df, daterange):
         df.at[idx, "RA_LR %"] = RA_LR
 
     return df
-
-
-# Use only campaigns that have met the naming convention criteria which adds the country and language.
-# Start at beginning of 2024 to remove very old campaigns which may have had : and - in them but weren't 
-# signifying country or language
-def get_name_compliant_campaigns():
-    df_campaigns = st.session_state.df_campaigns
-    reference_date = pd.to_datetime('2023/10/01', format='%Y/%m/%d')
-    df_campaigns['campaign_start_date'] = pd.to_datetime(df_campaigns['campaign_start_date'], format='%Y/%m/%d')
-
-    df_campaigns = df_campaigns[(df_campaigns['country'].notna()) & (df_campaigns['country'] != '') &
-                (df_campaigns['app_language'].notna()) & (df_campaigns['app_language'] != '') & 
-                (df_campaigns['campaign_start_date'] >= reference_date)]
-    return df_campaigns

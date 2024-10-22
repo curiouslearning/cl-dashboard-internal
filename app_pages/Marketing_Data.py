@@ -8,14 +8,25 @@ import ui_widgets as ui
 import users
 import datetime as dt
 import campaigns
+import pandas as pd
 
-ui.display_definitions_table("Data Notes",ui.data_notes)
+data_notes = pd.DataFrame(
+    [
+        [
+            "Campaign segment data",
+            "Starting 05/01/2024, campaign names were changed to support an indication of \
+             both language and country through a naming convention.  So we are only collecting \
+             and reporting on daily campaign segment data from that day forward. "       ],
+
+    ],
+    columns=["Note", "Description"],
+)
+ui.display_definitions_table("Data Notes",data_notes)
 settings.initialize()
 settings.init_user_list()
 settings.init_campaign_data()
 
 ui.colorize_multiselect_options()
-
 
 languages = users.get_language_list()
 language = ui.single_selector(

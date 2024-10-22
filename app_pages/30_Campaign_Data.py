@@ -5,56 +5,49 @@ import campaigns
 import metrics
 import ui_widgets as ui
 import ui_components as uic
+import pandas as pd
 
+data_notes = pd.DataFrame(
+    [
+        [
+            "Campaign segment data",
+            "Starting 05/01/2024, campaign names were changed to support an indication of \
+             both language and country through a naming convention.  So we are only collecting \
+             and reporting on daily campaign segment data from that day forward. "       ],
 
+    ],
+    columns=["Note", "Description"],
+)
 ## UI ##
 settings.initialize()
 settings.init_campaign_data()
-settings.init_user_list()
 
-col1, col2, col3 = st.columns(3)
-with col1:
-    selected_date, option = ui.calendar_selector(placement="middle", key="fh-3", index=0)
-    daterange = ui.convert_date_to_range(selected_date, option)
+ui.display_definitions_table("Campaign Data Notes",data_notes)
 
-# In the case of datepicker, don't do anything until both start and end dates are picked
-if len(daterange) > 1:
+rollup = st.toggle("Rollup daily segments",value=True)
 
-    df_campaigns = metrics.filter_campaigns(daterange=daterange) 
+df_campaigns_all = st.session_state["df_campaigns_all"]
+if rollup:
+    df_campaigns_all = campaigns.rollup_campaign_data(df_campaigns_all)
 
-    col = df_campaigns.pop("country")
-    df_campaigns.insert(2, col.name, col)
-    df_campaigns.reset_index(drop=True, inplace=True)
+st.header("Facebook Ads")
+dff = df_campaigns_all.query("source == 'Facebook'")
 
-    col = df_campaigns.pop("app_language")
-    df_campaigns.insert(3, col.name, col)
-    df_campaigns.reset_index(drop=True, inplace=True)
-
-    st.header("Marketing Performance Table")
-    df = campaigns.build_campaign_table(df_campaigns, daterange)
-    keys = [12, 13, 14, 15, 16]
-    ui.paginated_dataframe(df, keys, sort_col="country")
-
-    st.header("Facebook Ads")
-    dff = df_campaigns.query("source == 'Facebook'")
-
-    if len(dff) > 0:
-        keys = [2, 3, 4, 5, 6]
-        ui.paginated_dataframe(dff, keys, sort_col="campaign_name")
-    else:
-        st.text("No data for selected period")
+if len(dff) > 0:
+    keys = [2, 3, 4, 5, 6]
+    ui.paginated_dataframe(dff, keys, sort_col="campaign_name")
+else:
+    st.text("No data for selected period")
 
 
-    st.header("Google Ads")
-    dfg = df_campaigns.query("source == 'Google'")
+st.header("Google Ads")
+dfg = df_campaigns_all.query("source == 'Google'")
 
-    if len(dfg) > 0:
-        keys = [7, 8, 9, 10, 11]
-        dfg.sort_values(by="button_clicks")
-        ui.paginated_dataframe(dfg, keys, sort_col="campaign_name")
-    else:
-        st.text("No data for selected period")
+if len(dfg) > 0:
+    keys = [7, 8, 9, 10, 11]
+    ui.paginated_dataframe(dfg, keys, sort_col="campaign_name")
+else:
+    st.text("No data for selected period")
 
 st.divider()
 st.subheader("Campaign Timelines")
-uic.campaign_gantt_chart()

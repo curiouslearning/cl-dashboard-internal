@@ -35,7 +35,7 @@ toggle = st.radio(
             ],
             label="Graph option",
             horizontal=True,
-            index=0,
+            index=1,
             key="fsot",
             
         )
