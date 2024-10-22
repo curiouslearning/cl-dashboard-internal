@@ -903,7 +903,9 @@ def lr_lrc_bar_chart(df_totals_per_month):
         name='Total Learners Reached',
         marker_color='indianred',
         text=df_totals_per_month["total"],  # Show learners reached value on hover
-        textposition='auto'
+        textposition='auto',
+        hovertemplate='%{x}:<br>%{y:,}<br>Learners Reached<extra></extra>',  # Hover template formatting
+
 )
 
     # Create line chart for Average LRC
@@ -915,7 +917,12 @@ def lr_lrc_bar_chart(df_totals_per_month):
         yaxis='y2',  # Assign to second y-axis
         text=[f'${val:.2f}' for val in df_totals_per_month["LRC"]],  # Show cost on hover
         textposition='top center',
-        line=dict(color='blue', width=2)
+        textfont=dict(
+        color='black'  # Change text color to blue
+                     ),
+        hovertemplate='<span style="color:green;">%{x}%{x}:<br>$%{y:,}<br>Avg Learners Reached Cost<extra></extra></span>',  # Hover template formatting
+
+        line=dict(color='green', width=2)
     )
 
     # Combine the two charts into a figure

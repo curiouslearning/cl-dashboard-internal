@@ -39,9 +39,8 @@ if len(daterange) == 2 and len(countries_list) > 0:
     date_start = daterange[0].strftime("%m-%d-%Y")
     date_end = daterange[1].strftime("%m-%d-%Y")
     st.subheader("General Engagement")
-    header = (f"**Selected date range :tulip::    :green[{date_start} to {date_end}]**" )
+    header = (f"**Selected date range :calendar::    :green[{date_start} to {date_end}]**" )
     st.markdown(header)
-
 
     col1, col2, col3 = st.columns(3)
 
