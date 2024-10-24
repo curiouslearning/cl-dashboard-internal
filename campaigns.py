@@ -3,74 +3,70 @@ import pandas as pd
 from rich import print as print
 import campaigns
 import metrics
+import asyncio
+from pyinstrument import Profiler
+
 
 # Starting 05/01/2024, campaign names were changed to support an indication of 
 # both language and country through a naming convention.  So we are only collecting
 # and reporting on daily campaign segment data from that day forward.
 
-@st.cache_data(show_spinner="Fetching Google Campaign Data", ttl="1d")
-def get_google_campaign_data():
-    bq_client = st.session_state.bq_client
-    sql_query = f"""
-        SELECT
-        metrics.campaign_id,
-        metrics.segments_date as segment_date,
-        campaigns.campaign_name,
-        metrics_cost_micros as cost,
-        campaigns.campaign_start_date,
-        campaigns.campaign_end_date, 
-        "Google" as source
-        FROM dataexploration-193817.marketing_data.p_ads_CampaignStats_6687569935 as metrics
-        inner join dataexploration-193817.marketing_data.ads_Campaign_6687569935 as campaigns
-        on metrics.campaign_id = campaigns.campaign_id
-        and metrics.segments_date >= '2024-05-01'
-        group by 1,2,3,4,5,6
-    """
+# Combined function to fetch Google and Facebook campaign data concurrently
 
-    df = bq_client.query(sql_query).to_dataframe()
+async def get_campaign_data():
+    p = Profiler(async_mode="disabled")
+    with p:
+        bq_client = st.session_state.bq_client
 
-    df["campaign_id"] = df["campaign_id"].astype(str).str.replace(",", "")
-    df["cost"] = df["cost"].divide(1000000).round(2)
-    df["segment_date"] = pd.to_datetime(df["segment_date"])
-    df["segment_date"] = df["segment_date"].values.astype("datetime64[D]")
+        # Helper function to run BigQuery queries asynchronously
+        async def run_query(query):
+            return await asyncio.to_thread(bq_client.query(query).to_dataframe)
 
-    df = df.convert_dtypes()
-
-    return df
-
-
-@st.cache_data(show_spinner="Fetching Facebook Campaign Data", ttl="1d")
-def get_fb_campaign_data():
-    bq_client = st.session_state.bq_client
-    sql_query = f"""
-        SELECT 
-            d.campaign_id,
-            d.data_date_start as segment_date,
-            d.campaign_name,
-            d.spend as cost,
-            d.start_time as campaign_start_date, 
-            d.end_time as campaign_end_date,
-            "Facebook" as source
-        FROM dataexploration-193817.marketing_data.facebook_ads_data as d
-        WHERE d.data_date_start >= '2024-05-01'
-        ORDER BY d.data_date_start DESC;
+        # Google Ads Query
+        google_ads_query = """
+            SELECT
+                metrics.campaign_id,
+                metrics.segments_date as segment_date,
+                campaigns.campaign_name,
+                metrics_cost_micros as cost,
+                campaigns.campaign_start_date,
+                campaigns.campaign_end_date, 
+                "Google" as source
+            FROM dataexploration-193817.marketing_data.p_ads_CampaignStats_6687569935 as metrics
+            INNER JOIN dataexploration-193817.marketing_data.ads_Campaign_6687569935 as campaigns
+            ON metrics.campaign_id = campaigns.campaign_id
+            AND metrics.segments_date >= '2024-05-01'
+            GROUP BY 1,2,3,4,5,6
         """
-    df = bq_client.query(sql_query).to_dataframe()
 
-    # in case the importer runs more than once on the same day, delete any duplicates
-    df = df.drop_duplicates(subset=["campaign_id", "segment_date"], keep="first")
+        # Facebook Ads Query
+        facebook_ads_query = """
+            SELECT 
+                d.campaign_id,
+                d.data_date_start as segment_date,
+                d.campaign_name,
+                d.spend as cost,
+                d.start_time as campaign_start_date, 
+                d.end_time as campaign_end_date,
+                "Facebook" as source
+            FROM dataexploration-193817.marketing_data.facebook_ads_data as d
+            WHERE d.data_date_start >= '2024-05-01'
+            ORDER BY d.data_date_start DESC;
+        """
 
-    df["campaign_start_date"] = pd.to_datetime(
-        df.campaign_start_date, utc=True
-    ).dt.strftime("%Y/%m/%d")
-    df["campaign_end_date"] = pd.to_datetime(
-        df.campaign_end_date, utc=True
-    ).dt.strftime("%Y/%m/%d")
+        # Run both queries concurrently using asyncio.gather
+        google_ads_data, facebook_ads_data = await asyncio.gather(
+            run_query(google_ads_query),
+            run_query(facebook_ads_query)
+        )
 
-    df["segment_date"] = pd.to_datetime(df["segment_date"])
-
-    return df
-
+        # Process Google Ads Data
+        google_ads_data["campaign_id"] = google_ads_data["campaign_id"].astype(str).str.replace(",", "")
+        google_ads_data["cost"] = google_ads_data["cost"].divide(1000000).round(2)
+  #      google_ads_data["segment_date"] = pd.to_datetime
+        google_ads_data["segment_date"] = pd.to_datetime(google_ads_data["segment_date"])
+    p.print()
+    return google_ads_data, facebook_ads_data
 
 @st.cache_data(ttl="1d", show_spinner=False)
 # Looks for the string following the dash and makes that the associated country.
