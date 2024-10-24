@@ -65,7 +65,7 @@ async def get_campaign_data():
         google_ads_data["cost"] = google_ads_data["cost"].divide(1000000).round(2)
   #      google_ads_data["segment_date"] = pd.to_datetime
         google_ads_data["segment_date"] = pd.to_datetime(google_ads_data["segment_date"])
-    p.print()
+    p.print(color="red")
     return google_ads_data, facebook_ads_data
 
 @st.cache_data(ttl="1d", show_spinner=False)

@@ -88,7 +88,7 @@ async def get_users_list():
         max_level_indices_unity = df_unity_users.groupby('user_pseudo_id')['max_user_level'].idxmax()
         df_unity_users = df_unity_users.loc[max_level_indices_unity].reset_index()
 
-    logging.debug(p.print())
+    p.print(color="red")
     return df_cr_users, df_unity_users, df_cr_first_open, df_cr_app_launch
 
 
