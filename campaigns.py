@@ -6,7 +6,7 @@ import metrics
 import asyncio
 from pyinstrument import Profiler
 
-
+start_date = '2024-05-01'
 # Starting 05/01/2024, campaign names were changed to support an indication of 
 # both language and country through a naming convention.  So we are only collecting
 # and reporting on daily campaign segment data from that day forward.
@@ -23,7 +23,7 @@ async def get_campaign_data():
             return await asyncio.to_thread(bq_client.query(query).to_dataframe)
 
         # Google Ads Query
-        google_ads_query = """
+        google_ads_query = f"""
             SELECT
                 metrics.campaign_id,
                 metrics.segments_date as segment_date,
@@ -35,12 +35,12 @@ async def get_campaign_data():
             FROM dataexploration-193817.marketing_data.p_ads_CampaignStats_6687569935 as metrics
             INNER JOIN dataexploration-193817.marketing_data.ads_Campaign_6687569935 as campaigns
             ON metrics.campaign_id = campaigns.campaign_id
-            AND metrics.segments_date >= '2024-05-01'
-            GROUP BY 1,2,3,4,5,6
+            AND metrics.segments_date >= '{start_date}'
+           GROUP BY 1,2,3,4,5,6
         """
 
         # Facebook Ads Query
-        facebook_ads_query = """
+        facebook_ads_query = f"""
             SELECT 
                 d.campaign_id,
                 d.data_date_start as segment_date,
@@ -50,7 +50,7 @@ async def get_campaign_data():
                 d.end_time as campaign_end_date,
                 "Facebook" as source
             FROM dataexploration-193817.marketing_data.facebook_ads_data as d
-            WHERE d.data_date_start >= '2024-05-01'
+            WHERE d.data_date_start >= '{start_date}'
             ORDER BY d.data_date_start DESC;
         """
 
@@ -146,24 +146,6 @@ def rollup_campaign_data(df):
     # put it all back together
     df = pd.concat([df, combined])
     df = df.drop(columns=["segment_date"])
-
-    return df
-
-
-
-@st.cache_data(ttl="1d", show_spinner=False)
-def get_campaigns_by_date(daterange):
-    df_campaigns_all = st.session_state.df_campaigns_all
-
-    conditions = [
-        f"@daterange[0] <= segment_date <= @daterange[1]",
-    ]
-
-    query = " and ".join(conditions)
-    df = df_campaigns_all.query(query)
-
-    df = campaigns.rollup_campaign_data(df)
-    df = campaigns.add_google_button_clicks(df, daterange)
 
     return df
 
