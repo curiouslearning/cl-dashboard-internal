@@ -891,7 +891,7 @@ def create_funnels(countries_list, languages,key_prefix,app_versions,displayLR=T
             }
 
         fig = create_engagement_figure(funnel_data, key=f"{key_prefix}-5")
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True,key=f"{key_prefix}-6")
 
 
 def lr_lrc_bar_chart(df_totals_per_month):
