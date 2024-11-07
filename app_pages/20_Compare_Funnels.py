@@ -4,7 +4,6 @@ from rich import print as rprint
 from millify import prettify
 import ui_components as uic
 import ui_widgets as ui
-import metrics
 import users
 
 
