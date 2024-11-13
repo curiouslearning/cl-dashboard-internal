@@ -918,7 +918,6 @@ def lr_lrc_bar_chart(df_totals_per_month):
         hovertemplate='%{x}:<br>%{y:,}<br>Learners Reached<extra></extra>',  # Hover template formatting
 
 )
-
     # Create line chart for Average LRC
     line_chart = go.Scatter(
         x=df_totals_per_month["month"],
@@ -954,7 +953,7 @@ def lr_lrc_bar_chart(df_totals_per_month):
             side='right',
             showgrid=False,
             tickprefix='$',  # Add dollar sign for LRC axis
-            range=[0, 1]  # Adjust as needed based on LRC values
+         #   range=[0, 1]  # Adjust as needed based on LRC values
         ),
         legend=dict(x=0.1, y=1.1, orientation='h'),
         barmode='group'

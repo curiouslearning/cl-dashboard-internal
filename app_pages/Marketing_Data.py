@@ -55,10 +55,10 @@ if len(daterange) == 2 and len(countries_list) > 0:
 
     col1, col2, col3 = st.columns(3)
 
-    total = metrics.get_totals_by_metric(
+    LR = metrics.get_totals_by_metric(
         daterange, countries_list, stat="LR", language=language
     )
-    col1.metric(label="Learners Reached", value=prettify(int(total)))
+    col1.metric(label="Learners Reached", value=prettify(int(LR)))
 
     total = metrics.get_totals_by_metric(
         daterange, countries_list, "LA",  language=language
@@ -87,6 +87,8 @@ if len(daterange) == 2 and len(countries_list) > 0:
 
     cost = df_campaigns["cost"].sum()
     col1.metric(label="Cost", value=f"${prettify(int(cost))}")
+
+    col2.metric(label="LRC", value=f"${cost/LR:.2f}")
 
     # LR vs LRC chart
     st.divider()
