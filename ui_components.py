@@ -494,7 +494,6 @@ def funnel_change_line_chart(df, graph_type='sum'):
     df['date'] = df['date'].dt.date
 
     grouped = df.groupby('date').sum().reset_index()
-
     fig = go.Figure()
 
     # Define the columns for sum and percent
@@ -535,20 +534,18 @@ def funnel_change_line_chart(df, graph_type='sum'):
     for i, col in enumerate(columns_to_plot):
         if graph_type == 'Percent remaining':
             # Only assign percent_col and nom_den_col if graph_type is 'Percent remaining'
-            percent_col = percent_columns[i] if i > 0 else None
-            nom_den_col = nom_den_columns[i] if i > 0 else None
-            nom_label, den_label = hover_labels[i] if i > 0 else (None, None)
+            nom_den_col = nom_den_columns[i] 
+            nom_label, den_label = hover_labels[i] 
         else:
             # If graph_type is not 'Percent remaining', don't reference percent_columns and related lists
-            percent_col = None
             nom_den_col = None
             nom_label, den_label = None, None
 
         # Select y values based on graph_type
         y_values = grouped[columns_to_plot[i]]
-        
+
         # Conditional hovertemplate based on graph_type
-        if graph_type == 'Percent remaining' and i > 0:  # Only apply customdata (nom/den) for traces after the first one
+        if graph_type == 'Percent remaining': 
             fig.add_trace(go.Scatter(
                 x=grouped['date'],
                 y=y_values,
@@ -558,6 +555,7 @@ def funnel_change_line_chart(df, graph_type='sum'):
                     f'<b>Date:</b> %{{x}}<br><b>{col}:</b> %{{y:,}}%' +
                     f'<br><b>{nom_label}:</b> %{{customdata[0]:,}}<br><b>{den_label}:</b> %{{customdata[1]:,}}<extra></extra>'
                 ),
+
                 customdata=grouped[nom_den_col]
             ))
         else:
@@ -661,7 +659,7 @@ def funnel_change_by_language_chart(
                 countries_list=countries_list,
                 app="CR",
             )
-            try:
+            try:#
                 percentage = round((bottom_level_value / upper_level_value) * 100, 2)
             except ZeroDivisionError:
                 percentage = 0
@@ -839,10 +837,30 @@ def top_and_bottom_languages_per_level(selection, min_LR):
         st.metric(label=dfRALA["language"].loc[4], value=f"{dfRALA["RA over LA"].loc[0]:.2f}%")
 
 def create_funnels(countries_list, languages,key_prefix,app_versions,displayLR=True):
+    statsA = ["FO", "LR","DC", "TS","SL",  "PC", "LA", "RA" ,"GC",]
+    statsB = ["LR","DC", "TS","SL",  "PC", "LA", "RA" ,"GC",]
+    statsC = ["DC", "TS","SL",  "PC", "LA", "RA" ,"GC",]
+    titlesA = ["First Open",
+            "Learner Reached (app_launch)", "Download Completed", "Tapped Start", 
+            "Selected Level", "Puzzle Completed", "Learners Acquired", "Readers Acquired", "Game Completed"
+        ]
+    titlesB = [
+            "Learner Reached (app_launch)", "Download Completed", "Tapped Start", 
+            "Selected Level", "Puzzle Completed", "Learners Acquired", "Readers Acquired", "Game Completed"
+        ]
+    titlesC = ["Download Completed", "Tapped Start", 
+            "Selected Level", "Puzzle Completed", "Learners Acquired", "Readers Acquired", "Game Completed"
+        ]
 
     language = ui.single_selector(
         languages, placement="col", title="Select a language", key=f"{key_prefix}-2"
     )
+    stats = statsA
+    titles = titlesA
+
+    if language[0]  != 'All':
+        stats = statsB
+        titles = titlesB
 
     selected_country = ui.single_selector(
         countries_list, placement="col", title="Select a country", key=f"{key_prefix}-3"
@@ -857,7 +875,7 @@ def create_funnels(countries_list, languages,key_prefix,app_versions,displayLR=T
         st.caption(start + " to " + end)
 
         metrics_data = {}
-        for stat in ["DC", "SL", "TS", "PC", "LA", "LR", "RA" ,"GC","FO"]:
+        for stat in stats:
             metrics_data[stat] = metrics.get_totals_by_metric(
                 daterange,
                 stat=stat,
@@ -866,28 +884,21 @@ def create_funnels(countries_list, languages,key_prefix,app_versions,displayLR=T
                 countries_list=selected_country,
                 app="CR",
             )
-
-        funnel_titles_all = ["First Open",
-            "Learner Reached (app_launch)", "Download Completed", "Tapped Start", 
-            "Selected Level", "Puzzle Completed", "Learners Acquired", "Readers Acquired", "Game Completed"
-        ]
-        funnel_titles_not_all = [
-            "Download Completed", "Tapped Start", 
-            "Selected Level", "Puzzle Completed", "Learners Acquired", "Readers Acquired","Game Completed"
-        ]
         
         # If a specific app version is selected, we don't have LR data, so this is a way to not show it
         # The reason we don't use app_version directly is because if we are comparing funnels, if one uses it
         # we want the other to exclude that level as well.
         if displayLR:
             funnel_data = {
-                "Title": funnel_titles_all,
-                "Count": [metrics_data[stat] for stat in ["FO","LR", "DC", "TS", "SL", "PC", "LA", "RA","GC"]],
+                "Title": titles,
+                "Count": [metrics_data[stat] for stat in stats]
             }
         else:
+            stats = statsC 
+            titles = titlesC
             funnel_data = {
-                "Title": funnel_titles_not_all,
-                "Count": [metrics_data[stat] for stat in ["DC", "TS", "SL", "PC", "LA", "RA", "GC"]],
+                "Title": titles,
+                "Count": [metrics_data[stat] for stat in stats],
             }
 
         fig = create_engagement_figure(funnel_data, key=f"{key_prefix}-5")
