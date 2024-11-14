@@ -475,9 +475,8 @@ def get_month_ranges(start_date, end_date):
     return month_ranges
 
 #Returns a dataframe of the totals of a stat for each month
-def get_totals_per_month(daterange,stat,countries_list,language):
-
-    #First get all campaign data
+def get_totals_per_month(daterange, stat, countries_list, language):
+    # First, get all campaign data
     df_campaigns_all = st.session_state["df_campaigns_all"]
 
     # Get the list of (start_date, end_date) tuples for each month
@@ -488,21 +487,28 @@ def get_totals_per_month(daterange,stat,countries_list,language):
 
     # Loop over each month and call the function
     for start_date, end_date in month_ranges:
-        df_campaigns = df_campaigns_all
-        daterange=[start_date, end_date]
+        # Create a clipped date range for the current month
+        clipped_start_date = max(start_date, daterange[0])
+        clipped_end_date = min(end_date, daterange[1])
+
+        # Define a new range variable for the clipped range
+        clipped_range = [clipped_start_date, clipped_end_date]
+
+        # Get totals within the clipped date range
         total = get_totals_by_metric(
-            daterange=daterange, countries_list=countries_list,stat=stat, language=language
+            daterange=clipped_range, countries_list=countries_list, stat=stat, language=language
         )
+        
+        # Filter campaigns based on the clipped date range
+        df_campaigns = filter_campaigns(df_campaigns_all, clipped_range, language, countries_list)
 
-        df_campaigns = filter_campaigns(df_campaigns,daterange,language,countries_list)
-
+        # Calculate cost and LRC for the clipped range
         cost = df_campaigns["cost"].sum()
-
         lrc = (cost / total).round(2) if total != 0 else 0
 
         # Store the total along with the month start
         totals_by_month.append({
-            "month": start_date.strftime("%B-%Y"),  # Format the date as 'YYYY-MM' for the month
+            "month": clipped_start_date.strftime("%B-%Y"),  # Format as 'Month-Year' for clarity
             "total": total,
             "cost": cost,
             "LRC": lrc
@@ -513,5 +519,3 @@ def get_totals_per_month(daterange,stat,countries_list,language):
 
     # Display the DataFrame
     return df_totals
-
-
