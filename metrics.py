@@ -5,8 +5,6 @@ import numpy as np
 import datetime as dt
 import users
 
-
-
 default_daterange = [dt.datetime(2021, 1, 1).date(), dt.date.today()]
 
 
@@ -85,6 +83,7 @@ def filter_user_data(
     app="Both",
     language=["All"],
 ):
+
     # Check if necessary dataframes are available
     if not all(key in st.session_state for key in ["df_cr_users", "df_unity_users", "df_cr_first_open", "df_cr_app_launch"]):
         print("PROBLEM!")
@@ -108,6 +107,7 @@ def filter_user_data(
     else:
         df = st.session_state.df_cr_users
 
+
     # Initialize a boolean mask
     mask = (df['first_open'] >= daterange[0]) & (df['first_open'] <= daterange[1])
 
@@ -118,6 +118,9 @@ def filter_user_data(
     # Apply language filter if not "All" and stat is not "FO"
     if language[0] != "All" and stat != "FO":
         mask &= df['app_language'].isin(set(language))
+
+    if cr_app_versions != "All" and  app == "CR" and stat != "FO" and stat != "LR":
+        mask &= df["app_version"].isin(cr_app_versions)
 
     # Apply stat-specific filters
     if stat == "LA":
