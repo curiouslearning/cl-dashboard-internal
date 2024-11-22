@@ -772,69 +772,38 @@ def top_and_bottom_languages_per_level(selection, min_LR):
         .head(10)
         .loc[:, ["RA over LA", "language"]]
     ).reset_index(drop=True)
+    dfGCRA = (
+        df.sort_values(by="GC over RA", ascending=ascending)
+        .head(10)
+        .loc[:, ["GC over RA", "language"]]
+    ).reset_index(drop=True)
 
-    st.markdown(
-        """
-    <style>
-    [data-testid="stMetricValue"] {
-        font-size: 16px;
-    }
-    </style>
-    """,
-        unsafe_allow_html=True,
-    )
+    
+    df_table = pd.DataFrame(columns=["Event", "First", "Second", "Third", "Fourth", "Fifth"])
 
-    col0, col1, col2, col3, col4, col5, = st.columns(6)
+    # List of dataframes and corresponding row labels
+    dataframes = [
+        ("Download Completed", dfDCLR, "DC over LR"),
+        ("Tapped Start", dfTSDC, "TS over DC"),
+        ("Selected Level", dfSLTS, "SL over TS"),
+        ("Puzzle Completed", dfPCSL, "PC over SL"),
+        ("Learner Acquired", dfLAPC, "LA over PC"),
+        ("Reader Acquired", dfRALA, "RA over LA"),
+        ("Game Completed", dfGCRA, "GC over RA"),
+    ]
 
-    with col0:
-        st.caption("Download Completed")
-        st.caption("")
-        st.caption("Tapped Start")
-        st.caption("")
-        st.caption("Selected Level")
-        st.caption("")
-        st.caption("Puzzle Completed")
-        st.caption("")
-        st.caption("Learner Acquired")
-        st.caption("")
-        st.caption("Reader Acquired")
-        st.caption("")
-        st.caption("Game Completed")
-    with col1:
-        st.metric(label=dfDCLR["language"].loc[0], value=f"{dfDCLR["DC over LR"].loc[0]:.2f}%")
-        st.metric(label=dfTSDC["language"].loc[0], value=f"{dfTSDC["TS over DC"].loc[0]:.2f}%")
-        st.metric(label=dfSLTS["language"].loc[0], value=f"{dfSLTS["SL over TS"].loc[0]:.2f}%")
-        st.metric(label=dfPCSL["language"].loc[0], value=f"{dfPCSL["PC over SL"].loc[0]:.2f}%")
-        st.metric(label=dfLAPC["language"].loc[0], value=f"{dfLAPC["LA over PC"].loc[0]:.2f}%")
-        st.metric(label=dfRALA["language"].loc[0], value=f"{dfRALA["RA over LA"].loc[0]:.2f}%")
-    with col2:
-        st.metric(label=dfDCLR["language"].loc[1], value=f"{dfDCLR["DC over LR"].loc[1]:.2f}%")
-        st.metric(label=dfTSDC["language"].loc[1], value=f"{dfTSDC["TS over DC"].loc[1]:.2f}%")
-        st.metric(label=dfSLTS["language"].loc[1], value=f"{dfSLTS["SL over TS"].loc[1]:.2f}%")
-        st.metric(label=dfPCSL["language"].loc[1], value=f"{dfPCSL["PC over SL"].loc[1]:.2f}%")
-        st.metric(label=dfLAPC["language"].loc[1], value=f"{dfLAPC["LA over PC"].loc[1]:.2f}%")
-        st.metric(label=dfRALA["language"].loc[1], value=f"{dfRALA["RA over LA"].loc[0]:.2f}%")
-    with col3:
-        st.metric(label=dfDCLR["language"].loc[2], value=f"{dfDCLR["DC over LR"].loc[2]:.2f}%")
-        st.metric(label=dfTSDC["language"].loc[2], value=f"{dfTSDC["TS over DC"].loc[2]:.2f}%")
-        st.metric(label=dfSLTS["language"].loc[2], value=f"{dfSLTS["SL over TS"].loc[2]:.2f}%")
-        st.metric(label=dfPCSL["language"].loc[2], value=f"{dfPCSL["PC over SL"].loc[2]:.2f}%")
-        st.metric(label=dfLAPC["language"].loc[2], value=f"{dfLAPC["LA over PC"].loc[2]:.2f}%")
-        st.metric(label=dfRALA["language"].loc[2], value=f"{dfRALA["RA over LA"].loc[0]:.2f}%")
-    with col4:
-        st.metric(label=dfDCLR["language"].loc[3], value=f"{dfDCLR["DC over LR"].loc[3]:.2f}%")
-        st.metric(label=dfTSDC["language"].loc[3], value=f"{dfTSDC["TS over DC"].loc[3]:.2f}%")
-        st.metric(label=dfSLTS["language"].loc[3], value=f"{dfSLTS["SL over TS"].loc[3]:.2f}%")
-        st.metric(label=dfPCSL["language"].loc[3], value=f"{dfPCSL["PC over SL"].loc[3]:.2f}%")
-        st.metric(label=dfLAPC["language"].loc[3], value=f"{dfLAPC["LA over PC"].loc[3]:.2f}%")
-        st.metric(label=dfRALA["language"].loc[3], value=f"{dfRALA["RA over LA"].loc[0]:.2f}%")
-    with col5:
-        st.metric(label=dfDCLR["language"].loc[4], value=f"{dfDCLR["DC over LR"].loc[4]:.2f}%")
-        st.metric(label=dfTSDC["language"].loc[4], value=f"{dfTSDC["TS over DC"].loc[4]:.2f}%")
-        st.metric(label=dfSLTS["language"].loc[4], value=f"{dfSLTS["SL over TS"].loc[4]:.2f}%")
-        st.metric(label=dfPCSL["language"].loc[4], value=f"{dfPCSL["PC over SL"].loc[4]:.2f}%")
-        st.metric(label=dfLAPC["language"].loc[4], value=f"{dfLAPC["LA over PC"].loc[4]:.2f}%")
-        st.metric(label=dfRALA["language"].loc[4], value=f"{dfRALA["RA over LA"].loc[0]:.2f}%")
+    # Generate rows dynamically
+    for label, df, column in dataframes:
+        row = [label] + [
+            f"{df['language'].loc[i]}, {df[column].loc[i]:.2f}%" for i in range(5)
+        ]
+        df_row = pd.DataFrame([row], columns=df_table.columns)  # Ensure columns match
+        df_table = pd.concat([df_table, df_row], ignore_index=True)  # Ignore index to prevent conflicts
+
+    # Display the dataframe in Streamlit without index
+    st.dataframe(df_table)
+
+
 
 def create_funnels(countries_list, languages,key_prefix,app_versions,displayLR=True):
     statsA = ["FO", "LR","DC", "TS","SL",  "PC", "LA", "RA" ,"GC",]
