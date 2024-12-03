@@ -150,25 +150,27 @@ def month_selector(placement="side", key=""):
 
 
 def slider_callback():
-    # Update session state when the slider value changes
-    st.session_state.slider_date = st.session_state.slider_value
+    # Ensure the session state reflects the slider value
+    left_value, right_value = st.session_state.slider_value
 
+    # Validate and correct if the right value exceeds max_date
+    if right_value > st.session_state.max_date:
+        st.session_state.slider_date = (left_value, st.session_state.max_date)
+        st.session_state.slider_value = st.session_state.slider_date  # Update slider_value to reflect change
+        st.info ("You can't select a date inside the buffer zone. Resetting to end of buffer zone.", icon="⚠️")
+    else:
+        st.session_state.slider_date = (left_value, right_value)
 
 def custom_date_selection_slider(min_date, max_date, placement="side"):
     today = dt.date.today()
 
-    # Initialize session state if not present
+    # Initialize session state for slider and max_date
     if "slider_date" not in st.session_state:
         st.session_state.slider_date = (min_date, max_date)
+    if "max_date" not in st.session_state:
+        st.session_state.max_date = max_date
 
-    # Correct session state if the right-hand value exceeds max_date
-    left_value, right_value = st.session_state.slider_date
-    if right_value > max_date:
-        st.write("End date exceeds max. Resetting to max.")
-        print(st.session_state.max_date_selected)
-        st.session_state.slider_date = st.session_state.max_date_selected
-
-    # Render the slider
+    # Render the slider widget
     if placement == "side":
         st.sidebar.slider(
             label="Select Range:",
@@ -189,8 +191,6 @@ def custom_date_selection_slider(min_date, max_date, placement="side"):
         )
 
     return list(st.session_state.slider_date)
-
-
 
 def custom_date_selection(placement="side", key=""):
     min_date = dt.datetime.now().date() - dt.timedelta(30)
