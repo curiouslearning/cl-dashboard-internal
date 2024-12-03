@@ -3,7 +3,6 @@ import pandas as pd
 import datetime as dt
 from rich import print
 from dateutil.relativedelta import relativedelta
-import users
 import calendar
 import re
 from streamlit_option_menu import option_menu
@@ -150,17 +149,47 @@ def month_selector(placement="side", key=""):
     return report_month, report_year
 
 
-def custom_date_selection_slider():
+def slider_callback():
+    # Update session state when the slider value changes
+    st.session_state.slider_date = st.session_state.slider_value
 
-    today = dt.datetime.now().date()
-    last_year = dt.date(today.year, 1, 1) - relativedelta(years=1)
 
-    date_range = st.sidebar.slider(
-        label="Select Range:",
-        min_value=dt.date(2021, 1, 1),
-        value=(last_year, today),
-        max_value=today,
-    )
+def custom_date_selection_slider(min_date, max_date, placement="side"):
+    today = dt.date.today()
+
+    # Initialize session state if not present
+    if "slider_date" not in st.session_state:
+        st.session_state.slider_date = (min_date, max_date)
+
+    # Correct session state if the right-hand value exceeds max_date
+    left_value, right_value = st.session_state.slider_date
+    if right_value > max_date:
+        st.write("End date exceeds max. Resetting to max.")
+        print(st.session_state.max_date_selected)
+        st.session_state.slider_date = st.session_state.max_date_selected
+
+    # Render the slider
+    if placement == "side":
+        st.sidebar.slider(
+            label="Select Range:",
+            min_value=dt.date(2023, 10, 1),
+            max_value=today,
+            value=st.session_state.slider_date,  # Use session state for initialization
+            key="slider_value",  # Separate key for the slider widget
+            on_change=slider_callback,  # Callback to sync state
+        )
+    else:
+        st.slider(
+            label="Select Range:",
+            min_value=dt.date(2023, 10, 1),
+            max_value=today,
+            value=st.session_state.slider_date,  # Use session state for initialization
+            key="slider_value",  # Separate key for the slider widget
+            on_change=slider_callback,  # Callback to sync state
+        )
+
+    return list(st.session_state.slider_date)
+
 
 
 def custom_date_selection(placement="side", key=""):
