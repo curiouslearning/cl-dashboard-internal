@@ -3,3 +3,6 @@ primaryColor="#F88E90"
 backgroundColor="#f2f9f1"
 secondaryBackgroundColor="#ddeedf"
 textColor="#5c715e"
+
+[global]
+disableWidgetStateDuplicationWarning = true
