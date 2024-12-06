@@ -10,7 +10,7 @@ import ui_widgets as ui
 import plost
 import users
 import campaigns
-import numpy as np
+
 
 default_daterange = [dt.datetime(2021, 1, 1).date(), dt.date.today()]
 
@@ -804,8 +804,17 @@ def top_and_bottom_languages_per_level(selection, min_LR):
     st.dataframe(df_table)
 
 
-
-def create_funnels(countries_list, languages,key_prefix,app_versions,displayLR=True):
+#Added user_list which is a list of cr_user_id to filter with
+@st.cache_data(ttl="1d", show_spinner="Building funnel")
+def create_funnels(countries_list,
+                   daterange,
+                   languages,
+                   key_prefix,
+                   app_versions,
+                   displayLR=True,
+                   user_list=[],
+                   display_FO=True):
+    
     statsA = ["FO", "LR","DC", "TS","SL",  "PC", "LA", "RA" ,"GC",]
     statsB = ["LR","DC", "TS","SL",  "PC", "LA", "RA" ,"GC",]
     statsC = ["DC", "TS","SL",  "PC", "LA", "RA" ,"GC",]
@@ -821,22 +830,14 @@ def create_funnels(countries_list, languages,key_prefix,app_versions,displayLR=T
             "Selected Level", "Puzzle Completed", "Learners Acquired", "Readers Acquired", "Game Completed"
         ]
 
-    language = ui.single_selector(
-        languages, placement="col", title="Select a language", key=f"{key_prefix}-2"
-    )
+
     stats = statsA
     titles = titlesA
 
-    if language[0]  != 'All':
+    if languages[0]  != 'All' or display_FO == False:
         stats = statsB
         titles = titlesB
 
-    selected_country = ui.single_selector(
-        countries_list, placement="col", title="Select a country", key=f"{key_prefix}-3"
-    )
-
-    selected_date, option = ui.calendar_selector(placement="col", key=f"{key_prefix}-4")
-    daterange = ui.convert_date_to_range(selected_date, option)
 
     if len(daterange) == 2:
         start = daterange[0].strftime("%b %d, %Y")
@@ -849,9 +850,10 @@ def create_funnels(countries_list, languages,key_prefix,app_versions,displayLR=T
                 daterange,
                 stat=stat,
                 cr_app_versions=app_versions,
-                language=language,
-                countries_list=selected_country,
+                language=languages,
+                countries_list=countries_list,
                 app="CR",
+                user_list=user_list
             )
         
         # If a specific app version is selected, we don't have LR data, so this is a way to not show it

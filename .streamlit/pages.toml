@@ -39,6 +39,11 @@ icon = ":large_brown_circle:"
 is_section = true
 
 [[pages]]
+path = "app_pages/Date_Cohort.py"
+name = "Funnel by Date Cohort"
+icon = ":small_orange_diamond:"
+
+[[pages]]
 path = "app_pages/Funnel_Change.py"
 name = "Funnel Change by Language"
 icon = ":small_orange_diamond:"

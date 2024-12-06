@@ -15,6 +15,7 @@ def get_totals_by_metric(
     cr_app_versions="All",
     app="Both",
     language="All",
+    user_list=[] #New parameter allowing a filter of results by cr_user_id list
 ):
 
     # if no list passed in then get the full list
@@ -22,7 +23,7 @@ def get_totals_by_metric(
         countries_list = users.get_country_list()
 
     df_user_list = filter_user_data(
-        daterange, countries_list, stat, cr_app_versions, app=app, language=language
+        daterange, countries_list, stat, cr_app_versions, app=app, language=language,user_list=user_list
     )
 
     if stat not in ["DC", "TS", "SL", "PC", "LA"]:
@@ -72,9 +73,8 @@ def get_totals_by_metric(
             return level_completed_count
 
 
-# Takes the complete user lists and filters based on input data, and returns
+# Takes the complete user lists (cr_user_id) and filters based on input data, and returns
 # a new filtered dataset
-
 def filter_user_data(
     daterange=default_daterange,
     countries_list=["All"],
@@ -82,6 +82,7 @@ def filter_user_data(
     cr_app_versions="All",
     app="Both",
     language=["All"],
+    user_list=[]
 ):
 
     # Check if necessary dataframes are available
@@ -136,6 +137,9 @@ def filter_user_data(
     # Filter the dataframe with the combined mask
     df = df.loc[mask]
 
+    #If user list subset was passed in, filter on that as well
+    if (len (user_list) > 0):
+        df = df[df["cr_user_id"].isin(user_list)]
     return df
 
 
@@ -245,14 +249,16 @@ def get_counts(
     counts = counts.merge(gca, on=type, how="left").round(2).fillna(0)
     return counts
 
-
+#Added new parameter user_list.  If passed, only return the funnel based on that set of users
 @st.cache_data(ttl="1d", show_spinner=False)
 def build_funnel_dataframe(
     index_col="language",
     daterange=default_daterange,
     languages=["All"],
     countries_list=["All"],
+    user_list=[]
 ):
+    print(user_list)
     df = pd.DataFrame(columns=[index_col, "LR", "DC", "TS", "SL", "PC", "RA", "LA"])
     if index_col == "start_date":
         weeks = weeks_since(daterange)
@@ -277,6 +283,7 @@ def build_funnel_dataframe(
             language=language,
             countries_list=countries_list,
             app="CR",
+            user_list=user_list
         )
         SL = get_totals_by_metric(
             daterange,
@@ -284,14 +291,16 @@ def build_funnel_dataframe(
             language=language,
             countries_list=countries_list,
             app="CR",
-        )
+            user_list=user_list
+         )
         TS = get_totals_by_metric(
             daterange,
             stat="TS",
             language=language,
             countries_list=countries_list,
             app="CR",
-        )
+            user_list=user_list
+         )
 
         PC = get_totals_by_metric(
             daterange,
@@ -299,6 +308,7 @@ def build_funnel_dataframe(
             language=language,
             countries_list=countries_list,
             app="CR",
+            user_list=user_list
         )
         LA = get_totals_by_metric(
             daterange,
@@ -306,13 +316,15 @@ def build_funnel_dataframe(
             language=language,
             countries_list=countries_list,
             app="CR",
-        )
+            user_list=user_list
+         )
         LR = get_totals_by_metric(
             daterange,
             stat="LR",
             language=language,
             countries_list=countries_list,
             app="CR",
+            user_list=user_list
         )        
         RA = get_totals_by_metric(
             daterange,
@@ -320,14 +332,16 @@ def build_funnel_dataframe(
             language=language,
             countries_list=countries_list,
             app="CR",
-        )
+            user_list=user_list
+         )
         GC = get_totals_by_metric(
             daterange,
             stat="GC",
             language=language,
             countries_list=countries_list,
             app="CR",
-        )
+            user_list=user_list
+         )
 
         entry = {
             "LR": LR,
@@ -348,7 +362,7 @@ def build_funnel_dataframe(
         results.append(entry)
 
     df = pd.DataFrame(results)
-
+    df
     return df
 
 def add_level_percents(df):

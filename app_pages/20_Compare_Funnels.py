@@ -19,14 +19,37 @@ countries_list = users.get_country_list()
 col1, col2 = st.columns(2)
 with col1:
     app_versionsA = ui.app_version_selector(placement="col", key="cf-1")
+    languageA = ui.single_selector(
+        languages, placement="col", title="Select a language", key="cf-2"
+    )   
+    countries_listA = ui.multi_select_all(
+        countries_list,
+        title="Country Selection",
+        key="cf-7",
+        placement="middle",
+    )
+    selected_date, option = ui.calendar_selector(placement="col", key="crf-4")
+    daterangeA = ui.convert_date_to_range(selected_date, option)
+    
 with col2:  
-    app_versionsB = ui.app_version_selector(placement="col", key="cf-2")
+    app_versionsB = ui.app_version_selector(placement="col", key="cf-5")
+    languageB = ui.single_selector(
+        languages, placement="col", title="Select a language", key="cf-6"
+    )  
+    countries_listB = ui.multi_select_all(
+        countries_list,
+        title="Country Selection",
+        key="cf-8",
+        placement="middle",
+    ) 
+    selected_date, option = ui.calendar_selector(placement="col", key="crf-9")
+    daterangeB = ui.convert_date_to_range(selected_date, option)
 
 # if either of the funnels uses app_version, eliminate LR for both
 displayLR = True
 if app_versionsA != 'All' or app_versionsB != 'All':
     displayLR = False
 with col1:
-    uic.create_funnels(countries_list,languages,"cf-A",app_versionsA,displayLR)
+    uic.create_funnels(daterange=daterangeA,countries_list=countries_listA,languages=languageA,key_prefix="cf-10",app_versions=app_versionsA,displayLR=displayLR)
 with col2:  
-    uic.create_funnels(countries_list,languages,"cf-B",app_versionsB,displayLR)
+    uic.create_funnels(daterange=daterangeB,countries_list=countries_listB,languages=languageB,key_prefix="cf-11",app_versions=app_versionsB,displayLR=displayLR)
