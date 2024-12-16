@@ -9,8 +9,8 @@ name = "Unity vs Curious Reader Funnel"
 icon = ":small_orange_diamond:"
 
 [[pages]]
-path = "app_pages/CR_Funnel.py"
-name = "Curious Reader Funnel"
+path = "app_pages/Date_Cohort.py"
+name = "Curious Reader Funnel - Date Cohort"
 icon = ":small_orange_diamond:"
 
 [[pages]]
@@ -37,11 +37,6 @@ icon = ":small_orange_diamond:"
 name = "Funnel Analysis"
 icon = ":large_brown_circle:"
 is_section = true
-
-[[pages]]
-path = "app_pages/Date_Cohort.py"
-name = "Funnel by Date Cohort"
-icon = ":small_orange_diamond:"
 
 [[pages]]
 path = "app_pages/Funnel_Change.py"
