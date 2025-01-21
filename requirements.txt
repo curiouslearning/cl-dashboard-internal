@@ -13,3 +13,5 @@ streamlit_option_menu
 pyinstrument
 db-dtypes
 st-pages
+BeautifulSoup4
+pathlib
