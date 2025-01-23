@@ -30,13 +30,12 @@ async def get_campaign_data():
                 campaigns.campaign_name,
                 metrics_cost_micros as cost,
                 campaigns.campaign_start_date,
-                campaigns.campaign_end_date, 
                 "Google" as source
             FROM dataexploration-193817.marketing_data.p_ads_CampaignStats_6687569935 as metrics
             INNER JOIN dataexploration-193817.marketing_data.ads_Campaign_6687569935 as campaigns
             ON metrics.campaign_id = campaigns.campaign_id
             AND metrics.segments_date >= '{start_date}'
-           GROUP BY 1,2,3,4,5,6
+           GROUP BY 1,2,3,4,5
         """
 
         # Facebook Ads Query
@@ -47,7 +46,6 @@ async def get_campaign_data():
                 d.campaign_name,
                 d.spend as cost,
                 d.start_time as campaign_start_date, 
-                d.end_time as campaign_end_date,
                 "Facebook" as source
             FROM dataexploration-193817.marketing_data.facebook_ads_data as d
             WHERE d.data_date_start >= '{start_date}'

@@ -69,7 +69,6 @@ def campaign_gantt_chart():
 
     # Converting columns to datetime format
     df1["start_date"] = pd.to_datetime(df1["campaign_start_date"])
-    df1["end_date"] = pd.to_datetime(df1["campaign_end_date"])
 
     # Remove rows where 'end_date' is greater than one year from today (likely invalid campaign)
     today = dt.datetime.now()
@@ -345,15 +344,15 @@ def lrc_scatter_chart(option,display_category,df_campaigns,daterange):
         st.write("No data for selected period")
 
 
-@st.cache_data(ttl="1d", show_spinner=False)
+#@st.cache_data(ttl="1d", show_spinner=False)
 def spend_by_country_map(df_campaigns,source):
-    
+
     if source == 'Both':
         df_campaigns = df_campaigns.groupby("country", as_index=False)["cost"].sum().round(2)
     else:
         df_campaigns = df_campaigns[df_campaigns["source"] == source]
         df_campaigns = df_campaigns.groupby("country", as_index=False)["cost"].sum().round(2)
-    
+
 
     total_cost = df_campaigns["cost"].sum().round(2)
     value = "$" + prettify(total_cost)

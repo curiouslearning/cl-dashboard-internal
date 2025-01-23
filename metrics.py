@@ -258,7 +258,7 @@ def build_funnel_dataframe(
     countries_list=["All"],
     user_list=[]
 ):
-    print(user_list)
+
     df = pd.DataFrame(columns=[index_col, "LR", "DC", "TS", "SL", "PC", "RA", "LA"])
     if index_col == "start_date":
         weeks = weeks_since(daterange)

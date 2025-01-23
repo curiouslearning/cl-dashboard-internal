@@ -88,52 +88,53 @@ if len(daterange) == 2 and len(countries_list) > 0:
     cost = df_campaigns["cost"].sum()
     col1.metric(label="Cost", value=f"${prettify(int(cost))}")
 
-    col2.metric(label="LRC", value=f"${cost/LR:.2f}")
-
+    col2.metric(label="LRC", value=f"${cost/LR:.2f}" if LR != 0 else "N/A")
     # LR vs LRC chart
     st.divider()
 
     st.markdown(header)
 
     df_total_LR_per_month = metrics.get_totals_per_month(daterange,stat="LR",countries_list=countries_list,language=language)
-
-    uic.lr_lrc_bar_chart(df_total_LR_per_month)
+    if len(df_total_LR_per_month) > 0:
+        uic.lr_lrc_bar_chart(df_total_LR_per_month)
     st.divider()
 
     st.subheader("Total Spend per Country")
     st.markdown(header)
 
-    source = ui.ads_platform_selector(placement="middle")       
-    uic.spend_by_country_map(df_campaigns,source)
+    source = ui.ads_platform_selector(placement="middle")     
+    if (len(df_campaigns) > 0):
+        uic.spend_by_country_map(df_campaigns,source)
     
-    st.divider()
-    st.subheader("LRC / LAC")
-    st.markdown(header)
+        st.divider()
+        st.subheader("LRC / LAC")
+        st.markdown(header)
 
-    c1, c2, c3,c4 = st.columns(4)
-    with c1:
-        option = st.radio("Select a statistic", ("LRC", "LAC"), index=0, horizontal=True)
-    with c2:
-        display_category = st.radio(
-            "Display by", ("Country", "Language"), index=0, horizontal=True, key="e-4"
-        )
+        c1, c2, c3,c4 = st.columns(4)
+        with c1:
+            option = st.radio("Select a statistic", ("LRC", "LAC"), index=0, horizontal=True)
+        with c2:
+            display_category = st.radio(
+                "Display by", ("Country", "Language"), index=0, horizontal=True, key="e-4"
+            )
 
-    uic.lrc_scatter_chart(option,display_category,df_campaigns,daterange)
+
+            uic.lrc_scatter_chart(option,display_category,df_campaigns,daterange)
+        
+        st.divider()   
+        st.markdown(header)
     
-    st.divider()   
-    st.markdown(header)
- 
-    col = df_campaigns.pop("country")
-    df_campaigns.insert(2, col.name, col)
-    df_campaigns.reset_index(drop=True, inplace=True)
+        col = df_campaigns.pop("country")
+        df_campaigns.insert(2, col.name, col)
+        df_campaigns.reset_index(drop=True, inplace=True)
 
-    col = df_campaigns.pop("app_language")
-    df_campaigns.insert(3, col.name, col)
-    df_campaigns.reset_index(drop=True, inplace=True)
+        col = df_campaigns.pop("app_language")
+        df_campaigns.insert(3, col.name, col)
+        df_campaigns.reset_index(drop=True, inplace=True)
 
-    st.subheader("Marketing metrics table")
-    df = campaigns.build_campaign_table(df_campaigns, daterange)
-    keys = [12, 13, 14, 15, 16]
-    ui.paginated_dataframe(df, keys, sort_col="country")
+        st.subheader("Marketing metrics table")
+        df = campaigns.build_campaign_table(df_campaigns, daterange)
+        keys = [12, 13, 14, 15, 16]
+        ui.paginated_dataframe(df, keys, sort_col="country")
 
 
