@@ -55,23 +55,44 @@ with col1:
             df, placement="middle", title="Select languages", key="fa-1"
         )
 
-if (
-    len(selected_languages) == 0 or len(selected_languages) > 40
-):  # 40 is an arbitrary choice
-    st.markdown(
+tab1, tab2, = st.tabs(["Funnel % by language", "Funnel bar chart totals"])
+with tab1:
+    if (
+        len(selected_languages) == 0 
+    ):  # 40 is an arbitrary choice
+        st.markdown(
+            """
+        :red[Please select one or more languages.  ]
         """
-    :red[Please select one or more languages.  "All" is not an acceptable selection for this chart.]
-    """
-    )
-else:
-    start = daterange[0].strftime("%b %d, %Y")
-    end = daterange[1].strftime("%b %d, %Y")
-    st.write("Timerange: " + start + " to " + end)
-    with st.spinner("Calculating..."):
-        uic.top_tilted_funnel(
-            languages=selected_languages,
-            countries_list=countries_list,
-            daterange=daterange,
-            option="LR",
         )
+    else:
+        start = daterange[0].strftime("%b %d, %Y")
+        end = daterange[1].strftime("%b %d, %Y")
+        st.write("Timerange: " + start + " to " + end)
+        with st.spinner("Calculating..."):
+            uic.funnel_line_chart_percent(
+                languages=selected_languages,
+                countries_list=countries_list,
+                daterange=daterange
+            )
+
+with tab2:
+    if (
+        len(selected_languages) == 0 or len(selected_languages) > 40
+    ):  # 40 is an arbitrary choice
+        st.markdown(
+            """
+        :red[Please select one or more languages.  "All" is not an acceptable selection for this chart.]
+        """
+        )
+    else:
+        start = daterange[0].strftime("%b %d, %Y")
+        end = daterange[1].strftime("%b %d, %Y")
+        st.write("Timerange: " + start + " to " + end)
+        with st.spinner("Calculating..."):
+            uic.funnel_bar_chart(
+                languages=selected_languages,
+                countries_list=countries_list,
+                daterange=daterange
+            )
 

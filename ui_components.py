@@ -6,7 +6,6 @@ import plotly.express as px
 import plotly.graph_objects as go
 import metrics
 from millify import prettify
-import ui_widgets as ui
 import plost
 import users
 import campaigns
@@ -694,7 +693,7 @@ def funnel_change_by_language_chart(
     st.plotly_chart(fig, use_container_width=True)
 
 @st.cache_data(ttl="1d", show_spinner=False)
-def top_tilted_funnel(languages, countries_list, daterange, option):
+def funnel_bar_chart(languages, countries_list, daterange):
 
     df = metrics.build_funnel_dataframe(
         index_col="language",
@@ -703,10 +702,12 @@ def top_tilted_funnel(languages, countries_list, daterange, option):
         countries_list=countries_list,
     )
 
+    # Bar chart
     fig = go.Figure()
-
     # Adding each metric as a bar
     levels = ["LR", "DC", "TS", "PC", "LA", "RA","GC"]
+    
+    # Adding each metric as a bar
     for level in levels:
         fig.add_trace(go.Bar(x=df["language"], y=df[level], name=level))
 
@@ -718,12 +719,55 @@ def top_tilted_funnel(languages, countries_list, daterange, option):
         yaxis_title="Total",
         legend_title="Levels",
         template="plotly_white",
+        yaxis=dict(tickformat=",d"),  # Format Y-axis for better readability
+
         title_text=title,
         #    margin=dict(l=10, r=1, b=0, t=10, pad=4),
         geo=dict(bgcolor="rgba(0,0,0,0)"),
     )
-
+    
     st.plotly_chart(fig, use_container_width=True)
+    
+
+@st.cache_data(ttl="1d", show_spinner=False)
+def funnel_line_chart_percent(languages, countries_list, daterange):
+
+    df = metrics.build_funnel_dataframe(
+        index_col="language",
+        daterange=daterange,
+        languages=languages,
+        countries_list=countries_list,
+    )
+    df_percent = df.copy()
+    columns_to_normalize = df.columns[:-1]  # Exclude 'language' column
+
+    df_percent[columns_to_normalize] = df_percent[columns_to_normalize].div(df["LR"], axis=0) * 100
+
+    levels = ["LR", "DC", "TS", "PC", "LA", "RA","GC"]
+
+    #Line chart by percent
+    fig = go.Figure()
+    
+    # Add a trace for each language
+    for _, row in df_percent.iterrows():
+        fig.add_trace(go.Scatter(
+         x=levels,
+         y=row[:-1],  # Exclude the 'language' column
+         mode='lines+markers',
+         name=row["language"]
+     ))
+
+# Update layout
+    fig.update_layout(
+        title="Percentage of LR by Language",
+        xaxis_title="Levels",
+        yaxis_title="Percentage of LR (%)",
+        yaxis=dict(tickformat=".2f"),  # Format Y-axis for better readability
+        template="plotly_white"
+    )
+    
+    st.plotly_chart(fig, use_container_width=True)
+
 
 @st.cache_data(ttl="1d", show_spinner=False)
 def top_and_bottom_languages_per_level(selection, min_LR):
