@@ -730,39 +730,56 @@ def funnel_bar_chart(languages, countries_list, daterange):
     
 
 @st.cache_data(ttl="1d", show_spinner=False)
-def funnel_line_chart_percent(languages, countries_list, daterange):
+def funnel_line_chart_percent(languages, countries_list, daterange,user_cohort_list):
 
     df = metrics.build_funnel_dataframe(
         index_col="language",
         daterange=daterange,
         languages=languages,
         countries_list=countries_list,
+        user_list=user_cohort_list
     )
+
     df_percent = df.copy()
     columns_to_normalize = df.columns[:-1]  # Exclude 'language' column
-
     df_percent[columns_to_normalize] = df_percent[columns_to_normalize].div(df["LR"], axis=0) * 100
-
-    levels = ["LR", "DC", "TS", "PC", "LA", "RA","GC"]
-
-    #Line chart by percent
-    fig = go.Figure()
     
-    # Add a trace for each language
-    for _, row in df_percent.iterrows():
-        fig.add_trace(go.Scatter(
-         x=levels,
-         y=row[:-1],  # Exclude the 'language' column
-         mode='lines+markers',
-         name=row["language"]
-     ))
+    levels = ["LR", "DC", "TS", "SL", "PC", "LA", "RA", "GC"]
 
-# Update layout
+    fig = go.Figure()
+
+    for idx, row in df_percent.iterrows():
+        language = row["language"]
+        percent_values = row[:-1]  # Exclude 'language'
+        numerator_values = df.loc[idx, levels]
+        denominator_value = df.loc[idx, "LR"]
+        
+        # Prepare custom data (level, numerator, denominator, language)
+        custom_data = [
+            [level, num, denominator_value, language] 
+            for level, num in zip(levels, numerator_values)
+        ]
+        
+        fig.add_trace(go.Scatter(
+            x=levels,
+            y=percent_values,
+            mode='lines+markers',
+            name=language,
+            customdata=custom_data,
+            hovertemplate=(
+                "Language: %{customdata[3]}<br>" +          # Language
+                "Level: %{x}<br>" +                         # Level
+                "Percentage: %{y:.2f}%<br>" +               # Percentage
+                "%{customdata[0]}: %{customdata[1]}<br>" +  # Dynamic Numerator Label
+                "LR: %{customdata[2]}<extra></extra>"  # Denominator
+            )
+        ))
+
     fig.update_layout(
         title="Percentage of LR by Language",
         xaxis_title="Levels",
         yaxis_title="Percentage of LR (%)",
-        yaxis=dict(tickformat=".2f"),  # Format Y-axis for better readability
+        yaxis=dict(tickformat=".2f"),
         template="plotly_white"
     )
     

@@ -250,7 +250,7 @@ def get_counts(
     return counts
 
 #Added new parameter user_list.  If passed, only return the funnel based on that set of users
-@st.cache_data(ttl="1d", show_spinner=False)
+
 def build_funnel_dataframe(
     index_col="language",
     daterange=default_daterange,

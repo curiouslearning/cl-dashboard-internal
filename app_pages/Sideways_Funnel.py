@@ -6,6 +6,8 @@ import ui_components as uic
 import ui_widgets as ui
 import users
 import metrics
+from dateutil.relativedelta import relativedelta
+import datetime as dt
 
 settings.initialize()
 settings.init_user_list()
@@ -20,6 +22,23 @@ st.markdown(
     It compares the selected level % drop from the selected upper level.]
     """
 )
+
+# Callback function for radio button
+def radio_callback():
+    st.session_state["buffer_time"] = st.session_state["radio_selection"]
+    if "slider_date" in st.session_state:
+        del st.session_state["slider_date"]
+    if "max_date" in st.session_state:
+        del st.session_state["max_date"]
+        
+# Initialize buffer_time in session state if not already set
+if "buffer_time" not in st.session_state:
+    st.session_state["buffer_time"] = 30  # Default selection
+
+# Ensure the radio button is rendered only once
+if "radio_selection" not in st.session_state:
+    st.session_state["radio_selection"] = st.session_state["buffer_time"]
+
 col1, col2, col3 = st.columns(3)
 
 df_languages = metrics.get_counts(
@@ -33,7 +52,7 @@ df_top10 = (
 )
 
 countries_list = users.get_country_list()
-with col2:
+with col1:
     country = ui.single_selector(
         countries_list,
         placement="middle",
@@ -42,24 +61,51 @@ with col2:
     )
 
 with col3:
-    selected_date, option = ui.calendar_selector(placement="middle", key="fa-3", index=4)
-    daterange = ui.convert_date_to_range(selected_date, option)
+    buffer_time = st.radio(
+        label="Days",
+        options=[15, 30, 60, 90],
+        horizontal=True,
+        index=[15, 30, 60, 90].index(st.session_state["radio_selection"]),
+        key="radio_selection",
+        on_change=radio_callback
+    )
+    
+with col3:
 
-with col1:
-    upper_level, bottom_level = ui.level_comparison_selector(placement="middle")
+
+    # Date calculation logic
+    today = dt.datetime.now().date()
+    if "slider_date" not in st.session_state:
+        max_date = today - relativedelta(days=st.session_state["buffer_time"])
+        min_date = dt.date(2023, 10, 1)
+        st.session_state.max_date = max_date
+    else:
+        min_date, max_date = st.session_state.slider_date
+
+    # Render the slider
+    selected_date = ui.custom_date_selection_slider(min_date, max_date, placement="middle")
+    daterange = ui.convert_date_to_range(selected_date, option="")
+
+with col2:
+    st.write("Language selection")
     if st.toggle(label="Use Top 10 LR Languages", value=True):
         selected_languages = df_top10["app_language"].to_list()
     else:
         df = users.get_language_list()
         selected_languages = ui.multi_select_all(
             df, placement="middle", title="Select languages", key="fa-1"
-        )
+        )   
 
-tab1, tab2, = st.tabs(["Funnel % by language", "Funnel bar chart totals"])
-with tab1:
-    if (
-        len(selected_languages) == 0 
-    ):  # 40 is an arbitrary choice
+    if (len(selected_languages) > 0):     
+        df_user_cohort = metrics.filter_user_data(daterange=daterange,countries_list=countries_list,app="CR",language=selected_languages,stat="LR")
+
+        # All we need is their cr_user_id
+        user_cohort_list = df_user_cohort["cr_user_id"]
+
+        # Get superset of  the users up through today
+        daterange = [daterange[0],today]
+
+    if (len(selected_languages) == 0 ):  # 40 is an arbitrary choice
         st.markdown(
             """
         :red[Please select one or more languages.  ]
@@ -68,15 +114,22 @@ with tab1:
     else:
         start = daterange[0].strftime("%b %d, %Y")
         end = daterange[1].strftime("%b %d, %Y")
-        st.write("Timerange: " + start + " to " + end)
+  
+st.write("Timerange: " + start + " to " + end)  
+tab1, tab2, = st.tabs(["Funnel % by language", "Funnel bar chart totals"])
+with tab1:
+
+
         with st.spinner("Calculating..."):
             uic.funnel_line_chart_percent(
                 languages=selected_languages,
                 countries_list=countries_list,
-                daterange=daterange
+                daterange=daterange,
+                user_cohort_list=user_cohort_list
             )
 
 with tab2:
+    
     if (
         len(selected_languages) == 0 or len(selected_languages) > 40
     ):  # 40 is an arbitrary choice
