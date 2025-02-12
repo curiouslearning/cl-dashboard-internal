@@ -49,5 +49,3 @@ if len(dfg) > 0:
 else:
     st.text("No data for selected period")
 
-st.divider()
-st.subheader("Campaign Timelines")

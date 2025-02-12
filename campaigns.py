@@ -116,7 +116,6 @@ def rollup_campaign_data(df):
     aggregation = {
         "segment_date": "last",
         "campaign_start_date": "first",
-        "campaign_end_date": "first",
         "source": "first",
         "cost": "sum",
     }
