@@ -114,8 +114,8 @@ with col2:
     else:
         start = daterange[0].strftime("%b %d, %Y")
         end = daterange[1].strftime("%b %d, %Y")
-  
-st.write("Timerange: " + start + " to " + end)  
+        st.write("Timerange: " + start + " to " + end)  
+        
 tab1, tab2, = st.tabs(["Funnel % by language", "Funnel bar chart totals"])
 with tab1:
 

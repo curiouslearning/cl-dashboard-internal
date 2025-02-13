@@ -705,7 +705,7 @@ def funnel_bar_chart(languages, countries_list, daterange):
     # Bar chart
     fig = go.Figure()
     # Adding each metric as a bar
-    levels = ["LR", "DC", "TS", "PC", "LA", "RA","GC"]
+    levels = ["LR", "DC", "TS" ,"SL","PC", "LA", "RA","GC"]
     
     # Adding each metric as a bar
     for level in levels:

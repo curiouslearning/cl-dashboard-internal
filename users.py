@@ -80,18 +80,15 @@ async def get_users_list():
         df_unity_users["app_language"] = df_unity_users["app_language"].replace(
             "malgache", "malagasy"
         )
-
-        # Process max levels for cr_users and unity_users
-        max_level_indices_cr = df_cr_users.groupby('user_pseudo_id')['max_user_level'].idxmax()
-        df_cr_users = df_cr_users.loc[max_level_indices_cr].reset_index()
+        print (f"Before clean: df_cr_app_launch = {len(df_cr_app_launch)}, df_cr_users =  {len(df_cr_users)}" )
+        df_cr_app_launch,df_cr_users = clean_users_to_single_language(df_cr_app_launch,df_cr_users)
+        print (f"After clean: df_cr_app_launch = {len(df_cr_app_launch)}, df_cr_users =  {len(df_cr_users)}" )
 
         max_level_indices_unity = df_unity_users.groupby('user_pseudo_id')['max_user_level'].idxmax()
         df_unity_users = df_unity_users.loc[max_level_indices_unity].reset_index()
 
     p.print(color="red")
     return df_cr_users, df_unity_users, df_cr_first_open, df_cr_app_launch
-
-
 
 
 @st.cache_data(ttl="1d", show_spinner=False)
@@ -188,3 +185,73 @@ def get_funnel_snapshots(daterange,languages):
     df['date'] = pd.to_datetime(df['date'], errors='coerce')
 
     return df
+
+# Users who play multiple languages or have multiple countries are consolidated
+# to a single entry based on which combination took them the furthest in the game.
+# If its a tie, will take the first entry.
+
+import pandas as pd
+
+def clean_users_to_single_language(df_app_launch, df_funnel):
+    print(f"Before clean: df_cr_app_launch = {df_app_launch.shape[0]}, df_cr_users = {df_funnel.shape[0]}")
+
+    # ✅ Step 1: Identify duplicate cr_user_id values
+    duplicate_user_ids = df_app_launch[df_app_launch.duplicated(subset='cr_user_id', keep=False)]
+    
+    # ✅ Step 2: Remove duplicates from df_app_launch while keeping the first occurrence
+    print("Before duplicate removal:", df_app_launch.shape)
+    df_app_launch = df_app_launch.drop_duplicates(subset="cr_user_id", keep="first")
+    print("After duplicate removal:", df_app_launch.shape)
+
+    # ✅ Step 3: Get unique cr_user_id values with duplicates
+    unique_duplicate_ids = duplicate_user_ids['cr_user_id'].unique().tolist()
+
+    # ✅ Step 4: Define event ranking
+    event_order = ["download_completed", "tapped_start", "selected_level", "puzzle_completed", "level_completed"]
+    event_rank = {event: rank for rank, event in enumerate(event_order)}
+
+    # ✅ Step 5: Ensure "furthest_event" has no missing values before mapping
+    df_funnel["furthest_event"] = df_funnel["furthest_event"].fillna("unknown")
+
+    # ✅ Step 6: Map event to numeric rank
+    df_funnel["event_rank"] = df_funnel["furthest_event"].map(event_rank)
+
+    # ✅ Step 7: Flag whether event is "level_completed"
+    df_funnel["is_level_completed"] = df_funnel["furthest_event"] == "level_completed"
+
+    # ✅ Step 8: Optimized selection of best progress per user
+    # Get max level for users who completed a level
+    level_completed_users = df_funnel[df_funnel["is_level_completed"]]
+    max_level_idx = level_completed_users.groupby("cr_user_id")["max_user_level"].idxmax()
+
+    # Get max event rank for users who haven't completed a level
+    other_users = df_funnel[~df_funnel["is_level_completed"]]
+    max_event_idx = other_users.groupby("cr_user_id")["event_rank"].idxmax()
+
+    # ✅ Step 9: Merge both selections and remove NaN indices
+    best_progress_idx = pd.concat([max_level_idx, max_event_idx]).dropna().astype(int)
+
+    # ✅ Step 10: Filter df_funnel for only the best progress rows
+    df_funnel = df_funnel.loc[best_progress_idx]
+
+    # ✅ Step 11: Remove duplicate cr_user_id values from df_funnel
+    df_funnel = df_funnel.drop_duplicates(subset="cr_user_id", keep="first")
+
+    # ✅ Step 12: Retrieve corresponding user/language/country row for each user in unique_duplicate_ids
+    users_to_add_back = duplicate_user_ids[duplicate_user_ids["cr_user_id"].isin(unique_duplicate_ids)]
+
+    # ✅ Step 13: Add these rows back into df_app_launch
+    df_app_launch = pd.concat([df_app_launch, users_to_add_back])
+
+    # ✅ Step 14: Final duplicate removal (to ensure no reintroductions)
+    df_app_launch = df_app_launch.drop_duplicates(subset="cr_user_id", keep="first")
+
+    # ✅ Step 15: Debugging - Check for remaining duplicates
+    print("Duplicate cr_user_id count in df_funnel:", df_funnel["cr_user_id"].duplicated().sum())
+    print("Duplicate cr_user_id count in df_app_launch:", df_app_launch["cr_user_id"].duplicated().sum())
+
+    print(f"After clean: df_cr_app_launch = {df_app_launch.shape[0]}, df_cr_users = {df_funnel.shape[0]}")
+
+    return df_app_launch, df_funnel
+
+
