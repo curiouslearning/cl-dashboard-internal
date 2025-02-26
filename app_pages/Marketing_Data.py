@@ -119,7 +119,7 @@ if len(daterange) == 2 and len(countries_list) > 0:
             )
 
 
-            uic.lrc_scatter_chart(option,display_category,df_campaigns,daterange)
+        uic.lrc_scatter_chart(option,display_category,df_campaigns,daterange)
         
         st.divider()   
         st.markdown(header)
