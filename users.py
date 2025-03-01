@@ -44,6 +44,7 @@ async def get_users_list():
             FROM `dataexploration-193817.user_data.cr_user_progress`
             WHERE first_open BETWEEN PARSE_DATE('%Y/%m/%d','{start_date}') AND CURRENT_DATE()
         """
+
         sql_cr_app_launch = f"""
             SELECT *
             FROM `dataexploration-193817.user_data.cr_app_launch`
@@ -81,12 +82,20 @@ async def get_users_list():
             "malgache", "malagasy"
         )
         
+        #small test dataset
+       # df_cr_app_launch = df_cr_app_launch[df_cr_app_launch["app_language"].isin(["tsonga", "afrikaans"])]
+       # df_cr_users = df_cr_users[df_cr_users["app_language"].isin(["tsonga", "afrikaans"])]
+
         missing_users = df_cr_users[~df_cr_users["cr_user_id"].isin(df_cr_app_launch["cr_user_id"])]
-        print(f"Users in df_funnel but missing from df_app_launch: {missing_users['cr_user_id'].nunique()}")
-        missing_users.to_csv("missing.csv")
-        print (f"Before clean: df_cr_app_launch = {len(df_cr_app_launch)}, df_cr_users =  {len(df_cr_users)}" )
+
+        # Remove missing users from df_cr_users - NOTE: Same users with multiple country combinations
+        # will still be in df_cr_app_launch 
+        df_cr_users = df_cr_users[~df_cr_users["cr_user_id"].isin(missing_users["cr_user_id"])]
+
+        print (f"3. Before clean: df_cr_app_launch = {len(df_cr_app_launch)}, df_cr_users =  {len(df_cr_users)}" )
         df_cr_app_launch,df_cr_users = clean_users_to_single_language(df_cr_app_launch,df_cr_users)
-        print (f"After clean: df_cr_app_launch = {len(df_cr_app_launch)}, df_cr_users =  {len(df_cr_users)}" )
+        print (f"5. After clean: df_cr_app_launch = {len(df_cr_app_launch)}, df_cr_users =  {len(df_cr_users)}" )
+
 
         max_level_indices_unity = df_unity_users.groupby('user_pseudo_id')['max_user_level'].idxmax()
         df_unity_users = df_unity_users.loc[max_level_indices_unity].reset_index()
@@ -197,78 +206,92 @@ def get_funnel_snapshots(daterange,languages):
 # to a single entry based on which combination took them the furthest in the game.
 # If its a tie, will take the first entry.
 
-def clean_users_to_single_language(df_app_launch, df_funnel):
-    
-    # ✅ Step 1: Filter to only 'tsonga' or 'afrikaans'
-    df_app_launch = df_app_launch[df_app_launch["app_language"].isin(["tsonga", "afrikaans"])]
-    df_funnel = df_funnel[df_funnel["app_language"].isin(["tsonga", "afrikaans"])]
-    
-    missing_users = df_funnel[~df_funnel["cr_user_id"].isin(df_app_launch["cr_user_id"])]
-    print(f"Users in df_funnel but missing from df_app_launch: {missing_users['cr_user_id'].nunique()}")
 
-    
-    
-    print(f"Before clean: df_cr_app_launch = {df_app_launch.shape[0]}, df_cr_users = {df_funnel.shape[0]}")
+def clean_users_to_single_language(df_app_launch, df_cr_users):
+ #   df_app_launch = df_app_launch[df_app_launch["app_language"].isin(["tsonga", "afrikaans"])]
+ #   df_cr_users = df_cr_users[df_cr_users["app_language"].isin(["tsonga", "afrikaans"])]
 
-    # ✅ Step 2: Identify and remove all duplicates from df_app_launch, but SAVE them
+    # ✅ Step 1: Identify and remove all duplicates from df_app_launch, but SAVE them
     duplicate_user_ids = df_app_launch[df_app_launch.duplicated(subset='cr_user_id', keep=False)]
-    
-    print("Before duplicate removal:", df_app_launch.shape)
+    duplicate_user_ids.to_csv("duplicates.csv", index=False)
+
     df_app_launch = df_app_launch[~df_app_launch["cr_user_id"].isin(duplicate_user_ids["cr_user_id"])]
     print("After duplicate removal:", df_app_launch.shape)
 
-    # ✅ Step 3: Get list of users that had duplicates
+    # ✅ Step 2: Get list of users that had duplicates
     unique_duplicate_ids = duplicate_user_ids['cr_user_id'].unique().tolist()
 
-    # ✅ Step 4: Define event ranking
+    # ✅ Step 3: Define event ranking
     event_order = ["download_completed", "tapped_start", "selected_level", "puzzle_completed", "level_completed"]
     event_rank = {event: rank for rank, event in enumerate(event_order)}
 
-    # ✅ Step 5: Ensure "furthest_event" has no missing values
-    df_funnel["furthest_event"] = df_funnel["furthest_event"].fillna("unknown")
+    # ✅ Step 4: Ensure "furthest_event" has no missing values
+    df_cr_users["furthest_event"] = df_cr_users["furthest_event"].fillna("unknown")
 
-    # ✅ Step 6: Map event to numeric rank
-    df_funnel["event_rank"] = df_funnel["furthest_event"].map(event_rank)
+    # ✅ Step 5: Map event to numeric rank
+    df_cr_users["event_rank"] = df_cr_users["furthest_event"].map(event_rank)
 
-    # ✅ Step 7: Flag whether event is "level_completed"
-    df_funnel["is_level_completed"] = df_funnel["furthest_event"] == "level_completed"
+    # ✅ Step 6: Flag whether event is "level_completed"
+    df_cr_users["is_level_completed"] = df_cr_users["furthest_event"] == "level_completed"
 
-    # ✅ Step 8: Find the best progress per user
-    level_completed_users = df_funnel[df_funnel["is_level_completed"]]
-    max_level_idx = level_completed_users.groupby("cr_user_id")["max_user_level"].idxmax()
+    # ✅ Step 7: Ensure a single row per user across country & language
+    df_cr_users = df_cr_users.sort_values(["cr_user_id", "is_level_completed", "max_user_level", "event_rank"], 
+                                          ascending=[True, False, False, False])
 
-    other_users = df_funnel[~df_funnel["is_level_completed"]]
-    max_event_idx = other_users.groupby("cr_user_id")["event_rank"].idxmax()
+    df_cr_users = df_cr_users.drop_duplicates(subset=["cr_user_id"], keep="first")  # ✅ Keep only best progress row
 
-    # ✅ Step 9: Merge both selections and clean NaN indices
-    best_progress_idx = pd.concat([max_level_idx, max_event_idx]).dropna().astype(int)
+    # ✅ Step 8: Ensure every user in df_cr_users has a matching row in df_app_launch
+    users_to_update = df_cr_users[["cr_user_id", "app_language", "country"]].merge(
+        df_app_launch[["cr_user_id", "app_language", "country"]],
+        on="cr_user_id",
+        how="left",
+        suffixes=("_cr", "_app")
+    )
 
-    # ✅ Step 10: Keep only the best row per user in df_funnel
-    df_funnel = df_funnel.loc[best_progress_idx]
-
-    # ✅ Step 11: Remove duplicate cr_user_id values from df_funnel
-    df_funnel = df_funnel.drop_duplicates(subset="cr_user_id", keep="first")
-
-    # ✅ Step 12: Add back the correct user rows in df_app_launch
-    users_to_add_back = duplicate_user_ids[duplicate_user_ids["cr_user_id"].isin(unique_duplicate_ids)]
+    # ✅ Find users where the `app_language` in df_app_launch does not match the selected best `app_language` from df_cr_users
+    language_mismatch = users_to_update[users_to_update["app_language_cr"] != users_to_update["app_language_app"]]
     
+    if not language_mismatch.empty:
+        print("Users with language mismatch found:", language_mismatch)
+
+        # ✅ Update df_app_launch to reflect the correct `app_language` from df_cr_users
+        df_app_launch.loc[df_app_launch["cr_user_id"].isin(language_mismatch["cr_user_id"]), "app_language"] = \
+            df_app_launch["cr_user_id"].map(df_cr_users.set_index("cr_user_id")["app_language"])
+
+    # ✅ Step 9: Ensure all users with duplicates exist in df_cr_users
+    missing_users = set(unique_duplicate_ids) - set(df_cr_users["cr_user_id"])
+    print("Missing users in df_cr_users:", missing_users)
+
+    # ✅ Step 10: Add back the correct user rows in df_app_launch, ensuring **matching language & country**
+    users_to_add_back = duplicate_user_ids.merge(
+        df_cr_users[["cr_user_id", "app_language", "country"]],
+        on=["cr_user_id", "app_language", "country"],
+        how="left"  
+    )
+
+    # ✅ Step 11: Drop NaN values to ensure only valid rows are added back
+    users_to_add_back = users_to_add_back.dropna(subset=["app_language"])
+
+    # ✅ Step 12: If any users are still missing, add a fallback row for them
+    fallback_users = duplicate_user_ids[duplicate_user_ids["cr_user_id"].isin(missing_users)]
+    fallback_users = fallback_users.drop_duplicates(subset="cr_user_id", keep="first")
+
+    # Append the fallback users
+    users_to_add_back = pd.concat([users_to_add_back, fallback_users])
+
+    # ✅ Step 13: Deduplicate to ensure only one row per cr_user_id is added back
+    users_to_add_back = users_to_add_back.drop_duplicates(subset="cr_user_id", keep="first")
+    users_to_add_back.to_csv("users_to_add_back.csv", index=False)  
+
+    # ✅ Step 14: Restore users into df_app_launch
     df_app_launch = pd.concat([df_app_launch, users_to_add_back])
 
-    # ✅ Step 13: Ensure df_app_launch has only unique cr_user_id
+    # ✅ Step 15: Ensure df_app_launch has only unique cr_user_id
+    print("Unique users in df_app_launch before final deduplication:", df_app_launch["cr_user_id"].nunique())
     df_app_launch = df_app_launch.drop_duplicates(subset="cr_user_id", keep="first")
+    print("Unique users in df_app_launch after final deduplication:", df_app_launch["cr_user_id"].nunique())
 
-    # ✅ Step 14: Final debugging checks
-    df_app_launch = df_app_launch[df_app_launch["app_language"].isin(["tsonga"])]
-    df_funnel = df_funnel[df_funnel["app_language"].isin(["tsonga"])]
-    print("Duplicate cr_user_id count in df_funnel:", df_funnel["cr_user_id"].duplicated().sum())
-    print("Duplicate cr_user_id count in df_app_launch:", df_app_launch["cr_user_id"].duplicated().sum())
+    print(f"Final count: df_app_launch = {df_app_launch.shape[0]}, df_cr_users = {df_cr_users.shape[0]}")
 
-    print(f"After clean: df_cr_app_launch = {df_app_launch.shape[0]}, df_cr_users = {df_funnel.shape[0]}")
-    
-
-    df_app_launch.to_csv("app_launch.csv")
-    df_app_launch.to_csv("df_cr_users.csv")
-    return df_app_launch, df_funnel
-
-
+    return df_app_launch, df_cr_users
 

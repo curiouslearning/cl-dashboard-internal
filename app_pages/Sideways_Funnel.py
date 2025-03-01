@@ -123,7 +123,7 @@ with tab1:
         with st.spinner("Calculating..."):
             uic.funnel_line_chart_percent(
                 languages=selected_languages,
-                countries_list=countries_list,
+                countries_list=country,
                 daterange=daterange,
                 user_cohort_list=user_cohort_list
             )
@@ -145,7 +145,7 @@ with tab2:
         with st.spinner("Calculating..."):
             uic.funnel_bar_chart(
                 languages=selected_languages,
-                countries_list=countries_list,
+                countries_list=country,
                 daterange=daterange
             )
 
