@@ -187,9 +187,9 @@ def build_campaign_table(df, daterange):
             else:
                 RA = result
         try:
-            LA_LR = round(LA / LR, 2) * 100
-            PC_LR = round(PC / LR, 2) * 100
-            RA_LR = round(RA / LR, 2) * 100
+            LA_LR = round((LA / LR) * 100,2)
+            PC_LR = round((PC / LR) * 100, 2)
+            RA_LR = round((RA / LR) * 100,2)
         except ZeroDivisionError:
             LA_LR = 0
             PC_LR = 0
