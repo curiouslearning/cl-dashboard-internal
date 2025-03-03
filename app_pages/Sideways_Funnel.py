@@ -114,8 +114,8 @@ with col2:
     else:
         start = daterange[0].strftime("%b %d, %Y")
         end = daterange[1].strftime("%b %d, %Y")
-  
-st.write("Timerange: " + start + " to " + end)  
+        st.write("Timerange: " + start + " to " + end)  
+        
 tab1, tab2, = st.tabs(["Funnel % by language", "Funnel bar chart totals"])
 with tab1:
 
@@ -123,7 +123,7 @@ with tab1:
         with st.spinner("Calculating..."):
             uic.funnel_line_chart_percent(
                 languages=selected_languages,
-                countries_list=countries_list,
+                countries_list=country,
                 daterange=daterange,
                 user_cohort_list=user_cohort_list
             )
@@ -145,7 +145,7 @@ with tab2:
         with st.spinner("Calculating..."):
             uic.funnel_bar_chart(
                 languages=selected_languages,
-                countries_list=countries_list,
+                countries_list=country,
                 daterange=daterange
             )
 
