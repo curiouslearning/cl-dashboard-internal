@@ -81,21 +81,16 @@ async def get_users_list():
         df_unity_users["app_language"] = df_unity_users["app_language"].replace(
             "malgache", "malagasy"
         )
-        
-        #small test dataset
-       # df_cr_app_launch = df_cr_app_launch[df_cr_app_launch["app_language"].isin(["tsonga", "afrikaans"])]
-       # df_cr_users = df_cr_users[df_cr_users["app_language"].isin(["tsonga", "afrikaans"])]
 
+        # We have an unknown anomalie where users from FTM do not show up in the CR events.  We 
+        # need to remove them so we have a true funnel.
         missing_users = df_cr_users[~df_cr_users["cr_user_id"].isin(df_cr_app_launch["cr_user_id"])]
 
         # Remove missing users from df_cr_users - NOTE: Same users with multiple country combinations
         # will still be in df_cr_app_launch 
         df_cr_users = df_cr_users[~df_cr_users["cr_user_id"].isin(missing_users["cr_user_id"])]
 
-        print (f"3. Before clean: df_cr_app_launch = {len(df_cr_app_launch)}, df_cr_users =  {len(df_cr_users)}" )
         df_cr_app_launch,df_cr_users = clean_users_to_single_language(df_cr_app_launch,df_cr_users)
-        print (f"5. After clean: df_cr_app_launch = {len(df_cr_app_launch)}, df_cr_users =  {len(df_cr_users)}" )
-
 
         max_level_indices_unity = df_unity_users.groupby('user_pseudo_id')['max_user_level'].idxmax()
         df_unity_users = df_unity_users.loc[max_level_indices_unity].reset_index()
