@@ -9,7 +9,7 @@ name = "Unity vs Curious Reader Funnel"
 icon = ":small_orange_diamond:"
 
 [[pages]]
-path = "app_pages/Date_Cohort.py"
+path = "app_pages/CR_Funnel.py"
 name = "Curious Reader Funnel"
 icon = ":small_orange_diamond:"
 
