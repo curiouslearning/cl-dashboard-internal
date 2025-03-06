@@ -872,16 +872,10 @@ def create_funnels(countries_list,
                    key_prefix,
                    app_versions,
                    displayLR=True,
-                   user_list=[],
-                   display_FO=True):
+                   user_list=[]):
     
-    statsA = ["FO", "LR","DC", "TS","SL",  "PC", "LA", "RA" ,"GC",]
     statsB = ["LR","DC", "TS","SL",  "PC", "LA", "RA" ,"GC",]
     statsC = ["DC", "TS","SL",  "PC", "LA", "RA" ,"GC",]
-    titlesA = ["First Open",
-            "Learner Reached (app_launch)", "Download Completed", "Tapped Start", 
-            "Selected Level", "Puzzle Completed", "Learners Acquired", "Readers Acquired", "Game Completed"
-        ]
     titlesB = [
             "Learner Reached (app_launch)", "Download Completed", "Tapped Start", 
             "Selected Level", "Puzzle Completed", "Learners Acquired", "Readers Acquired", "Game Completed"
@@ -891,13 +885,8 @@ def create_funnels(countries_list,
         ]
 
 
-    stats = statsA
-    titles = titlesA
-
-    if languages[0]  != 'All' or display_FO == False:
-        stats = statsB
-        titles = titlesB
-
+    stats = statsB
+    titles = titlesB
 
     if len(daterange) == 2:
         start = daterange[0].strftime("%b %d, %Y")

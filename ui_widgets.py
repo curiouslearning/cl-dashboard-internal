@@ -2,18 +2,13 @@ import streamlit as st
 import pandas as pd
 import datetime as dt
 from rich import print
-from dateutil.relativedelta import relativedelta
 import calendar
 import re
 from streamlit_option_menu import option_menu
 
 level_definitions = pd.DataFrame(
     [
-        [
-            "FO",
-            "First Open",
-            "The first time Curious Reader is opened from the play store",
-       ],
+
         [
             "LR",
             "Learner Reached",
@@ -327,37 +322,33 @@ def single_selector(selections, placement="side", title="", key="key"):
     return selection_list
 
 
-# Pass a unique key into the function in order to use this on multiple pages safely
+# Pass a unique key into the function in order to use this on multiple pages safel
+
 def multi_select_all(available_options, placement="side", title="", key="key"):
     available_options.insert(0, "All")
 
-    # If a user switches to another page and comes back, selected options is dropped from session state
-    # but max_selections still exists.  This has to do with how streamlit handles the key option in widgets
-    # This will ensure All is selected when coming back to the page
+    # Ensure each instance has its own session state keys
     if key not in st.session_state:
         st.session_state[key] = ["All"]
-    if "max_selections" not in st.session_state:
-        st.session_state["max_selections"] = 1  # Enforce single selection
+    if f"{key}_max_selections" not in st.session_state:
+        st.session_state[f"{key}_max_selections"] = 1  # Unique max selection per widget
         st.session_state[key] = ["All"]  # Set default to "All"
 
     def options_select():  # Define options_select inside multi_select_all
-
         if key in st.session_state:
             if "All" in st.session_state[key]:
                 st.session_state[key] = ["All"]  # Reset to "All" if deselected
-                st.session_state["max_selections"] = 1  # Enforce single selection again
+                st.session_state[f"{key}_max_selections"] = 1  # Unique max selection
             else:
-                st.session_state["max_selections"] = len(
-                    available_options
-                )  # Allow multiple selections
+                st.session_state[f"{key}_max_selections"] = len(available_options)  # Allow multiple selections
 
     if placement == "side":
         st.sidebar.multiselect(
             label=title,
             options=available_options,
             key=key,
-            max_selections=st.session_state["max_selections"],
-            on_change=options_select,  # Pass the function without calling it
+            max_selections=st.session_state[f"{key}_max_selections"],  # Unique max selection key
+            on_change=options_select,  
             format_func=lambda x: "All" if x == "All" else f"{x}",
         )
 
@@ -366,8 +357,8 @@ def multi_select_all(available_options, placement="side", title="", key="key"):
             label=title,
             options=available_options,
             key=key,
-            max_selections=st.session_state["max_selections"],
-            on_change=options_select,  # Pass the function without calling it
+            max_selections=st.session_state[f"{key}_max_selections"],  # Unique max selection key
+            on_change=options_select,  
             format_func=lambda x: "All" if x == "All" else f"{x}",
         )
 

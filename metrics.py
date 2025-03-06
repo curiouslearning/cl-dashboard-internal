@@ -27,7 +27,7 @@ def get_totals_by_metric(
     )
 
     if stat not in ["DC", "TS", "SL", "PC", "LA"]:
-        return len(df_user_list) #All LR or FO
+        return len(df_user_list) #All LR 
     else:
         download_completed_count = len(
             df_user_list[df_user_list["furthest_event"] == "download_completed"]
@@ -86,7 +86,7 @@ def filter_user_data(
 ):
 
     # Check if necessary dataframes are available
-    if not all(key in st.session_state for key in ["df_cr_users", "df_unity_users", "df_cr_first_open", "df_cr_app_launch"]):
+    if not all(key in st.session_state for key in ["df_cr_users", "df_unity_users",  "df_cr_app_launch"]):
         print("PROBLEM!")
         return pd.DataFrame()
 
@@ -103,11 +103,8 @@ def filter_user_data(
         df =  pd.concat([df1, df2], axis=0)
     elif app == "CR" and stat == "LR":
         df = st.session_state.df_cr_app_launch
-    elif app == "CR" and stat == "FO":
-        df = st.session_state.df_cr_first_open
     else:
         df = st.session_state.df_cr_users
-
 
     # Initialize a boolean mask
     mask = (df['first_open'] >= daterange[0]) & (df['first_open'] <= daterange[1])
@@ -116,11 +113,11 @@ def filter_user_data(
     if countries_list[0] != "All":
         mask &= df['country'].isin(set(countries_list))
 
-    # Apply language filter if not "All" and stat is not "FO"
-    if language[0] != "All" and stat != "FO":
+    # Apply language filter if not "All" 
+    if language[0] != "All":
         mask &= df['app_language'].isin(set(language))
 
-    if cr_app_versions != "All" and  app == "CR" and stat != "FO" and stat != "LR":
+    if cr_app_versions != "All" and  app == "CR" and stat != "LR":
         mask &= df["app_version"].isin(cr_app_versions)
 
     # Apply stat-specific filters
@@ -130,7 +127,7 @@ def filter_user_data(
         mask &= (df['max_user_level'] >= 25)
     elif stat == "GC":  # Game completed
         mask &= (df['max_user_level'] >= 1) & (df['gpc'] >= 90)
-    elif stat == "LR" or stat == "FO":
+    elif stat == "LR":
         # No additional filters for these stats beyond daterange and optional countries/language
         pass
     
@@ -461,7 +458,7 @@ def filter_campaigns(df_campaigns_all,daterange,selected_languages,countries_lis
     if countries_list[0] != "All":
       mask &= df_campaigns['country'].isin(set(countries_list))
 
-    # Apply language filter if not "All" and stat is not "FO"
+    # Apply language filter if not "All" 
     if selected_languages[0] != "All" :
         mask &= df_campaigns['app_language'].isin(set(selected_languages))
 

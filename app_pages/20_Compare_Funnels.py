@@ -29,9 +29,8 @@ with col1:
         key="cf-7",
         placement="middle",
     )
-    selected_date, option = ui.calendar_selector(placement="col", key="crf-4")
+    selected_date, option = ui.calendar_selector(placement="col", key="crf-4",title="Select date user cohort")
     daterangeA = ui.convert_date_to_range(selected_date, option)
-    user_cohort_listA = metrics.get_user_cohort_list(daterange=daterangeA,languages=languageA,countries_list=countries_listA,app="CR")
 
     
 with col2:  
@@ -45,15 +44,20 @@ with col2:
         key="cf-8",
         placement="middle",
     ) 
-    selected_date, option = ui.calendar_selector(placement="col", key="crf-9")
+    selected_date, option = ui.calendar_selector(placement="col", key="crf-9",title="Select date user cohort")
     daterangeB = ui.convert_date_to_range(selected_date, option)
+ 
+# if either of the funnels uses app_version, eliminate LR for both
+
+if len(countries_listA) and  len(countries_listB ) > 0:
+    
+    user_cohort_listA = metrics.get_user_cohort_list(daterange=daterangeA,languages=languageA,countries_list=countries_listA,app="CR")
     user_cohort_listB = metrics.get_user_cohort_list(daterange=daterangeB,languages=languageB,countries_list=countries_listB,app="CR")
 
-# if either of the funnels uses app_version, eliminate LR for both
-displayLR = True
-if app_versionsA != 'All' or app_versionsB != 'All':
-    displayLR = False
-with col1:
-    uic.create_funnels(daterange=daterangeA,countries_list=countries_listA,languages=languageA,key_prefix="cf-10",app_versions=app_versionsA,displayLR=displayLR,user_list=user_cohort_listA)
-with col2:  
-    uic.create_funnels(daterange=daterangeB,countries_list=countries_listB,languages=languageB,key_prefix="cf-11",app_versions=app_versionsB,displayLR=displayLR,user_list=user_cohort_listB)
+    displayLR = True
+    if app_versionsA != 'All' or app_versionsB != 'All':
+        displayLR = False
+    with col1:
+        uic.create_funnels(daterange=daterangeA,countries_list=countries_listA,languages=languageA,key_prefix="cf-10",app_versions=app_versionsA,displayLR=displayLR,user_list=user_cohort_listA)
+    with col2:  
+        uic.create_funnels(daterange=daterangeB,countries_list=countries_listB,languages=languageB,key_prefix="cf-11",app_versions=app_versionsB,displayLR=displayLR,user_list=user_cohort_listB)

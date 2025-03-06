@@ -37,5 +37,5 @@ with col2:
 
 if len(countries_list) > 0:
     user_cohort_list = metrics.get_user_cohort_list(daterange=daterange,languages=language,countries_list=countries_list,app="CR")
-    uic.create_funnels(countries_list=countries_list,daterange=daterange,key_prefix="dc-1",app_versions="All",languages=languages,displayLR=True,user_list=user_cohort_list,display_FO=False)
+    uic.create_funnels(countries_list=countries_list,daterange=daterange,key_prefix="dc-1",app_versions="All",languages=languages,displayLR=True,user_list=user_cohort_list)
 
