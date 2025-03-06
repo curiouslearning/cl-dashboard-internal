@@ -98,7 +98,7 @@ data_notes = pd.DataFrame(
     columns=["Note", "Description"],
 )
 
-
+today = dt.date.today()
 
 def display_definitions_table(title,def_df):
     expander = st.expander(title)
@@ -448,7 +448,7 @@ def app_version_selector(placement="side", key=""):
     return selected_options
 
 
-def calendar_selector(placement="side", key="", index=0):
+def calendar_selector(placement="side", key="", index=0, title="Date"):
     options = (
         "All time",
         "Select year",
@@ -457,7 +457,7 @@ def calendar_selector(placement="side", key="", index=0):
         "Presets",
     )
 
-    with st.expander("Date"):
+    with st.expander(title):
 
         if placement == "side":
             option = st.sidebar.radio(

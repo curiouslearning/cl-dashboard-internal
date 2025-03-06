@@ -10,7 +10,7 @@ icon = ":small_orange_diamond:"
 
 [[pages]]
 path = "app_pages/Date_Cohort.py"
-name = "Curious Reader Funnel - Date Cohort"
+name = "Curious Reader Funnel"
 icon = ":small_orange_diamond:"
 
 [[pages]]
