@@ -536,3 +536,36 @@ def get_totals_per_month(daterange, stat, countries_list, language):
 
     # Display the DataFrame
     return df_totals
+
+def get_date_cohort_dataframe(
+    daterange=default_daterange,
+    languages=["All"],
+    countries_list=["All"],
+    app="CR"):
+        
+    # Get all of the users in the user selected window - this is the cohort
+    df_user_cohort = filter_user_data(daterange=daterange,countries_list=countries_list,app="CR",language=languages)
+
+    # All we need is their cr_user_id
+    user_cohort_list = df_user_cohort["cr_user_id"]
+
+    # Get superset of  the users up through today
+    daterange = [daterange[0],dt.date.today()]
+    df = filter_user_data(daterange=daterange,countries_list=countries_list,app=app,language=languages,user_list=user_cohort_list)
+    
+    return df
+
+def get_user_cohort_list(
+    daterange=default_daterange,
+    languages=["All"],
+    countries_list=["All"],
+    app="CR"):
+        
+    # Get all of the users in the user selected window - this is the cohort
+    df_user_cohort = filter_user_data(daterange=daterange,countries_list=countries_list,app="CR",language=languages)
+
+    # All we need is their cr_user_id
+    user_cohort_list = df_user_cohort["cr_user_id"]
+    
+    return user_cohort_list
+

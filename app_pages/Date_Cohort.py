@@ -36,15 +36,6 @@ with col2:
 
 
 if len(countries_list) > 0:
-    # Get all of the users in the user selected window - this is the cohort
-    df_user_cohort = metrics.filter_user_data(daterange=daterange,countries_list=countries_list,app="CR",language=languages)
-
-    # All we need is their cr_user_id
-    user_cohort_list = df_user_cohort["cr_user_id"]
-
-    # Get superset of  the users up through today
-    daterange = [daterange[0],ui.today]
-    df = metrics.filter_user_data(daterange=daterange,countries_list=countries_list,app="CR",language=languages,user_list=user_cohort_list)
-
+    user_cohort_list = metrics.get_user_cohort_list(daterange=daterange,languages=language,countries_list=countries_list,app="CR")
     uic.create_funnels(countries_list=countries_list,daterange=daterange,key_prefix="dc-1",app_versions="All",languages=languages,displayLR=True,user_list=user_cohort_list,display_FO=False)
 

@@ -98,8 +98,6 @@ data_notes = pd.DataFrame(
     columns=["Note", "Description"],
 )
 
-today = dt.date.today()
-
 def display_definitions_table(title,def_df):
     expander = st.expander(title)
     # CSS to inject contained in a string
