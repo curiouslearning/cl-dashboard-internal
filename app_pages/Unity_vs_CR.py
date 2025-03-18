@@ -77,7 +77,7 @@ if len(daterange) == 2:
         "Count": [LR, PC, LA, RA, GC],
     }
     fig = uic.create_engagement_figure(funnel_data, "acq-3")
-    col1.plotly_chart(fig, use_container_width=True)
+    col1.plotly_chart(fig, use_container_width=True,key="uvcr-1")
 
     LR = metrics.get_totals_by_metric(
         daterange, countries_list, stat="LR", app="CR", language=language
@@ -107,6 +107,6 @@ if len(daterange) == 2:
     }
 
     fig = uic.create_engagement_figure(funnel_data, "acq-4")
-    col2.plotly_chart(fig, use_container_width=True)
+    col2.plotly_chart(fig, use_container_width=True,key="uvcr-2")
 
  
