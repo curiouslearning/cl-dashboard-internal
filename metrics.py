@@ -84,7 +84,8 @@ def filter_user_data(
     language=["All"],
     user_list=[]
 ):
-
+    #default column to filter user cohort list
+    user_list_key = "cr_user_id"
     # Check if necessary dataframes are available
     if not all(key in st.session_state for key in ["df_cr_users", "df_unity_users",  "df_cr_app_launch"]):
         print("PROBLEM!")
@@ -93,10 +94,13 @@ def filter_user_data(
     # Select the appropriate dataframe based on app and stat
     if app == "Unity":
         df = st.session_state.df_unity_users #Unity users are in one table only
+        user_list_key = "user_pseudo_id"
     elif app == "Both" and stat == "LR":
         df1 = st.session_state.df_unity_users
         df2 = st.session_state.df_cr_app_launch
         df =  pd.concat([df1, df2], axis=0)
+        user_list_key = "user_pseudo_id"
+       
     elif app == "Both" and stat != "LR":
         df1 = st.session_state.df_unity_users
         df2 = st.session_state.df_cr_users
@@ -105,6 +109,7 @@ def filter_user_data(
         df = st.session_state.df_cr_app_launch
     else:
         df = st.session_state.df_cr_users
+
 
     # Initialize a boolean mask
     mask = (df['first_open'] >= daterange[0]) & (df['first_open'] <= daterange[1])
@@ -136,7 +141,10 @@ def filter_user_data(
 
     #If user list subset was passed in, filter on that as well
     if (len (user_list) > 0):
-        df = df[df["cr_user_id"].isin(user_list)]
+
+        df = df[df[user_list_key].isin(user_list)]
+
+
     return df
 
 
@@ -572,10 +580,14 @@ def get_user_cohort_list(
     app="CR"):
         
     # Get all of the users in the user selected window - this is the cohort
-    df_user_cohort = filter_user_data(daterange=daterange,countries_list=countries_list,app="CR",language=languages)
+    df_user_cohort = filter_user_data(daterange=daterange,countries_list=countries_list,app=app,language=languages)
 
-    # All we need is their cr_user_id
-    user_cohort_list = df_user_cohort["cr_user_id"]
-    
+    # Unity doesn't have a cr_user_id.  But CR has different user_psuedo_id for CR events vs 
+    # FTM events, so we have to play this little game.
+    if app == "CR":
+        user_cohort_list = df_user_cohort["cr_user_id"]
+    else:
+        user_cohort_list = df_user_cohort["user_pseudo_id"]
+   
     return user_cohort_list
 

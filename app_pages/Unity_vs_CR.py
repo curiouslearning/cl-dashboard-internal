@@ -47,23 +47,25 @@ unsafe_allow_html=True,
 )
 
 
-if len(daterange) == 2:
+if len(daterange) == 2 and len(countries_list) > 0:
+    
+    user_cohort_list = metrics.get_user_cohort_list(daterange=daterange,languages=language,countries_list=countries_list,app="Unity")
 
     LR = metrics.get_totals_by_metric(
-        daterange, countries_list, stat="LR", app="Unity", language=language
+        daterange, countries_list, stat="LR", app="Unity", language=language,user_list=user_cohort_list
     )
 
     PC = metrics.get_totals_by_metric(
-        daterange, countries_list, "PC", app="Unity", language=language
+        daterange, countries_list, "PC", app="Unity", language=language,user_list=user_cohort_list
     )
     LA = metrics.get_totals_by_metric(
-        daterange, countries_list, stat="LA", app="Unity", language=language
+        daterange, countries_list, stat="LA", app="Unity", language=language,user_list=user_cohort_list
     )
     RA = metrics.get_totals_by_metric(
-        daterange, countries_list, stat="RA", app="Unity", language=language
+        daterange, countries_list, stat="RA", app="Unity", language=language,user_list=user_cohort_list
     )
     GC = metrics.get_totals_by_metric(
-        daterange, countries_list, "GC", app="Unity", language=language
+        daterange, countries_list, "GC", app="Unity", language=language,user_list=user_cohort_list
     )
 
     funnel_data = {
@@ -78,21 +80,23 @@ if len(daterange) == 2:
     }
     fig = uic.create_engagement_figure(funnel_data, "acq-3")
     col1.plotly_chart(fig, use_container_width=True,key="uvcr-1")
+    
+    user_cohort_list = metrics.get_user_cohort_list(daterange=daterange,languages=language,countries_list=countries_list,app="CR")
 
     LR = metrics.get_totals_by_metric(
-        daterange, countries_list, stat="LR", app="CR", language=language
+        daterange, countries_list, stat="LR", app="CR", language=language,user_list=user_cohort_list
     )
     PC = metrics.get_totals_by_metric(
-        daterange, countries_list, "PC", app="CR", language=language
+        daterange, countries_list, "PC", app="CR", language=language,user_list=user_cohort_list
     )
     LA = metrics.get_totals_by_metric(
-        daterange, countries_list, stat="LA", app="CR", language=language
+        daterange, countries_list, stat="LA", app="CR", language=language,user_list=user_cohort_list
     )
     GC = metrics.get_totals_by_metric(
-        daterange, countries_list, "GC", app="CR", language=language
+        daterange, countries_list, "GC", app="CR", language=language,user_list=user_cohort_list
     )
     RA = metrics.get_totals_by_metric(
-        daterange, countries_list, "RA", app="CR", language=language
+        daterange, countries_list, "RA", app="CR", language=language,user_list=user_cohort_list
     )
 
     funnel_data = {
