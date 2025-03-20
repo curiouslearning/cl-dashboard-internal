@@ -64,14 +64,17 @@ if len(selected_languages) == 0 or len(selected_languages) > 40:
     """
     )
 else:
-    with st.spinner("Calculating..."):
-        start = daterange[0].strftime("%b %d, %Y")
-        end = daterange[1].strftime("%b %d, %Y")
-        st.write("Timerange: " + start + " to " + end)
-        uic.funnel_change_by_language_chart(
-            selected_languages,
-            country,
-            upper_level=upper_level,
-            bottom_level=bottom_level,
-            daterange=daterange,
-        )
+    if len(daterange) == 2:       
+        user_cohort_list = metrics.get_user_cohort_list(daterange=daterange,languages=selected_languages,countries_list=country,app="CR")
+        with st.spinner("Calculating..."):
+            start = daterange[0].strftime("%b %d, %Y")
+            end = daterange[1].strftime("%b %d, %Y")
+            st.write("Timerange: " + start + " to " + end)
+            uic.funnel_change_by_language_chart(
+                selected_languages,
+                country,
+                upper_level=upper_level,
+                bottom_level=bottom_level,
+                daterange=daterange,
+                user_list=user_cohort_list
+            )

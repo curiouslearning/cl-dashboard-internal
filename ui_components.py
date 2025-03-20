@@ -613,12 +613,13 @@ def top_campaigns_by_downloads_barchart(n):
 
 @st.cache_data(ttl="1d", show_spinner=False)
 def funnel_change_by_language_chart(
-    languages, countries_list, daterange, upper_level, bottom_level
+    languages, countries_list, daterange, upper_level, bottom_level, user_list=[]
 ):
 
     weeks = metrics.weeks_since(daterange)
-    end_date = dt.datetime.now().date()
-
+    end_date = daterange[1]
+    end_date = min(end_date, dt.datetime.today().date())
+    
     if weeks <= 4:
         # Use days if weeks are <= 4
         days = weeks * 7
@@ -649,6 +650,7 @@ def funnel_change_by_language_chart(
                 language=language_list,
                 countries_list=countries_list,
                 app="CR",
+                user_list=user_list
             )
             upper_level_value = metrics.get_totals_by_metric(
                 daterange,
@@ -656,7 +658,8 @@ def funnel_change_by_language_chart(
                 language=language_list,
                 countries_list=countries_list,
                 app="CR",
-            )
+                user_list=user_list
+           )
             try:#
                 percentage = round((bottom_level_value / upper_level_value) * 100, 2)
             except ZeroDivisionError:
