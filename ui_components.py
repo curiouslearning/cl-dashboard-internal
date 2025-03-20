@@ -618,7 +618,6 @@ def funnel_change_by_language_chart(
 
     weeks = metrics.weeks_since(daterange)
     end_date = daterange[1]
-    end_date = min(end_date, dt.datetime.today().date())
     
     if weeks <= 4:
         # Use days if weeks are <= 4

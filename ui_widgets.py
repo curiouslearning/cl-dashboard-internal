@@ -198,23 +198,27 @@ def custom_date_selection(placement="side", key=""):
     return list(date_range)
 
 
-def convert_date_to_range(selected_date, option):
-
+def convert_date_to_range(selected_date, option, end_date=None):
+    today = dt.datetime.today().date()
+    
     if option == "Select year":
         first = dt.date(selected_date, 1, 1)
         last = dt.date(selected_date, 12, 31)
-        return [first, last]
     elif option == "All time":
-        return [dt.datetime(2021, 1, 1).date(), dt.date.today()]
+        first = dt.date(2021, 1, 1)
+        last = today
     elif option == "Select month":
-        month = selected_date[0]
-        year = selected_date[1]
+        month, year = selected_date
         first = dt.date(year, month, 1)
-        yearmonth = calendar.monthrange(year, month)
-        last = dt.date(year, month, yearmonth[1])
-        return [first, last]
-    else: #already converted
+        last = dt.date(year, month, calendar.monthrange(year, month)[1])
+    else:  # already converted
         return selected_date
+
+    # Ensure last date does not exceed today
+    last = min(last, today if end_date is None else min(end_date, today))
+
+    return [first, last]
+
 
 
 def quarter_start(month):
