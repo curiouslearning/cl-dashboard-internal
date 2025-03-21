@@ -42,7 +42,7 @@ toggle = st.radio(
 
 if len(selected_languages) > 0 and len(daterange) == 2:
     # Funnel snapshots started 9/11/2024
-    daterange[0] = max(daterange[0], dt.date(2024, 11, 13))
+    daterange[0] = max(daterange[0], dt.date(2025, 3, 22))
     
     start = daterange[0].strftime("%b %d, %Y")
     end = daterange[1].strftime("%b %d, %Y")
