@@ -380,7 +380,7 @@ def build_funnel_dataframe(
         results.append(entry)
 
     df = pd.DataFrame(results)
-    df
+
     return df
 
 def add_level_percents(df):

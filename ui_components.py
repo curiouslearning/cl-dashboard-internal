@@ -209,7 +209,7 @@ def top_LR_LC_bar_chart(daterange, countries_list, option, app="Both", language=
 
 
     df = (
-        df[[display_group, "LR", "LA"]]
+        df[[display_group, "LR", "LA","RA"]]
         .sort_values(by=option, ascending=False)
         .head(10)
         .round(2)
@@ -229,6 +229,12 @@ def top_LR_LC_bar_chart(daterange, countries_list, option, app="Both", language=
                 x=df[display_group],
                 y=df["LA"],
                 hovertemplate=" %{x}<br>LA: %{y:,.0f}<extra></extra>",
+            ),
+            go.Bar(
+                name="RA",
+                x=df[display_group],
+                y=df["RA"],
+                hovertemplate=" %{x}<br>RA: %{y:,.0f}<extra></extra>",
             ),
         ],
     )
