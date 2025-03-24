@@ -19,25 +19,11 @@ st.markdown(
     """
     :green-background[NOTE:]
     :green[This chart lets you compare one specific level across the languages selected.
-    It compares the selected level % drop from the selected upper level.]
+    It compares the selected level % drop from the selected upper level.  ]
+    :red[It excludes languages with an LR less than 100 ]
+
     """
 )
-
-# Callback function for radio button
-def radio_callback():
-    st.session_state["buffer_time"] = st.session_state["radio_selection"]
-    if "slider_date" in st.session_state:
-        del st.session_state["slider_date"]
-    if "max_date" in st.session_state:
-        del st.session_state["max_date"]
-        
-# Initialize buffer_time in session state if not already set
-if "buffer_time" not in st.session_state:
-    st.session_state["buffer_time"] = 30  # Default selection
-
-# Ensure the radio button is rendered only once
-if "radio_selection" not in st.session_state:
-    st.session_state["radio_selection"] = st.session_state["buffer_time"]
 
 col1, col2, col3 = st.columns(3)
 
@@ -60,33 +46,14 @@ with col1:
         key="la-2",
     )
 
-with col3:
-    buffer_time = st.radio(
-        label="Days",
-        options=[15, 30, 60, 90],
-        horizontal=True,
-        index=[15, 30, 60, 90].index(st.session_state["radio_selection"]),
-        key="radio_selection",
-        on_change=radio_callback
-    )
     
-with col3:
-
-
-    # Date calculation logic
-    today = dt.datetime.now().date()
-    if "slider_date" not in st.session_state:
-        max_date = today - relativedelta(days=st.session_state["buffer_time"])
-        min_date = dt.date(2023, 10, 1)
-        st.session_state.max_date = max_date
-    else:
-        min_date, max_date = st.session_state.slider_date
-
-    # Render the slider
-    selected_date = ui.custom_date_selection_slider(min_date, max_date, placement="middle")
-    daterange = ui.convert_date_to_range(selected_date, option="")
-
 with col2:
+
+    selected_date, option = ui.calendar_selector(placement="middle", key="SF-1", index=0, title="Select user cohort by date")
+    daterange = ui.convert_date_to_range(selected_date, option)
+
+
+with col3:
     st.write("Language selection")
     if st.toggle(label="Use Top 10 LR Languages", value=True):
         selected_languages = df_top10["app_language"].to_list()
@@ -97,13 +64,7 @@ with col2:
         )   
 
     if (len(selected_languages) > 0):     
-        df_user_cohort = metrics.filter_user_data(daterange=daterange,countries_list=countries_list,app="CR",language=selected_languages,stat="LR")
-
-        # All we need is their cr_user_id
-        user_cohort_list = df_user_cohort["cr_user_id"]
-
-        # Get superset of  the users up through today
-        daterange = [daterange[0],today]
+         user_cohort_list = metrics.get_user_cohort_list(daterange=daterange,languages=selected_languages,countries_list=countries_list,app="CR")
 
     if (len(selected_languages) == 0 ):  # 40 is an arbitrary choice
         st.markdown(
@@ -118,8 +79,7 @@ with col2:
         
 tab1, tab2, = st.tabs(["Funnel % by language", "Funnel bar chart totals"])
 with tab1:
-
-
+    if (len(selected_languages) > 0):   
         with st.spinner("Calculating..."):
             uic.funnel_line_chart_percent(
                 languages=selected_languages,
@@ -146,6 +106,7 @@ with tab2:
             uic.funnel_bar_chart(
                 languages=selected_languages,
                 countries_list=country,
-                daterange=daterange
+                daterange=daterange,
+                user_cohort_list=user_cohort_list
             )
 

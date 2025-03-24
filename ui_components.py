@@ -695,13 +695,14 @@ def funnel_change_by_language_chart(
     st.plotly_chart(fig, use_container_width=True)
 
 @st.cache_data(ttl="1d", show_spinner=False)
-def funnel_bar_chart(languages, countries_list, daterange):
+def funnel_bar_chart(languages, countries_list, daterange,user_cohort_list):
 
     df = metrics.build_funnel_dataframe(
         index_col="language",
         daterange=daterange,
         languages=languages,
         countries_list=countries_list,
+        user_list=user_cohort_list,
     )
 
     # Bar chart
@@ -752,9 +753,12 @@ def funnel_line_chart_percent(languages, countries_list, daterange,user_cohort_l
 
     for idx, row in df_percent.iterrows():
         language = row["language"]
+        denominator_value = df.loc[idx, "LR"]
+        if denominator_value < 100:
+            continue
         percent_values = row[:-1]  # Exclude 'language'
         numerator_values = df.loc[idx, levels]
-        denominator_value = df.loc[idx, "LR"]
+
         
         # Prepare custom data (level, numerator, denominator, language)
         custom_data = [
