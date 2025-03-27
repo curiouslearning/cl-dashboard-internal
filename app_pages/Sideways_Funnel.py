@@ -81,12 +81,15 @@ tab1, tab2, = st.tabs(["Funnel % by language", "Funnel bar chart totals"])
 with tab1:
     if (len(selected_languages) > 0):   
         with st.spinner("Calculating..."):
-            uic.funnel_line_chart_percent(
+            df_download = uic.funnel_line_chart_percent(
                 languages=selected_languages,
                 countries_list=country,
                 daterange=daterange,
                 user_cohort_list=user_cohort_list
             )
+            csv = ui.convert_for_download(df_download)
+            st.download_button(label="Download CSV",data=csv,file_name="funnel_line_chart_percent.csv",key="sf-10",icon=":material/download:",mime="text/csv")
+
 
 with tab2:
     
@@ -103,10 +106,12 @@ with tab2:
         end = daterange[1].strftime("%b %d, %Y")
         st.write("Timerange: " + start + " to " + end)
         with st.spinner("Calculating..."):
-            uic.funnel_bar_chart(
+            df_download = uic.funnel_bar_chart(
                 languages=selected_languages,
                 countries_list=country,
                 daterange=daterange,
                 user_cohort_list=user_cohort_list
             )
+            csv = ui.convert_for_download(df_download)
+            st.download_button(label="Download CSV",data=csv,file_name="funnel_bar_chart.csv",key="sf-11",icon=":material/download:",mime="text/csv")
 

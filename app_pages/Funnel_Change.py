@@ -70,7 +70,7 @@ else:
             start = daterange[0].strftime("%b %d, %Y")
             end = daterange[1].strftime("%b %d, %Y")
             st.write("Timerange: " + start + " to " + end)
-            uic.funnel_change_by_language_chart(
+            df_download = uic.funnel_change_by_language_chart(
                 selected_languages,
                 country,
                 upper_level=upper_level,
@@ -78,3 +78,6 @@ else:
                 daterange=daterange,
                 user_list=user_cohort_list
             )
+            csv = ui.convert_for_download(df_download)
+            st.download_button(label="Download CSV",data=csv,file_name="funnel_change_by_language_chart.csv",key="fc-10",icon=":material/download:",mime="text/csv")
+

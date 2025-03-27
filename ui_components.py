@@ -706,6 +706,7 @@ def funnel_change_by_language_chart(
     )
 
     st.plotly_chart(fig, use_container_width=True)
+    return df
 
 @st.cache_data(ttl="1d", show_spinner=False)
 def funnel_bar_chart(languages, countries_list, daterange,user_cohort_list):
@@ -743,6 +744,7 @@ def funnel_bar_chart(languages, countries_list, daterange,user_cohort_list):
     )
     
     st.plotly_chart(fig, use_container_width=True)
+    return df
     
 
 @st.cache_data(ttl="1d", show_spinner=False)
@@ -803,7 +805,7 @@ def funnel_line_chart_percent(languages, countries_list, daterange,user_cohort_l
     )
     
     st.plotly_chart(fig, use_container_width=True)
-
+    return df_percent
 
 @st.cache_data(ttl="1d", show_spinner=False)
 def top_and_bottom_languages_per_level(selection, min_LR):

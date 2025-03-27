@@ -50,6 +50,9 @@ if len(selected_languages) > 0 and len(daterange) == 2:
     df = users.get_funnel_snapshots(daterange=daterange,languages=selected_languages)
     with st.spinner("Calculating..."):
         uic.funnel_change_line_chart(df,toggle)
+        csv = ui.convert_for_download(df)
+        st.download_button(label="Download CSV",data=csv,file_name="funnel_snapshots.csv",key="fs-10",icon=":material/download:",mime="text/csv")
+
 else:
     st.write("Please select at least one language and a valid date range")
 
