@@ -67,12 +67,18 @@ if (len(countries_list)) > 0 and (len(daterange) == 2):
     start = daterange[0].strftime("%b %d, %Y")
     end = daterange[1].strftime("%b %d, %Y")
     st.write("Timerange: " + start + " to " + end)
-    uic.LR_LA_line_chart_over_time(
+    df_download = uic.LR_LA_line_chart_over_time(
         daterange, countries_list, app=app, language=language, option=option,display_category=display_category,aggregate=False
     )
-    uic.LR_LA_line_chart_over_time(
+    csv = ui.convert_for_download(df_download)
+    st.download_button(label="Download CSV",data=csv,file_name="LR_LA_line_chart_over_time.csv",key="a-12",icon=":material/download:",mime="text/csv")
+
+    df_download = uic.LR_LA_line_chart_over_time(
         daterange, countries_list, app=app, language=language, option=option,display_category=display_category,aggregate=True
     )
+    csv = ui.convert_for_download(df_download)
+    st.download_button(label="Download CSV",data=csv,file_name="LR_LA_line_chart_over_time_aggregate.csv",key="a-13",icon=":material/download:",mime="text/csv")
+
 
 
 
