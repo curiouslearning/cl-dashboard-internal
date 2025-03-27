@@ -34,7 +34,7 @@ with col2:
     daterange = ui.convert_date_to_range(selected_date, option)
 
 
-if len(countries_list) > 0:
+if len(countries_list) > 0  and (len(daterange) == 2):
     user_cohort_list = metrics.get_user_cohort_list(daterange=daterange,languages=language,countries_list=countries_list,app="CR")
     uic.create_funnels(countries_list=countries_list,daterange=daterange,key_prefix="dc-1",languages=languages,displayLR=True,user_list=user_cohort_list)
 
