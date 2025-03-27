@@ -10,7 +10,7 @@ import metrics
 
 settings.initialize()
 settings.init_user_list()
-settings.init_cr_app_version_list()
+
 ui.display_definitions_table("Data Notes",ui.data_notes)
 
 st.subheader("Curious Reader Funnel Comparison")
@@ -19,7 +19,6 @@ countries_list = users.get_country_list()
 
 col1, col2 = st.columns(2)
 with col1:
-    app_versionsA = ui.app_version_selector(placement="col", key="cf-1")
     languageA = ui.single_selector(
         languages, placement="col", title="Select a language", key="cf-2"
     )   
@@ -34,7 +33,6 @@ with col1:
 
     
 with col2:  
-    app_versionsB = ui.app_version_selector(placement="col", key="cf-5")
     languageB = ui.single_selector(
         languages, placement="col", title="Select a language", key="cf-6"
     )  
@@ -47,7 +45,6 @@ with col2:
     selected_date, option = ui.calendar_selector(placement="col", key="crf-9",title="Select date user cohort")
     daterangeB = ui.convert_date_to_range(selected_date, option)
  
-# if either of the funnels uses app_version, eliminate LR for both
 
 if len(countries_listA) and  len(countries_listB ) > 0:
     
@@ -55,9 +52,7 @@ if len(countries_listA) and  len(countries_listB ) > 0:
     user_cohort_listB = metrics.get_user_cohort_list(daterange=daterangeB,languages=languageB,countries_list=countries_listB,app="CR")
 
     displayLR = True
-    if app_versionsA != 'All' or app_versionsB != 'All':
-        displayLR = False
     with col1:
-        uic.create_funnels(daterange=daterangeA,countries_list=countries_listA,languages=languageA,key_prefix="cf-10",app_versions=app_versionsA,displayLR=displayLR,user_list=user_cohort_listA)
+        uic.create_funnels(daterange=daterangeA,countries_list=countries_listA,languages=languageA,key_prefix="cf-10",displayLR=displayLR,user_list=user_cohort_listA)
     with col2:  
-        uic.create_funnels(daterange=daterangeB,countries_list=countries_listB,languages=languageB,key_prefix="cf-11",app_versions=app_versionsB,displayLR=displayLR,user_list=user_cohort_listB)
+        uic.create_funnels(daterange=daterangeB,countries_list=countries_listB,languages=languageB,key_prefix="cf-11",displayLR=displayLR,user_list=user_cohort_listB)

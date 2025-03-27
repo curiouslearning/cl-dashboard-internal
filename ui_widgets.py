@@ -431,16 +431,6 @@ def stats_radio_selector():
     return option
 
 
-def app_version_selector(placement="side", key=""):
-    cr_versions = st.session_state.cr_app_versions_list
-
-    selected_options = st.multiselect("Select versions:",cr_versions,key=key ,default='All')
-    if 'All' in selected_options:
-        selected_options = 'All'
-
-    return selected_options
-
-
 def calendar_selector(placement="side", key="", index=0, title="Date"):
     options = (
         "All time",

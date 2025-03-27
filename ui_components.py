@@ -891,7 +891,6 @@ def create_funnels(countries_list,
                    daterange,
                    languages,
                    key_prefix,
-                   app_versions,
                    displayLR=True,
                    user_list=[]):
     
@@ -919,16 +918,12 @@ def create_funnels(countries_list,
             metrics_data[stat] = metrics.get_totals_by_metric(
                 daterange,
                 stat=stat,
-                cr_app_versions=app_versions,
                 language=languages,
                 countries_list=countries_list,
                 app="CR",
                 user_list=user_list
             )
         
-        # If a specific app version is selected, we don't have LR data, so this is a way to not show it
-        # The reason we don't use app_version directly is because if we are comparing funnels, if one uses it
-        # we want the other to exclude that level as well.
         if displayLR:
             funnel_data = {
                 "Title": titles,

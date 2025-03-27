@@ -78,11 +78,6 @@ def cache_marketing_data():
     # Execute the async function and return its result synchronously
     return asyncio.run(campaigns.get_campaign_data())
 
-def init_cr_app_version_list():
-    cr_app_versions_list = users.get_app_version_list()
-    if "cr_app_versions_list" not in st.session_state:
-        st.session_state.cr_app_versions_list = cr_app_versions_list
-
 @st.cache_data(ttl="1d", show_spinner="Gathering User List")
 def cache_users_list():
     # Execute the async function and return its result synchronously

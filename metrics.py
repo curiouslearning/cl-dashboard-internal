@@ -12,7 +12,6 @@ def get_totals_by_metric(
     daterange=default_daterange,
     countries_list=[],
     stat="LR",
-    cr_app_versions="All",
     app="Both",
     language="All",
     user_list=[] #New parameter allowing a filter of results by cr_user_id list
@@ -23,7 +22,7 @@ def get_totals_by_metric(
         countries_list = users.get_country_list()
 
     df_user_list = filter_user_data(
-        daterange, countries_list, stat, cr_app_versions, app=app, language=language,user_list=user_list
+        daterange, countries_list, stat, app=app, language=language,user_list=user_list
     )
 
     if stat not in ["DC", "TS", "SL", "PC", "LA"]:
@@ -79,7 +78,6 @@ def filter_user_data(
     daterange=default_daterange,
     countries_list=["All"],
     stat="LR",
-    cr_app_versions="All",
     app="Both",
     language=["All"],
     user_list=[]
@@ -122,9 +120,6 @@ def filter_user_data(
     if language[0] != "All":
         mask &= df['app_language'].isin(set(language))
 
-    if cr_app_versions != "All" and  app == "CR" and stat != "LR":
-        mask &= df["app_version"].isin(cr_app_versions)
-
     # Apply stat-specific filters
     if stat == "LA":
         mask &= (df['max_user_level'] >= 1)
@@ -141,9 +136,7 @@ def filter_user_data(
 
     #If user list subset was passed in, filter on that as well
     if (len (user_list) > 0):
-
         df = df[df[user_list_key].isin(user_list)]
-
 
     return df
 

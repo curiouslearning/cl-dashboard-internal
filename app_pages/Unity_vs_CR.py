@@ -9,7 +9,7 @@ import metrics
 
 settings.initialize()
 settings.init_user_list()
-settings.init_cr_app_version_list()
+
 ui.display_definitions_table("Data Notes",ui.data_notes)
 countries_list = users.get_country_list()
 
