@@ -7,7 +7,7 @@ Streamlit Dashboard for Internal Analysis
 2. git clone https://github.com/curiouslearning/cl-dashboard-internal.git
 3. cd to ./cl-dashboard-internal
 4. pip install -r requirements.txt
-5. streamlit run Acquisition_Funnel.py
+5. streamlit run main.py
 
 
 docker build  --no-cache --platform linux/amd64  -t gcr.io/dataexploration-193817/cl-dashboard-internal:latest . 

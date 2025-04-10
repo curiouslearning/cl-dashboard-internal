@@ -243,6 +243,9 @@ def clean_cr_users_to_single_language(df_app_launch, df_cr_users):
     # ✅ Ensure df_app_launch has only unique cr_user_id
 
     df_app_launch = df_app_launch.drop_duplicates(subset="cr_user_id", keep="first")
-
+    
+    # This is a fix for a nasty bug where a user can have a different first_open in one dataframe vs the other.
+    # Its because cr_app_launch is Curious Reader first open but cr_user_progress is FTM first_open
+    df_cr_users["first_open"] = df_cr_users["cr_user_id"].map(df_app_launch.set_index("cr_user_id")["first_open"])
     return df_app_launch, df_cr_users
 

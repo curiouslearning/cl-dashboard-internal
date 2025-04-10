@@ -624,89 +624,99 @@ def top_campaigns_by_downloads_barchart(n):
     )
 
 
-@st.cache_data(ttl="1d", show_spinner=False)
+from datetime import timedelta
+
 def funnel_change_by_language_chart(
     languages, countries_list, daterange, upper_level, bottom_level, user_list=[]
 ):
 
+    start_date, end_date = daterange
+    total_days = (end_date - start_date).days
     weeks = metrics.weeks_since(daterange)
-    end_date = daterange[1]
-    
+
     if weeks <= 4:
-        # Use days if weeks are <= 4
-        days = weeks * 7
+        # Use daily intervals
         date_ranges = [
-            (end_date - dt.timedelta(i), end_date - dt.timedelta(i - 1))
-            for i in range(1, days + 1)
+            (start_date + timedelta(days=i), start_date + timedelta(days=i + 1))
+            for i in range(total_days)
         ]
         x_axis_label = "Day"
     else:
-        # Use weeks otherwise
+        # Use weekly intervals (inclusive start, exclusive end)
         date_ranges = [
-            (end_date - dt.timedelta(i * 7), end_date - dt.timedelta((i - 1) * 7))
+            (end_date - timedelta(weeks=i), end_date - timedelta(weeks=i - 1))
             for i in range(1, weeks + 1)
         ]
         x_axis_label = "Week"
 
     df = pd.DataFrame(columns=["start_date"] + languages)
 
-    for start_date, end_date in date_ranges:
-        daterange = [start_date, end_date]
-        df.loc[len(df), "start_date"] = start_date
+    for start_date, period_end in date_ranges:
+        row_data = {"start_date": start_date}
+        local_daterange = [start_date, period_end]
 
         for language in languages:
+
             language_list = [language]
-            bottom_level_value = metrics.get_totals_by_metric(
-                daterange,
+
+            bottom_val = metrics.get_totals_by_metric(
+                daterange=local_daterange,
                 stat=bottom_level,
                 language=language_list,
                 countries_list=countries_list,
                 app="CR",
                 user_list=user_list
             )
-            upper_level_value = metrics.get_totals_by_metric(
-                daterange,
+
+            upper_val = metrics.get_totals_by_metric(
+                daterange=local_daterange,
                 stat=upper_level,
                 language=language_list,
                 countries_list=countries_list,
                 app="CR",
                 user_list=user_list
-           )
-            try:#
-                percentage = round((bottom_level_value / upper_level_value) * 100, 2)
-            except ZeroDivisionError:
-                percentage = 0
-            df.loc[df["start_date"] == start_date, language] = percentage
+            )
 
-    # Create traces for each column provided it has a value
+            if upper_val in [0, None] or bottom_val is None:
+                percentage = 0
+            else:
+                percentage = round((bottom_val / upper_val) * 100, 2)
+
+            row_data[language] = percentage
+
+        df.loc[len(df)] = row_data
+
+    # Plot
     traces = [
         go.Scatter(
             x=df["start_date"],
-            y=df[column],
+            y=df[lang],
             mode="lines+markers",
-            name=column,
+            name=lang,
             hovertemplate="%{y}%<br>",
         )
-        for column in df.columns[1:]
+        for lang in languages
     ]
 
-    # Create layout
-    layout = go.Layout(
-        title="",
-        xaxis=dict(title=x_axis_label),
-        yaxis=dict(title="Percent of upper level"),
-        legend={"traceorder": "normal"},
+    fig = go.Figure(
+        data=traces,
+        layout=go.Layout(
+            xaxis=dict(title=x_axis_label),
+            yaxis=dict(title="Percent of upper level"),
+            legend={"traceorder": "normal"},
+            margin=dict(l=10, r=1, b=0, t=10, pad=4),
+            geo=dict(bgcolor="rgba(0,0,0,0)"),
+        ),
     )
-
-    # Create figure
-    fig = go.Figure(data=traces, layout=layout)
-    fig.update_layout(
-        margin=dict(l=10, r=1, b=0, t=10, pad=4),
-        geo=dict(bgcolor="rgba(0,0,0,0)"),
+    fig.update_layout(  
+    xaxis=dict(
+        title=x_axis_label,
+        tickformat="%Y-%m-%d"  # forces date-only display
     )
-
+)
     st.plotly_chart(fig, use_container_width=True)
     return df
+
 
 @st.cache_data(ttl="1d", show_spinner=False)
 def funnel_bar_chart(languages, countries_list, daterange,user_cohort_list):
