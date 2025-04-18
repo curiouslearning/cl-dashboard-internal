@@ -25,7 +25,8 @@ if (len(cr_user_id) > 0):
     df_cr_users = st.session_state.df_cr_users
     df_cr_app_launch = st.session_state.df_cr_app_launch
     df_cr_engagement = st.session_state.df_cr_engagement
-    df_cr_engagement.to_csv("df_cr_engagement.csv")
+    df_filtered = df_cr_app_launch[df_cr_app_launch['first_open'] >= pd.to_datetime('2025-01-01')]
+    df_filtered.to_csv("df_filtered.csv")
 
     user = df_cr_app_launch.loc[df_cr_app_launch['cr_user_id'] == cr_user_id]
     user_pseudo_id = None
