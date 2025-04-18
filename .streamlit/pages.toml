@@ -58,3 +58,12 @@ path = "app_pages/Best_Languages.py"
 name = "Best and Worst Performing Languages"
 icon = ":small_orange_diamond:"
 
+[[pages]]
+name = "Users"
+icon = ":large_brown_circle:"
+is_section = true
+
+[[pages]]
+path = "app_pages/user_details.py"
+name = "User Lookup"
+icon = ":small_orange_diamond:"
