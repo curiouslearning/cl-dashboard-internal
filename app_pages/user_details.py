@@ -14,11 +14,16 @@ def info_row(label, value, color="green"):
 
 def safe_value(val, fallback="N/A"):
     return fallback if pd.isna(val) else val
-
-
 col1, col2 = st.columns([2,4])
+
+#if the cr_user_id is passed in, retrieve from the query params
+value = ""
+if "cr_user_id" in st.query_params:
+    value = st.query_params["cr_user_id"]
+    
+#use the default initial setting of "value" which will either be blank or passed in     
 with col1:
-    cr_user_id = st.text_input(label="Enter cr_user_id",type="default")
+    cr_user_id = st.text_input(label="Enter cr_user_id",type="default",value=value)
 
 
 if (len(cr_user_id) > 0):
@@ -26,7 +31,6 @@ if (len(cr_user_id) > 0):
     df_cr_app_launch = st.session_state.df_cr_app_launch
     df_cr_engagement = st.session_state.df_cr_engagement
     df_filtered = df_cr_app_launch[df_cr_app_launch['first_open'] >= pd.to_datetime('2025-01-01')]
-    df_filtered.to_csv("df_filtered.csv")
 
     user = df_cr_app_launch.loc[df_cr_app_launch['cr_user_id'] == cr_user_id]
     user_pseudo_id = None
