@@ -64,6 +64,11 @@ if (len(cr_user_id) > 0):
         seconds = safe_value(user["total_time_seconds"].iloc[0])
         minutes = (seconds / 60).round(2)
         info_row("Total Time (m):", minutes)
+        info_row( "Device Brand Name: " ,  safe_value(user["device_mobile_brand_name"].iloc[0]))
+        info_row( "Device Marketing Name: " ,  safe_value(user["device_mobile_marketing_name"].iloc[0]))
+        info_row( "Device Model Name: " ,  safe_value(user["device_mobile_model_name"].iloc[0]))
+        info_row( "Device Category: " ,  safe_value(user["device_category"].iloc[0]))
+
 
     else:
         st.warning("No engagement data found for this cr_user_id.")
