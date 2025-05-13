@@ -9,6 +9,10 @@ from millify import prettify
 import plost
 import users
 import campaigns
+from datetime import timedelta
+import numpy as np
+from sklearn.linear_model import LinearRegression
+
 
 
 default_daterange = [dt.datetime(2021, 1, 1).date(), dt.date.today()]
@@ -624,15 +628,16 @@ def top_campaigns_by_downloads_barchart(n):
     )
 
 
-from datetime import timedelta
 
 def funnel_change_by_language_chart(
     languages, countries_list, daterange, upper_level, bottom_level, user_list=[]
 ):
-
     start_date, end_date = daterange
     total_days = (end_date - start_date).days
     weeks = metrics.weeks_since(daterange)
+    
+    show_actual = st.checkbox("Show Actual Data Lines", value=True)
+    show_trend = st.checkbox("Show Trend Lines", value=True)
 
     if weeks <= 4:
         # Use daily intervals
@@ -656,7 +661,6 @@ def funnel_change_by_language_chart(
         local_daterange = [start_date, period_end]
 
         for language in languages:
-
             language_list = [language]
 
             bottom_val = metrics.get_totals_by_metric(
@@ -665,7 +669,7 @@ def funnel_change_by_language_chart(
                 language=language_list,
                 countries_list=countries_list,
                 app="CR",
-                user_list=user_list
+                user_list=user_list,
             )
 
             upper_val = metrics.get_totals_by_metric(
@@ -674,7 +678,7 @@ def funnel_change_by_language_chart(
                 language=language_list,
                 countries_list=countries_list,
                 app="CR",
-                user_list=user_list
+                user_list=user_list,
             )
 
             if upper_val in [0, None] or bottom_val is None:
@@ -686,18 +690,43 @@ def funnel_change_by_language_chart(
 
         df.loc[len(df)] = row_data
 
-    # Plot
-    traces = [
-        go.Scatter(
-            x=df["start_date"],
-            y=df[lang],
-            mode="lines+markers",
-            name=lang,
-            hovertemplate="%{y}%<br>",
-        )
-        for lang in languages
-    ]
+    # Convert to numeric x-axis for regression
+    df["start_date"] = pd.to_datetime(df["start_date"])  # ensure datetime dtype
+    df["start_date_numeric"] = (df["start_date"] - df["start_date"].min()).dt.days
+    # Plot with trendlines
+    traces = []
 
+    for lang in languages:
+        x_vals = df["start_date_numeric"].values.reshape(-1, 1)
+        y_vals = df[lang].values
+
+        if show_actual:
+            traces.append(
+                go.Scatter(
+                    x=df["start_date"],
+                    y=y_vals,
+                    mode="lines+markers",
+                    name=lang,
+                    hovertemplate="%{y}%<br>",
+                )
+            )
+
+        if show_trend and np.isfinite(y_vals).sum() > 1:
+            model = LinearRegression()
+            model.fit(x_vals, y_vals)
+            trendline_y = model.predict(x_vals)
+
+            traces.append(
+                go.Scatter(
+                    x=df["start_date"],
+                    y=trendline_y,
+                    mode="lines",
+                    name=f"{lang} Trend",
+                    line=dict(dash="dot"),
+                    showlegend=True,
+                )
+            )
+        
     fig = go.Figure(
         data=traces,
         layout=go.Layout(
@@ -708,14 +737,16 @@ def funnel_change_by_language_chart(
             geo=dict(bgcolor="rgba(0,0,0,0)"),
         ),
     )
-    fig.update_layout(  
-    xaxis=dict(
-        title=x_axis_label,
-        tickformat="%Y-%m-%d"  # forces date-only display
+    fig.update_layout(
+        xaxis=dict(
+            title=x_axis_label,
+            tickformat="%Y-%m-%d"  # forces date-only display
+        )
     )
-)
+
     st.plotly_chart(fig, use_container_width=True)
     return df
+
 
 
 @st.cache_data(ttl="1d", show_spinner=False)
