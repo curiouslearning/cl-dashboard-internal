@@ -3,7 +3,6 @@ import pandas as pd
 from rich import print as print
 import numpy as np
 from pyinstrument import Profiler
-import logging
 import asyncio
 
 # How far back to obtain user data.  Currently the queries pull back to 01/01/2021
