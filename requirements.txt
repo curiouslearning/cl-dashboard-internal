@@ -15,4 +15,4 @@ db-dtypes
 st-pages
 BeautifulSoup4
 pathlib
-sklearn
+scikit-learn
