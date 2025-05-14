@@ -13,7 +13,6 @@ settings.init_user_list()
 
 ui.display_definitions_table("Definitions",ui.level_percent_definitions)
 
-st.subheader("Funnel Performance by Level")
 st.markdown(
     """
     :green-background[NOTE:]
@@ -21,18 +20,8 @@ st.markdown(
     It compares the selected level % drop from the selected upper level.]
     """
 )
-col1, col2, col3 = st.columns(3)
+col1, col2 = st.columns(2)
 
-
-df_languages = metrics.get_counts(
-    type="app_language",
-    app="CR",
-    language=["All"],
-)
-
-df_top10 = (
-    df_languages[["app_language", "LR"]].sort_values(by="LR", ascending=False).head(10)
-)
 
 countries_list = users.get_country_list()
 with col2:
@@ -43,13 +32,23 @@ with col2:
         key="la-2",
     )
 
-with col3:
+with col2:
     selected_date, option = ui.calendar_selector(placement="middle", key="fa-3", index=4)
     daterange = ui.convert_date_to_range(selected_date, option)
+    
+df_languages = metrics.get_counts(
+    type="app_language",
+    daterange=daterange,
+    app="CR",
+    language=["All"],
+)
+df_top10 = (
+    df_languages[["app_language", "LR"]].sort_values(by="LR", ascending=False).head(6)
+)
 
 with col1:
     upper_level, bottom_level = ui.level_comparison_selector(placement="middle")
-    if st.toggle(label="Use Top 10 LR Languages", value=True):
+    if st.toggle(label="Use Top 10 LR Languages for Date Range", value=True):
         selected_languages = df_top10["app_language"].to_list()
     else:
         df = users.get_language_list()

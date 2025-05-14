@@ -627,8 +627,6 @@ def top_campaigns_by_downloads_barchart(n):
         legend="bottom",
     )
 
-
-
 def funnel_change_by_language_chart(
     languages, countries_list, daterange, upper_level, bottom_level, user_list=[]
 ):
@@ -640,14 +638,12 @@ def funnel_change_by_language_chart(
     show_trend = st.checkbox("Show Trend Lines", value=True)
 
     if weeks <= 4:
-        # Use daily intervals
         date_ranges = [
             (start_date + timedelta(days=i), start_date + timedelta(days=i + 1))
             for i in range(total_days)
         ]
         x_axis_label = "Day"
     else:
-        # Use weekly intervals (inclusive start, exclusive end)
         date_ranges = [
             (end_date - timedelta(weeks=i), end_date - timedelta(weeks=i - 1))
             for i in range(1, weeks + 1)
@@ -655,6 +651,7 @@ def funnel_change_by_language_chart(
         x_axis_label = "Week"
 
     df = pd.DataFrame(columns=["start_date"] + languages)
+    customdata_map = {lang: [] for lang in languages}
 
     for start_date, period_end in date_ranges:
         row_data = {"start_date": start_date}
@@ -687,18 +684,19 @@ def funnel_change_by_language_chart(
                 percentage = round((bottom_val / upper_val) * 100, 2)
 
             row_data[language] = percentage
+            customdata_map[language].append((bottom_val, upper_val))
 
         df.loc[len(df)] = row_data
 
-    # Convert to numeric x-axis for regression
-    df["start_date"] = pd.to_datetime(df["start_date"])  # ensure datetime dtype
+    df["start_date"] = pd.to_datetime(df["start_date"])
     df["start_date_numeric"] = (df["start_date"] - df["start_date"].min()).dt.days
-    # Plot with trendlines
+
     traces = []
 
     for lang in languages:
         x_vals = df["start_date_numeric"].values.reshape(-1, 1)
         y_vals = df[lang].values
+        custom_vals = customdata_map[lang]
 
         if show_actual:
             traces.append(
@@ -707,7 +705,13 @@ def funnel_change_by_language_chart(
                     y=y_vals,
                     mode="lines+markers",
                     name=lang,
-                    hovertemplate="%{y}%<br>",
+                    customdata=custom_vals,
+                    hovertemplate=(
+                        f"<b>{lang}</b><br>Date: %{{x}}<br>"
+                        "Percentage: %{y}%<br>"
+                        f"{bottom_level}: %{{customdata[0]:,}}<br>"
+                        f"{upper_level}: %{{customdata[1]:,}}<extra></extra>"
+                    ),
                 )
             )
 
@@ -726,7 +730,7 @@ def funnel_change_by_language_chart(
                     showlegend=True,
                 )
             )
-        
+
     fig = go.Figure(
         data=traces,
         layout=go.Layout(
@@ -740,12 +744,13 @@ def funnel_change_by_language_chart(
     fig.update_layout(
         xaxis=dict(
             title=x_axis_label,
-            tickformat="%Y-%m-%d"  # forces date-only display
+            tickformat="%Y-%m-%d"
         )
     )
 
     st.plotly_chart(fig, use_container_width=True)
     return df
+
 
 
 
