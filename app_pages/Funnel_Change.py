@@ -48,7 +48,7 @@ df_top10 = (
 
 with col1:
     upper_level, bottom_level = ui.level_comparison_selector(placement="middle")
-    if st.toggle(label="Use Top 10 LR Languages for Date Range", value=True):
+    if st.toggle(label="Use Top 6 LR Languages for Date Range", value=True):
         selected_languages = df_top10["app_language"].to_list()
     else:
         df = users.get_language_list()

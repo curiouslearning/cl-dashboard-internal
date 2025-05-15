@@ -74,6 +74,51 @@ if (len(cr_user_id) > 0):
         st.warning("No engagement data found for this cr_user_id.")
 
 
+    st.markdown("---")  # Optional: visual separator
+
+    if st.button("Run Full Event Query for this User"):
+        with st.spinner("Running BigQuery..."):
+            bq_client = st.session_state["bq_client"]
+
+            sql = f"""
+                SELECT
+                  event_name,
+                  event_date,
+                  CAST(DATE(TIMESTAMP_MICROS(event_timestamp)) AS DATETIME) AS event_timestamp,
+                  user_pseudo_id,
+                  device.language
+                FROM
+                  `ftm-b9d99.analytics_159643920.events_*` AS a
+                WHERE
+                  _TABLE_SUFFIX BETWEEN '20250101' AND FORMAT_DATE('%Y%m%d', CURRENT_DATE())
+                  AND EXISTS (
+                    SELECT 1
+                    FROM UNNEST(event_params) AS p
+                    WHERE p.key = 'cr_user_id' AND p.value.string_value = '{cr_user_id}'
+                  )
+                ORDER BY
+                  event_timestamp ASC
+            """
+
+            try:
+                df_events = bq_client.query(sql).to_dataframe()
+                if df_events.empty:
+                    st.info("No events found for this user.")
+                else:
+                    st.success(f"Found {len(df_events)} events.")
+                    st.dataframe(df_events)
+
+                    # Optional: Add CSV download
+                    csv = df_events.to_csv(index=False).encode('utf-8')
+                    st.download_button(
+                        label="Download as CSV",
+                        data=csv,
+                        file_name=f"events_{cr_user_id}.csv",
+                        mime="text/csv",
+                    )
+
+            except Exception as e:
+                st.error(f"Error running query: {e}")
 
     
 
