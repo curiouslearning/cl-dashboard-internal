@@ -84,9 +84,9 @@ if (len(cr_user_id) > 0):
                 SELECT
                   event_name,
                   event_date,
-                  CAST(DATE(TIMESTAMP_MICROS(event_timestamp)) AS DATETIME) AS event_timestamp,
+                  CAST(TIMESTAMP_MICROS(event_timestamp) AS DATETIME) AS event_timestamp,
                   user_pseudo_id,
-                  device.language
+                  device.language as device_language
                 FROM
                   `ftm-b9d99.analytics_159643920.events_*` AS a
                 WHERE
