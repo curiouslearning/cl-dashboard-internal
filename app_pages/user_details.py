@@ -90,7 +90,7 @@ if (len(cr_user_id) > 0):
                 FROM
                   `ftm-b9d99.analytics_159643920.events_*` AS a
                 WHERE
-                  _TABLE_SUFFIX BETWEEN '20250101' AND FORMAT_DATE('%Y%m%d', CURRENT_DATE())
+                  _TABLE_SUFFIX BETWEEN '20230101' AND FORMAT_DATE('%Y%m%d', CURRENT_DATE())
                   AND EXISTS (
                     SELECT 1
                     FROM UNNEST(event_params) AS p
