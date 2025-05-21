@@ -36,7 +36,7 @@ async def get_users_list():
         
         sql_cr_users = f"""
             SELECT *
-            FROM `dataexploration-193817.user_data.cr_user_progress_inc`
+            FROM `dataexploration-193817.user_data.cr_user_progress`
             WHERE first_open BETWEEN PARSE_DATE('%Y/%m/%d','{start_date}') AND CURRENT_DATE()
         """
 
