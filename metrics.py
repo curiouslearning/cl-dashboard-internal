@@ -553,7 +553,12 @@ def get_date_cohort_dataframe(
     languages=["All"],
     countries_list=["All"],
     app="CR"):
-        
+    
+    """
+    Returns a DataFrame of activity for all users who first opened the app in the selected cohort.
+    Useful for tracking how cohorts evolve over time.
+    """
+
     # Get all of the users in the user selected window - this is the cohort
     df_user_cohort = filter_user_data(daterange=daterange,countries_list=countries_list,app="CR",language=languages)
 
@@ -571,7 +576,11 @@ def get_user_cohort_list(
     languages=["All"],
     countries_list=["All"],
     app="CR"):
-        
+    
+    """
+    Returns a list of user identifiers from the selected cohort based on first_open date,
+    country, language, and app type. Handles differing ID logic for Unity vs CR.
+    """       
     # Get all of the users in the user selected window - this is the cohort
     df_user_cohort = filter_user_data(daterange=daterange,countries_list=countries_list,app=app,language=languages)
 
@@ -583,4 +592,20 @@ def get_user_cohort_list(
         user_cohort_list = df_user_cohort["user_pseudo_id"]
    
     return user_cohort_list
+
+def calculate_average_metric_per_user(user_cohort_list, column_name):
+    df_cr_app_launch = st.session_state["df_cr_app_launch"]
+
+    if len(user_cohort_list) == 0:
+        return 0
+
+    # Filter rows where cr_user_id is in the cohort list
+    df_filtered = df_cr_app_launch[df_cr_app_launch["cr_user_id"].isin(user_cohort_list)]
+
+    # Sum the selected column and calculate the average
+    total = df_filtered[column_name].sum()
+    average = total / len(user_cohort_list)
+
+    return average
+
 

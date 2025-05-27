@@ -36,5 +36,12 @@ with col2:
 
 if len(countries_list) > 0  and (len(daterange) == 2):
     user_cohort_list = metrics.get_user_cohort_list(daterange=daterange,languages=language,countries_list=countries_list,app="CR")
+    
+    average_number_sessions = metrics.calculate_average_metric_per_user(user_cohort_list,column_name="engagement_event_count")
+    average_total_sessions_time = metrics.calculate_average_metric_per_user(user_cohort_list,column_name="total_time_minutes")
+ 
+    col1.metric(label="Average Number Sessions per User", value=f"{average_number_sessions:.2f}%")
+    col1.metric(label="Average Total Session Time per User", value=f"{average_total_sessions_time:.2f}%")
+    
     uic.create_funnels(countries_list=countries_list,daterange=daterange,key_prefix="dc-1",languages=languages,displayLR=True,user_list=user_cohort_list)
 
