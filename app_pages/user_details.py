@@ -44,6 +44,12 @@ if (len(cr_user_id) > 0):
         info_row("Country:", safe_value(user["country"].iloc[0]))
         info_row("Language:", safe_value(user["app_language"].iloc[0]))
         info_row("CR First Open:", safe_value(user["first_open"].iloc[0]))
+        info_row("Engagement events:", safe_value(user["engagement_event_count"].iloc[0]))
+        info_row("Engagement time:", safe_value(user["total_time_minutes"].iloc[0]))
+        info_row("Mobile brand:", safe_value(user["device_mobile_brand_name"].iloc[0]))
+        info_row("Mobile model:", safe_value(user["device_mobile_model_name"].iloc[0]))
+        info_row("Mobile marketing name:", safe_value(user["device_mobile_marketing_name"].iloc[0]))
+        info_row("App version:", safe_value(user["app_version"].iloc[0]))
     else:
         st.warning("No CR data found for this cr_user_id.")
 
@@ -56,22 +62,6 @@ if (len(cr_user_id) > 0):
         info_row("Learner Acquired Date :", safe_value(user["la_date"].iloc[0]))
     else:
         st.warning("No FTM data found for this cr_user_id.")
-
-    # CR Engagement
-    user = df_cr_engagement.loc[df_cr_engagement['user_pseudo_id'] == user_pseudo_id]
-    if not user.empty:
-        info_row("Engagement Events:", safe_value(user["engagement_event_count"].iloc[0]))
-        seconds = safe_value(user["total_time_seconds"].iloc[0])
-        minutes = (seconds / 60).round(2)
-        info_row("Total Time (m):", minutes)
-        info_row( "Device Brand Name: " ,  safe_value(user["device_mobile_brand_name"].iloc[0]))
-        info_row( "Device Marketing Name: " ,  safe_value(user["device_mobile_marketing_name"].iloc[0]))
-        info_row( "Device Model Name: " ,  safe_value(user["device_mobile_model_name"].iloc[0]))
-        info_row( "Device Category: " ,  safe_value(user["device_category"].iloc[0]))
-
-
-    else:
-        st.warning("No engagement data found for this cr_user_id.")
 
 
     st.markdown("---")  # Optional: visual separator
