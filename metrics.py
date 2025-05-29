@@ -12,6 +12,7 @@ def get_totals_by_metric(
     daterange=default_daterange,
     countries_list=[],
     stat="LR",
+    cr_app_versions="All",
     app="Both",
     language="All",
     user_list=[] #New parameter allowing a filter of results by cr_user_id list
@@ -22,7 +23,7 @@ def get_totals_by_metric(
         countries_list = users.get_country_list()
 
     df_user_list = filter_user_data(
-        daterange, countries_list, stat, app=app, language=language,user_list=user_list
+        daterange=daterange, countries_list=countries_list, stat=stat, app=app, cr_app_versions=cr_app_versions, language=language,user_list=user_list
     )
 
     if stat not in ["DC", "TS", "SL", "PC", "LA"]:
@@ -77,6 +78,7 @@ def get_totals_by_metric(
 def filter_user_data(
     daterange=default_daterange,
     countries_list=["All"],
+    cr_app_versions="All",
     stat="LR",
     app="Both",
     language=["All"],
@@ -111,6 +113,9 @@ def filter_user_data(
 
     # Initialize a boolean mask
     mask = (df['first_open'] >= daterange[0]) & (df['first_open'] <= daterange[1])
+
+    if cr_app_versions != "All" and  app == "CR":
+            mask &= df["app_version"].isin(cr_app_versions)
 
     # Apply country filter if not "All"
     if countries_list[0] != "All":
@@ -186,7 +191,7 @@ def get_counts(
 ):
     dfLR = (
         filter_user_data(
-            daterange, countries_list, stat="LR", app=app, language=language
+            daterange=daterange, countries_list=countries_list, stat="LR", app=app, language=language
         )
         .groupby(type)
         .size()
@@ -194,14 +199,14 @@ def get_counts(
         .reset_index()
     )
     dfLA = (
-        filter_user_data(daterange, countries_list, "LA", app=app, language=language)
+        filter_user_data(daterange=daterange, countries_list=countries_list, stat="LA", app=app, language=language)
         .groupby(type)
         .size()
         .to_frame(name="LA")
         .reset_index()
     )    
     dfRA = (
-        filter_user_data(daterange, countries_list, "RA", app=app, language=language)
+        filter_user_data(daterange=daterange, countries_list=countries_list,  stat="RA", app=app, language=language)
         .groupby(type)
         .size()
         .to_frame(name="RA")
@@ -217,7 +222,7 @@ def get_counts(
 
     #### GPP ###
     df = filter_user_data(
-       daterange, countries_list, stat="LA", app=app, language=language
+       daterange=daterange, countries_list=countries_list, stat="LA", app=app, language=language
        )
     avg_gpc_per_type = df.groupby(type)["gpc"].mean().round(2)
     dfGPP = pd.DataFrame(
@@ -230,7 +235,7 @@ def get_counts(
     counts = counts.merge(dfGPP, on=type, how="left").fillna(0)
 
     dfPC = (
-        filter_user_data(daterange, countries_list, "PC", app=app, language=language)
+        filter_user_data(daterange=daterange, countries_list=countries_list, stat="PC", app=app, language=language)
         .groupby(type)
         .size()
         .to_frame(name="PC")
@@ -239,7 +244,7 @@ def get_counts(
 
     counts = counts.merge(dfPC, on=type, how="left").fillna(0)
     df = filter_user_data(
-        daterange, countries_list, stat="LA", app=app, language=language
+        daterange=daterange, countries_list=countries_list, stat="LA", app=app, language=language
     )
     gpc_gt_90_counts = df[df["gpc"] >= 90].groupby(type)["user_pseudo_id"].count()
     total_user_counts = df.groupby(type)["user_pseudo_id"].count()
@@ -262,6 +267,7 @@ def get_counts(
 
 #Added new parameter user_list.  If passed, only return the funnel based on that set of users
 
+@st.cache_data(ttl="1d", show_spinner=False)
 def build_funnel_dataframe(
     index_col="language",
     daterange=default_daterange,
@@ -289,7 +295,7 @@ def build_funnel_dataframe(
             daterange = [start_date, end_date]
 
         DC = get_totals_by_metric(
-            daterange,
+            daterange=daterange,
             stat="DC",
             language=language,
             countries_list=countries_list,
@@ -297,7 +303,7 @@ def build_funnel_dataframe(
             user_list=user_list
         )
         SL = get_totals_by_metric(
-            daterange,
+            daterange=daterange,
             stat="SL",
             language=language,
             countries_list=countries_list,
@@ -305,7 +311,7 @@ def build_funnel_dataframe(
             user_list=user_list
          )
         TS = get_totals_by_metric(
-            daterange,
+            daterange=daterange,
             stat="TS",
             language=language,
             countries_list=countries_list,
@@ -314,7 +320,7 @@ def build_funnel_dataframe(
          )
 
         PC = get_totals_by_metric(
-            daterange,
+            daterange=daterange,
             stat="PC",
             language=language,
             countries_list=countries_list,
@@ -322,7 +328,7 @@ def build_funnel_dataframe(
             user_list=user_list
         )
         LA = get_totals_by_metric(
-            daterange,
+            daterange=daterange,
             stat="LA",
             language=language,
             countries_list=countries_list,
@@ -330,7 +336,7 @@ def build_funnel_dataframe(
             user_list=user_list
          )
         LR = get_totals_by_metric(
-            daterange,
+            daterange=daterange,
             stat="LR",
             language=language,
             countries_list=countries_list,
@@ -338,7 +344,7 @@ def build_funnel_dataframe(
             user_list=user_list
         )        
         RA = get_totals_by_metric(
-            daterange,
+            daterange=daterange,
             stat="RA",
             language=language,
             countries_list=countries_list,
@@ -346,7 +352,7 @@ def build_funnel_dataframe(
             user_list=user_list
          )
         GC = get_totals_by_metric(
-            daterange,
+            daterange=daterange,
             stat="GC",
             language=language,
             countries_list=countries_list,
@@ -459,6 +465,7 @@ def add_level_percents(df):
 
 
 # Get the campaign data and filter by date, language, and country selections
+@st.cache_data(ttl="1d", show_spinner=False)
 def filter_campaigns(df_campaigns_all,daterange,selected_languages,countries_list):
 
     # Drop the campaigns that don't meet the naming convention
@@ -503,6 +510,7 @@ def get_month_ranges(start_date, end_date):
     return month_ranges
 
 #Returns a dataframe of the totals of a stat for each month
+@st.cache_data(ttl="1d", show_spinner=False)
 def get_totals_per_month(daterange, stat, countries_list, language):
     # First, get all campaign data
     df_campaigns_all = st.session_state["df_campaigns_all"]
@@ -548,6 +556,7 @@ def get_totals_per_month(daterange, stat, countries_list, language):
     # Display the DataFrame
     return df_totals
 
+@st.cache_data(ttl="1d", show_spinner=False)
 def get_date_cohort_dataframe(
     daterange=default_daterange,
     languages=["All"],
@@ -571,9 +580,11 @@ def get_date_cohort_dataframe(
     
     return df
 
+@st.cache_data(ttl="1d", show_spinner=False)
 def get_user_cohort_list(
     daterange=default_daterange,
     languages=["All"],
+    cr_app_versions="All",
     countries_list=["All"],
     app="CR"):
     
@@ -582,7 +593,7 @@ def get_user_cohort_list(
     country, language, and app type. Handles differing ID logic for Unity vs CR.
     """       
     # Get all of the users in the user selected window - this is the cohort
-    df_user_cohort = filter_user_data(daterange=daterange,countries_list=countries_list,app=app,language=languages)
+    df_user_cohort = filter_user_data(daterange=daterange,countries_list=countries_list,app=app,language=languages,cr_app_versions=cr_app_versions)
 
     # Unity doesn't have a cr_user_id.  But CR has different user_psuedo_id for CR events vs 
     # FTM events, so we have to play this little game.
@@ -593,6 +604,7 @@ def get_user_cohort_list(
    
     return user_cohort_list
 
+@st.cache_data(ttl="1d", show_spinner=False)
 def calculate_average_metric_per_user(user_cohort_list, column_name):
     df_cr_app_launch = st.session_state["df_cr_app_launch"]
 

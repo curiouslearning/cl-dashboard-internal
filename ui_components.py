@@ -936,6 +936,7 @@ def top_and_bottom_languages_per_level(selection, min_LR):
 def create_funnels(countries_list,
                    daterange,
                    languages,
+                   app_versions,
                    key_prefix,
                    displayLR=True,
                    user_list=[]):
@@ -964,6 +965,7 @@ def create_funnels(countries_list,
             metrics_data[stat] = metrics.get_totals_by_metric(
                 daterange,
                 stat=stat,
+                cr_app_versions=app_versions,
                 language=languages,
                 countries_list=countries_list,
                 app="CR",

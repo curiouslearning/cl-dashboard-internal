@@ -10,6 +10,8 @@ import metrics
 
 settings.initialize()
 settings.init_user_list()
+settings.init_cr_app_version_list()
+
 
 ui.display_definitions_table("Data Notes",ui.data_notes)
 
@@ -19,6 +21,8 @@ countries_list = users.get_country_list()
 
 col1, col2 = st.columns(2)
 with col1:
+    app_versionsA = ui.app_version_selector(placement="col", key="cf-1")
+
     languageA = ui.single_selector(
         languages, placement="col", title="Select a language", key="cf-2"
     )   
@@ -33,6 +37,8 @@ with col1:
 
     
 with col2:  
+    app_versionsB = ui.app_version_selector(placement="col", key="cf-5")
+
     languageB = ui.single_selector(
         languages, placement="col", title="Select a language", key="cf-6"
     )  
@@ -48,23 +54,25 @@ with col2:
 
 if len(countries_listA) and  len(countries_listB ) > 0:
     
-    user_cohort_listA = metrics.get_user_cohort_list(daterange=daterangeA,languages=languageA,countries_list=countries_listA,app="CR")
+    user_cohort_listA = metrics.get_user_cohort_list(daterange=daterangeA,languages=languageA,countries_list=countries_listA,app="CR",cr_app_versions=app_versionsA)
     average_total_sessions_timeA = metrics.calculate_average_metric_per_user(user_cohort_listA,column_name="total_time_minutes")
     average_number_sessionsA = metrics.calculate_average_metric_per_user(user_cohort_listA,column_name="engagement_event_count")
 
-    user_cohort_listB = metrics.get_user_cohort_list(daterange=daterangeB,languages=languageB,countries_list=countries_listB,app="CR")
+    user_cohort_listB = metrics.get_user_cohort_list(daterange=daterangeB,languages=languageB,countries_list=countries_listB,app="CR",cr_app_versions=app_versionsB)
     average_total_sessions_timeB = metrics.calculate_average_metric_per_user(user_cohort_listB,column_name="total_time_minutes")
     average_number_sessionsB = metrics.calculate_average_metric_per_user(user_cohort_listB,column_name="engagement_event_count")
 
 
     displayLR = True
+    if app_versionsA != 'All' or app_versionsB != 'All':
+        displayLR = False
     with col1:
         st.metric(label="Average Number Sessions per User", value=f"{average_number_sessionsA:.2f}")
         st.metric(label="Average Total Session Time per User", value=f"{average_total_sessions_timeA:.2f} min")
-        uic.create_funnels(daterange=daterangeA,countries_list=countries_listA,languages=languageA,key_prefix="cf-10",displayLR=displayLR,user_list=user_cohort_listA)
+        uic.create_funnels(daterange=daterangeA,countries_list=countries_listA,languages=languageA,key_prefix="cf-10",displayLR=displayLR,user_list=user_cohort_listA,app_versions=app_versionsA)
  
     with col2:  
         st.metric(label="Average Number Sessions per User", value=f"{average_number_sessionsB:.2f}")
         st.metric(label="Average Total Session Time per User", value=f"{average_total_sessions_timeB:.2f} min")
-        uic.create_funnels(daterange=daterangeB,countries_list=countries_listB,languages=languageB,key_prefix="cf-11",displayLR=displayLR,user_list=user_cohort_listB)
+        uic.create_funnels(daterange=daterangeB,countries_list=countries_listB,languages=languageB,key_prefix="cf-11",displayLR=displayLR,user_list=user_cohort_listB,app_versions=app_versionsB)
 

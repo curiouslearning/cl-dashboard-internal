@@ -62,6 +62,12 @@ def init_user_list():
     if "df_cr_app_launch" not in st.session_state:
         st.session_state["df_cr_app_launch"] = df_cr_app_launch
 
+def init_cr_app_version_list():
+    cr_app_versions_list = users.get_app_version_list()
+    if "cr_app_versions_list" not in st.session_state:
+        st.session_state.cr_app_versions_list = cr_app_versions_list
+
+
 # Get the campaign data from BigQuery, roll it up per campaign
 def init_campaign_data():
 # Call the combined asynchronous campaign data function
