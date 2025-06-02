@@ -46,15 +46,9 @@ async def get_users_list():
             WHERE first_open BETWEEN PARSE_DATE('%Y/%m/%d','{start_date}') AND CURRENT_DATE()
         """
 
-        sql_cr_engagement = f"""
-            SELECT *
-            FROM `dataexploration-193817.user_data.cr_user_engagement`
-            WHERE first_open BETWEEN PARSE_DATE('%Y/%m/%d','{start_date}') AND CURRENT_DATE()
-        """
 
         # Run all the queries asynchronously
-        df_cr_engagement, df_cr_users, df_unity_users, df_cr_app_launch = await asyncio.gather(
-            run_query(sql_cr_engagement),
+        df_cr_users, df_unity_users, df_cr_app_launch = await asyncio.gather(
             run_query(sql_cr_users),
             run_query(sql_unity_users),
             run_query(sql_cr_app_launch),
@@ -96,7 +90,7 @@ async def get_users_list():
 
     p.print(color="red")
     
-    return df_cr_engagement, df_cr_users, df_unity_users,  df_cr_app_launch
+    return  df_cr_users, df_unity_users,  df_cr_app_launch
 
 
 @st.cache_data(ttl="1d", show_spinner=False)
