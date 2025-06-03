@@ -71,23 +71,31 @@ if (len(cr_user_id) > 0):
             bq_client = st.session_state["bq_client"]
 
             sql = f"""
-                SELECT
-                  event_name,
-                  event_date,
-                  CAST(TIMESTAMP_MICROS(event_timestamp) AS DATETIME) AS event_timestamp,
-                  user_pseudo_id,
-                  device.language as device_language
-                FROM
-                  `ftm-b9d99.analytics_159643920.events_*` AS a
-                WHERE
-                  _TABLE_SUFFIX BETWEEN '20230101' AND FORMAT_DATE('%Y%m%d', CURRENT_DATE())
-                  AND EXISTS (
-                    SELECT 1
-                    FROM UNNEST(event_params) AS p
-                    WHERE p.key = 'cr_user_id' AND p.value.string_value = '{cr_user_id}'
-                  )
-                ORDER BY
-                  event_timestamp ASC
+                    SELECT
+                    a.event_name,
+                    a.event_date,
+                    CAST(TIMESTAMP_MICROS(a.event_timestamp) AS DATETIME) AS event_timestamp,
+                    a.user_pseudo_id,
+                    a.device.language AS device_language,
+
+                    -- Only include web_app_title if the event_name is app_launch
+                    IF(a.event_name = 'app_launch', 
+                        (SELECT p.value.string_value 
+                        FROM UNNEST(a.event_params) AS p 
+                        WHERE p.key = 'web_app_title'), 
+                        NULL) AS web_app_title
+
+                    FROM
+                    `ftm-b9d99.analytics_159643920.events_*` AS a
+                    WHERE
+                    _TABLE_SUFFIX BETWEEN '20240101' AND FORMAT_DATE('%Y%m%d', CURRENT_DATE())
+                    AND EXISTS (
+                        SELECT 1
+                        FROM UNNEST(a.event_params) AS p
+                        WHERE p.key = 'cr_user_id' AND p.value.string_value = '{cr_user_id}'
+                    )
+                    ORDER BY
+                    event_timestamp ASC
             """
 
             try:
