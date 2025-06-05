@@ -54,13 +54,13 @@ with col2:
 
 if len(countries_listA) and  len(countries_listB ) > 0:
     
-    user_cohort_listA = metrics.get_user_cohort_list(daterange=daterangeA,languages=languageA,countries_list=countries_listA,app="CR",cr_app_versions=app_versionsA)
-    average_total_sessions_timeA = metrics.calculate_average_metric_per_user(user_cohort_listA,column_name="total_time_minutes")
-    average_number_sessionsA = metrics.calculate_average_metric_per_user(user_cohort_listA,column_name="engagement_event_count")
+    user_cohort_listA = metrics.get_user_cohort_list(daterange=daterangeA,languages=languageA,countries_list=countries_listA,app="CR",cr_app_versions=app_versionsA,as_list=False)
+    average_total_sessions_timeA = metrics.calculate_average_metric_per_user(user_cohort_listA["cr_user_id"],column_name="total_time_minutes")
+    average_number_sessionsA = metrics.calculate_average_metric_per_user(user_cohort_listA["cr_user_id"],column_name="engagement_event_count")
 
-    user_cohort_listB = metrics.get_user_cohort_list(daterange=daterangeB,languages=languageB,countries_list=countries_listB,app="CR",cr_app_versions=app_versionsB)
-    average_total_sessions_timeB = metrics.calculate_average_metric_per_user(user_cohort_listB,column_name="total_time_minutes")
-    average_number_sessionsB = metrics.calculate_average_metric_per_user(user_cohort_listB,column_name="engagement_event_count")
+    user_cohort_listB = metrics.get_user_cohort_list(daterange=daterangeB,languages=languageB,countries_list=countries_listB,app="CR",cr_app_versions=app_versionsB,as_list=False)
+    average_total_sessions_timeB = metrics.calculate_average_metric_per_user(user_cohort_listB["cr_user_id"],column_name="total_time_minutes")
+    average_number_sessionsB = metrics.calculate_average_metric_per_user(user_cohort_listB["cr_user_id"],column_name="engagement_event_count")
 
 
     displayLR = True
@@ -69,10 +69,15 @@ if len(countries_listA) and  len(countries_listB ) > 0:
     with col1:
         st.metric(label="Average Number Sessions per User", value=f"{average_number_sessionsA:.2f}")
         st.metric(label="Average Total Session Time per User", value=f"{average_total_sessions_timeA:.2f} min")
-        uic.create_funnels(daterange=daterangeA,countries_list=countries_listA,languages=languageA,key_prefix="cf-10",displayLR=displayLR,user_list=user_cohort_listA,app_versions=app_versionsA)
+        uic.create_funnels(daterange=daterangeA,countries_list=countries_listA,languages=languageA,key_prefix="cf-10",displayLR=displayLR,user_list=user_cohort_listA["cr_user_id"],app_versions=app_versionsA)
+        csvA = ui.convert_for_download(user_cohort_listA)
+        st.download_button(label="Download CSV",data=csvA,file_name="user_cohort_listA.csv",key="cf-15",icon=":material/download:",mime="text/csv")
+
  
     with col2:  
         st.metric(label="Average Number Sessions per User", value=f"{average_number_sessionsB:.2f}")
         st.metric(label="Average Total Session Time per User", value=f"{average_total_sessions_timeB:.2f} min")
-        uic.create_funnels(daterange=daterangeB,countries_list=countries_listB,languages=languageB,key_prefix="cf-11",displayLR=displayLR,user_list=user_cohort_listB,app_versions=app_versionsB)
+        uic.create_funnels(daterange=daterangeB,countries_list=countries_listB,languages=languageB,key_prefix="cf-11",displayLR=displayLR,user_list=user_cohort_listB["cr_user_id"],app_versions=app_versionsB)
+        csvB = ui.convert_for_download(user_cohort_listB)
+        st.download_button(label="Download CSV",data=csvB,file_name="user_cohort_listB.csv",key="cf-20",icon=":material/download:",mime="text/csv")
 

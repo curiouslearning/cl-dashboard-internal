@@ -586,23 +586,33 @@ def get_user_cohort_list(
     languages=["All"],
     cr_app_versions="All",
     countries_list=["All"],
-    app="CR"):
-    
+    app="CR",
+    as_list=True  # <-- NEW PARAM
+):
     """
-    Returns a list of user identifiers from the selected cohort based on first_open date,
-    country, language, and app type. Handles differing ID logic for Unity vs CR.
-    """       
-    # Get all of the users in the user selected window - this is the cohort
-    df_user_cohort = filter_user_data(daterange=daterange,countries_list=countries_list,app=app,language=languages,cr_app_versions=cr_app_versions)
+    Returns a list of user identifiers (default) or a DataFrame of cohort info based on first_open date,
+    country, language, and app type. Use as_list=False to return full DataFrame.
+    """
+    df_user_cohort = filter_user_data(
+        daterange=daterange,
+        countries_list=countries_list,
+        app=app,
+        language=languages,
+        cr_app_versions=cr_app_versions,
+    )
 
-    # Unity doesn't have a cr_user_id.  But CR has different user_psuedo_id for CR events vs 
-    # FTM events, so we have to play this little game.
     if app == "CR":
-        user_cohort_list = df_user_cohort["cr_user_id"]
+        user_cohort_df = df_user_cohort[["cr_user_id", "first_open","country", "app_language", "app_version"]]
+        user_id_col = "cr_user_id"
     else:
-        user_cohort_list = df_user_cohort["user_pseudo_id"]
-   
-    return user_cohort_list
+        user_cohort_df = df_user_cohort[["user_pseudo_id"]]
+        user_id_col = "user_pseudo_id"
+
+    if as_list:
+        return user_cohort_df[user_id_col].dropna().tolist()
+    else:
+        return user_cohort_df
+
 
 @st.cache_data(ttl="1d", show_spinner=False)
 def calculate_average_metric_per_user(user_cohort_list, column_name):
