@@ -1045,3 +1045,64 @@ def lr_lrc_bar_chart(df_totals_per_month):
 
     # Show the figure
     st.plotly_chart(fig, use_container_width=True)
+
+@st.cache_data(ttl="1d", show_spinner="Computing chart")    
+def engagement_over_time_chart(df_list_with_labels, metric="Avg Total Time (minutes)"):
+    all_data = []
+
+    for label, df in df_list_with_labels:
+        df = df.copy()
+        df["first_open"] = pd.to_datetime(df["first_open"])
+        df["cohort_week"] = df["first_open"].dt.to_period("W").apply(lambda r: r.start_time)
+
+        agg = {
+            "user_count": ("cr_user_id", "nunique")
+        }
+
+        if metric == "Avg Session Count":
+            agg["avg_value"] = ("engagement_event_count", "mean")
+        else:
+            agg["avg_value"] = ("total_time_minutes", "mean")
+
+        cohort_summary = (
+            df.groupby("cohort_week")
+            .agg(**agg)
+            .reset_index()
+        )
+
+        cohort_summary = cohort_summary[cohort_summary["user_count"] >= 5]
+        cohort_summary["cohort_label"] = label
+        all_data.append(cohort_summary)
+
+    if not all_data:
+        st.warning("No cohorts had enough users (≥5) to plot.")
+        return
+
+    combined_df = pd.concat(all_data, ignore_index=True)
+
+    y_label = "Average Session Count" if metric == "Avg Session Count" else "Average Total Time (minutes)"
+
+    fig = px.line(
+        combined_df,
+        x="cohort_week",
+        y="avg_value",
+        color="cohort_label",
+        markers=True,
+        hover_data={"user_count": True},
+        labels={
+            "cohort_week": "Week (First Open)",
+            "avg_value": y_label,
+            "user_count": "Users in Cohort",
+            "cohort_label": "Cohort"
+        },
+        title=f"{y_label} by Weekly Cohort (≥5 users)"
+    )
+
+    fig.update_layout(
+        xaxis_title="Cohort Week",
+        yaxis_title=y_label,
+        yaxis_tickformat=",",
+        xaxis=dict(rangeslider=dict(visible=True))
+    )
+
+    st.plotly_chart(fig, use_container_width=True)

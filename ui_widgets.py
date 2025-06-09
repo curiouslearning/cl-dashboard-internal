@@ -268,7 +268,7 @@ def app_version_selector(placement="side", key=""):
 
     selected_options = st.multiselect("Select versions:",cr_versions,key=key ,default='All')
     if 'All' in selected_options:
-        selected_options = 'All'
+        selected_options = ['All']
 
     return selected_options
 

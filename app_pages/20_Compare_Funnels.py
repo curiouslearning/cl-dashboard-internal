@@ -64,7 +64,7 @@ if len(countries_listA) and  len(countries_listB ) > 0:
 
 
     displayLR = True
-    if app_versionsA != 'All' or app_versionsB != 'All':
+    if 'All' not in app_versionsA or 'All' not in app_versionsB:
         displayLR = False
     with col1:
         st.metric(label="Average Number Sessions per User", value=f"{average_number_sessionsA:.2f}")

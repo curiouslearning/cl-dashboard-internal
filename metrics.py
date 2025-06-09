@@ -114,9 +114,8 @@ def filter_user_data(
     # Initialize a boolean mask
     mask = (df['first_open'] >= daterange[0]) & (df['first_open'] <= daterange[1])
 
-    if cr_app_versions != "All" and  app == "CR":
-            mask &= df["app_version"].isin(cr_app_versions)
-
+    if "All" not in cr_app_versions and app == "CR":
+        mask &= df["app_version"].isin(cr_app_versions)
     # Apply country filter if not "All"
     if countries_list[0] != "All":
         mask &= df['country'].isin(set(countries_list))
