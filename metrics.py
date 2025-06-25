@@ -623,8 +623,11 @@ def calculate_average_metric_per_user(user_cohort_list, column_name):
     # Filter rows where cr_user_id is in the cohort list
     df_filtered = df_cr_app_launch[df_cr_app_launch["cr_user_id"].isin(user_cohort_list)]
 
+    u = pd.DataFrame(user_cohort_list)
+
     # Sum the selected column and calculate the average
     total = df_filtered[column_name].sum()
+
     average = total / len(user_cohort_list)
 
     return average

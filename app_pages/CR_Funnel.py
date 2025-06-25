@@ -37,11 +37,15 @@ with col2:
 if len(countries_list) > 0  and (len(daterange) == 2):
     user_cohort_list = metrics.get_user_cohort_list(daterange=daterange,languages=language,countries_list=countries_list,app="CR")
     
-    average_number_sessions = metrics.calculate_average_metric_per_user(user_cohort_list,column_name="engagement_event_count")
-    average_total_sessions_time = metrics.calculate_average_metric_per_user(user_cohort_list,column_name="total_time_minutes")
+    average_number_sessions_cl = metrics.calculate_average_metric_per_user(user_cohort_list,column_name="engagement_event_count")
+    average_total_sessions_time_cl = metrics.calculate_average_metric_per_user(user_cohort_list,column_name="total_time_minutes")
+    average_number_sessions_fb = metrics.calculate_average_metric_per_user(user_cohort_list,column_name="firebase_session_count")
+    average_total_sessions_time_fb = metrics.calculate_average_metric_per_user(user_cohort_list,column_name="firebase_total_time_minutes")
  
-    col1.metric(label="Average Number Sessions per User", value=f"{average_number_sessions:.2f}")
-    col1.metric(label="Average Total Session Time per User", value=f"{average_total_sessions_time:.2f} min")
+    col1.metric(label="Average Number Sessions per User", value=f"{average_number_sessions_cl:.2f}")
+    col1.metric(label="Average Total Session Time per User", value=f"{average_total_sessions_time_cl:.2f} min")
+    col2.metric(label="Average Number Firebase Sessions per User", value=f"{average_number_sessions_fb:.2f}")
+    col2.metric(label="Average Total Firebase Session Time per User", value=f"{average_total_sessions_time_fb:.2f} min")
     
     uic.create_funnels(countries_list=countries_list,daterange=daterange,key_prefix="dc-1",languages=languages,displayLR=True,user_list=user_cohort_list)
 
