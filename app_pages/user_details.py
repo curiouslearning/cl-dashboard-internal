@@ -44,6 +44,7 @@ if (len(cr_user_id) > 0):
         info_row("Country:", safe_value(user["country"].iloc[0]))
         info_row("Language:", safe_value(user["app_language"].iloc[0]))
         info_row("CR First Open:", safe_value(user["first_open"].iloc[0]))
+        info_row("CR Last Event Date:", safe_value(user["last_event_date"].iloc[0]))
         info_row("Calculated Engagement events:", safe_value(user["engagement_event_count"].iloc[0]))
         info_row("Calculated Engagement time:", safe_value(user["total_time_minutes"].iloc[0]))
         info_row("Firebase Engagement events:", safe_value(user["firebase_session_count"].iloc[0]))
