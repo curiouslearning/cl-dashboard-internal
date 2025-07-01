@@ -14,27 +14,8 @@ settings.init_user_list()
 
 ui.display_definitions_table("Definitions",ui.level_percent_definitions)
 
-st.markdown(
-    """
-    :green-background[NOTE:]
-    :green[This chart lets you compare one specific level across the languages selected.
-    It compares the selected level % drop from the selected upper level.  ]
-    :red[It excludes languages with an LR less than 100 ]
-
-    """
-)
 
 col1, col2, col3 = st.columns(3)
-
-df_languages = metrics.get_counts(
-    type="app_language",
-    app="CR",
-    language=["All"],
-)
-
-df_top10 = (
-    df_languages[["app_language", "LR"]].sort_values(by="LR", ascending=False).head(10)
-)
 
 countries_list = users.get_country_list()
 with col1:
@@ -44,7 +25,17 @@ with col1:
         title="Country Selection",
         key="la-2",
     )
+    app = ui.app_selector(placement="middle")
+    df_languages = metrics.get_counts(
+        type="app_language",
+        app=app,
+        language=["All"],
+    )
+    
 
+df_top10 = (
+    df_languages[["app_language", "LR"]].sort_values(by="LR", ascending=False).head(10)
+)
     
 with col2:
 
@@ -63,8 +54,8 @@ with col3:
         )   
 
     if (len(selected_languages) > 0):     
-         user_cohort_list = metrics.get_user_cohort_list(daterange=daterange,languages=selected_languages,countries_list=countries_list,app="CR")
-
+        user_cohort_list = metrics.get_user_cohort_list(daterange=daterange,languages=selected_languages,countries_list=countries_list,app=app)
+        
     if (len(selected_languages) == 0 ):  # 40 is an arbitrary choice
         st.markdown(
             """
@@ -84,6 +75,7 @@ with tab1:
                 languages=selected_languages,
                 countries_list=country,
                 daterange=daterange,
+                app=app,
                 user_cohort_list=user_cohort_list
             )
             csv = ui.convert_for_download(df_download)

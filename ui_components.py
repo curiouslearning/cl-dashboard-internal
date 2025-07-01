@@ -794,22 +794,32 @@ def funnel_bar_chart(languages, countries_list, daterange,user_cohort_list):
     
 
 @st.cache_data(ttl="1d", show_spinner=False)
-def funnel_line_chart_percent(languages, countries_list, daterange,user_cohort_list):
+def funnel_line_chart_percent(languages, countries_list, daterange, user_cohort_list, app="Both"):
+    # Determine levels first, BEFORE using in logic below
+    if app == "CR":
+        levels = ["LR", "DC", "TS", "SL", "PC", "LA", "RA", "GC"]
+    else:
+        levels = ["LR", "PC", "LA", "RA", "GC"]
 
+    # Build funnel dataframe
     df = metrics.build_funnel_dataframe(
         index_col="language",
         daterange=daterange,
         languages=languages,
+        app=app,
         countries_list=countries_list,
         user_list=user_cohort_list
     )
 
     df_percent = df.copy()
-    columns_to_normalize = df.columns[:-1]  # Exclude 'language' column
-    df_percent[columns_to_normalize] = df_percent[columns_to_normalize].div(df["LR"], axis=0) * 100
-    
-    levels = ["LR", "DC", "TS", "SL", "PC", "LA", "RA", "GC"]
 
+    # Normalize only the specified levels against LR
+    columns_to_normalize = levels.copy()
+    columns_to_normalize.remove("LR")
+    df_percent[columns_to_normalize] = df_percent[columns_to_normalize].div(df["LR"], axis=0) * 100
+    df_percent["LR"] = 100  # Set LR as 100% baseline
+
+    # Plotting
     fig = go.Figure()
 
     for idx, row in df_percent.iterrows():
@@ -817,16 +827,16 @@ def funnel_line_chart_percent(languages, countries_list, daterange,user_cohort_l
         denominator_value = df.loc[idx, "LR"]
         if denominator_value < 100:
             continue
-        percent_values = row[:-1]  # Exclude 'language'
+
+        percent_values = row[levels]
         numerator_values = df.loc[idx, levels]
 
-        
-        # Prepare custom data (level, numerator, denominator, language)
+        # Prepare custom hover data
         custom_data = [
-            [level, num, denominator_value, language] 
+            [level, num, denominator_value, language]
             for level, num in zip(levels, numerator_values)
         ]
-        
+
         fig.add_trace(go.Scatter(
             x=levels,
             y=percent_values,
@@ -834,11 +844,11 @@ def funnel_line_chart_percent(languages, countries_list, daterange,user_cohort_l
             name=language,
             customdata=custom_data,
             hovertemplate=(
-                "Language: %{customdata[3]}<br>" +          # Language
-                "Level: %{x}<br>" +                         # Level
-                "Percentage: %{y:.2f}%<br>" +               # Percentage
-                "%{customdata[0]}: %{customdata[1]}<br>" +  # Dynamic Numerator Label
-                "LR: %{customdata[2]}<extra></extra>"  # Denominator
+                "Language: %{customdata[3]}<br>"
+                "Level: %{x}<br>"
+                "Percentage: %{y:.2f}%<br>"
+                "%{customdata[0]}: %{customdata[1]}<br>"
+                "LR: %{customdata[2]}<extra></extra>"
             )
         ))
 
@@ -849,7 +859,7 @@ def funnel_line_chart_percent(languages, countries_list, daterange,user_cohort_l
         yaxis=dict(tickformat=".2f"),
         template="plotly_white"
     )
-    
+
     st.plotly_chart(fig, use_container_width=True)
     return df_percent
 

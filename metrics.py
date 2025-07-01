@@ -271,11 +271,16 @@ def build_funnel_dataframe(
     index_col="language",
     daterange=default_daterange,
     languages=["All"],
+    app="Both",
     countries_list=["All"],
     user_list=[]
 ):
+    if app == "CR":
+        levels = ["LR", "DC", "TS", "SL", "PC", "LA", "RA", "GC"]
+    else:
+        levels = ["LR", "PC", "LA", "RA", "GC"]
 
-    df = pd.DataFrame(columns=[index_col, "LR", "DC", "TS", "SL", "PC", "RA", "LA"])
+    df = pd.DataFrame(columns=[index_col] + levels)
     if index_col == "start_date":
         weeks = weeks_since(daterange)
         iteration = range(1, weeks + 1)
@@ -298,7 +303,7 @@ def build_funnel_dataframe(
             stat="DC",
             language=language,
             countries_list=countries_list,
-            app="CR",
+            app=app,
             user_list=user_list
         )
         SL = get_totals_by_metric(
@@ -306,7 +311,7 @@ def build_funnel_dataframe(
             stat="SL",
             language=language,
             countries_list=countries_list,
-            app="CR",
+            app=app,
             user_list=user_list
          )
         TS = get_totals_by_metric(
@@ -314,7 +319,7 @@ def build_funnel_dataframe(
             stat="TS",
             language=language,
             countries_list=countries_list,
-            app="CR",
+            app=app,
             user_list=user_list
          )
 
@@ -323,7 +328,7 @@ def build_funnel_dataframe(
             stat="PC",
             language=language,
             countries_list=countries_list,
-            app="CR",
+            app=app,
             user_list=user_list
         )
         LA = get_totals_by_metric(
@@ -331,7 +336,7 @@ def build_funnel_dataframe(
             stat="LA",
             language=language,
             countries_list=countries_list,
-            app="CR",
+            app=app,
             user_list=user_list
          )
         LR = get_totals_by_metric(
@@ -339,7 +344,7 @@ def build_funnel_dataframe(
             stat="LR",
             language=language,
             countries_list=countries_list,
-            app="CR",
+            app=app,
             user_list=user_list
         )        
         RA = get_totals_by_metric(
@@ -347,7 +352,7 @@ def build_funnel_dataframe(
             stat="RA",
             language=language,
             countries_list=countries_list,
-            app="CR",
+            app=app,
             user_list=user_list
          )
         GC = get_totals_by_metric(
@@ -355,7 +360,7 @@ def build_funnel_dataframe(
             stat="GC",
             language=language,
             countries_list=countries_list,
-            app="CR",
+            app=app,
             user_list=user_list
          )
 
