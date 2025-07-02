@@ -255,7 +255,7 @@ def LR_LA_line_chart_over_time(
     daterange, countries_list, option, app="Both", language="All", display_category="Country", aggregate=True
 ):
     df_user_list = metrics.filter_user_data(
-        daterange, countries_list, option, app=app, language=language
+        daterange=daterange, countries_list=countries_list, stat=option, app=app, language=language
     )
 
     if option == "LA":

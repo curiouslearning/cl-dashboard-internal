@@ -78,7 +78,7 @@ def get_totals_by_metric(
 def filter_user_data(
     daterange=default_daterange,
     countries_list=["All"],
-    cr_app_versions="All",
+    cr_app_versions=["All"],
     stat="LR",
     app="Both",
     language=["All"],
