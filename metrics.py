@@ -151,8 +151,8 @@ def get_GPP_avg(daterange, countries_list, app="Both", language="All"):
     df_user_list = filter_user_data(
         daterange, countries_list, stat="LA", app=app, language=language
     )
-    df_user_list = df_user_list.fillna(0)
-
+    df_user_list["gpc"] = df_user_list["gpc"].fillna(0)
+    
     return 0 if len(df_user_list) == 0 else np.average(df_user_list.gpc)
 
 
@@ -162,8 +162,8 @@ def get_GC_avg(daterange, countries_list, app="Both", language="All"):
     df_user_list = filter_user_data(
         daterange, countries_list, stat="LA", app=app, language=language
     )
-    df_user_list = df_user_list.fillna(0)
-
+    df_user_list["gpc"] = df_user_list["gpc"].fillna(0)
+    
     cohort_count = len(df_user_list)
     gc_count = df_user_list[(df_user_list["gpc"] >= 90)].shape[0]
 
