@@ -16,17 +16,14 @@ def get_metrics_for_cohort(user_list):
     return {
         "Avg Sessions/User": metrics.calculate_average_metric_per_user(user_list, "engagement_event_count"),
         "Avg Total Time/User (min)": metrics.calculate_average_metric_per_user(user_list, "total_time_minutes"),
-    }, {
-        "Avg Sessions/User": metrics.calculate_average_metric_per_user(user_list, "firebase_session_count"),
-        "Avg Total Time/User (min)": metrics.calculate_average_metric_per_user(user_list, "firebase_total_time_minutes"),
     }
 
-def show_dual_metric_table(title, home_metrics, fb_metrics):
+def show_dual_metric_table(title, home_metrics):
     """Displays home vs Firebase metrics with no visible index."""
     df = pd.DataFrame({
         "Metric": list(home_metrics.keys()),
         "App Calculated": [f"{v:.2f}" for v in home_metrics.values()],
-        "Firebase Sampled": [f"{fb_metrics[k]:.2f}" for k in home_metrics.keys()]
+
     })
     df.set_index("Metric", inplace=True)  # 👈 hides default numeric index
     st.markdown(f"### {title}")
@@ -71,7 +68,7 @@ if len(countries_listA) and len(countries_listB):
         as_list=False
     )
     user_listA = user_cohort_listA["cr_user_id"]
-    metrics_home_A, metrics_fb_A = get_metrics_for_cohort(user_listA)
+    metrics_home_A = get_metrics_for_cohort(user_listA)
 
     # Cohort B
     user_cohort_listB = metrics.get_user_cohort_list(
@@ -83,14 +80,14 @@ if len(countries_listA) and len(countries_listB):
         as_list=False
     )
     user_listB = user_cohort_listB["cr_user_id"]
-    metrics_home_B, metrics_fb_B = get_metrics_for_cohort(user_listB)
+    metrics_home_B = get_metrics_for_cohort(user_listB)
 
     # Logic for displayLR
     displayLR = 'All' in app_versionsA and 'All' in app_versionsB
 
     # --- Output Section ---
     with col1:
-        show_dual_metric_table("Cohort A", metrics_home_A, metrics_fb_A)
+        show_dual_metric_table("Cohort A", metrics_home_A)
         uic.create_funnels(
             daterange=daterangeA,
             countries_list=countries_listA,
@@ -111,7 +108,7 @@ if len(countries_listA) and len(countries_listB):
         )
 
     with col2:
-        show_dual_metric_table("Cohort B", metrics_home_B, metrics_fb_B)
+        show_dual_metric_table("Cohort B", metrics_home_B)
         uic.create_funnels(
             daterange=daterangeB,
             countries_list=countries_listB,
