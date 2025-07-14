@@ -15,7 +15,7 @@ countries_list = users.get_country_list()
 
 # Choose number of cohorts to compare
 num_cohorts = st.number_input(
-    "How many cohorts to compare?", min_value=1, max_value=10, value=2, step=1
+    "How many cohorts to compare?", min_value=1, max_value=10, value=1, step=1
 )
 
 cohort_inputs = []
