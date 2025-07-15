@@ -49,68 +49,26 @@ unsafe_allow_html=True,
 
 if len(daterange) == 2 and len(countries_list) > 0:
     
-    user_cohort_list = metrics.get_user_cohort_list(daterange=daterange,languages=language,countries_list=countries_list,app="Unity")
+    user_cohort_list_unity = metrics.get_user_cohort_list(daterange=daterange,languages=language,countries_list=countries_list,app="Unity")
 
-    LR = metrics.get_totals_by_metric(
-        daterange, countries_list, stat="LR", app="Unity", language=language,user_list=user_cohort_list
-    )
+    user_cohort_list_cr = metrics.get_user_cohort_list(daterange=daterange,languages=language,countries_list=countries_list,app="CR")
 
-    PC = metrics.get_totals_by_metric(
-        daterange, countries_list, "PC", app="Unity", language=language,user_list=user_cohort_list
-    )
-    LA = metrics.get_totals_by_metric(
-        daterange, countries_list, stat="LA", app="Unity", language=language,user_list=user_cohort_list
-    )
-    RA = metrics.get_totals_by_metric(
-        daterange, countries_list, stat="RA", app="Unity", language=language,user_list=user_cohort_list
-    )
-    GC = metrics.get_totals_by_metric(
-        daterange, countries_list, "GC", app="Unity", language=language,user_list=user_cohort_list
-    )
+    average_number_sessions_unity = metrics.calculate_average_metric_per_user(user_cohort_list_unity,app="Unity",column_name="engagement_event_count")
+    average_total_sessions_time_unity = metrics.calculate_average_metric_per_user(user_cohort_list_unity,app="Unity",column_name="total_time_minutes")
+    average_session_length_unity = metrics.calculate_average_metric_per_user(user_cohort_list_unity,app="Unity",column_name="avg_session_length_minutes")
+    average_number_sessions_cr = metrics.calculate_average_metric_per_user(user_cohort_list_cr,app="CR",column_name="engagement_event_count")
+    average_total_sessions_time_cr = metrics.calculate_average_metric_per_user(user_cohort_list_cr,app="CR",column_name="total_time_minutes")
+    average_session_length_cr = metrics.calculate_average_metric_per_user(user_cohort_list_cr,app="CR",column_name="avg_session_length_minutes")
 
-    funnel_data = {
-        "Title": [
-            "Learners Reached",
-            "Puzzle Completed",
-            "Learners Acquired",
-            "Readers Acquired",
-            "Game Completed",
-        ],
-        "Count": [LR, PC, LA, RA, GC],
-    }
-    fig = uic.create_engagement_figure(funnel_data, "acq-3")
-    col1.plotly_chart(fig, use_container_width=True,key="uvcr-1")
-    
-    user_cohort_list = metrics.get_user_cohort_list(daterange=daterange,languages=language,countries_list=countries_list,app="CR")
-
-    LR = metrics.get_totals_by_metric(
-        daterange, countries_list, stat="LR", app="CR", language=language,user_list=user_cohort_list
-    )
-    PC = metrics.get_totals_by_metric(
-        daterange, countries_list, "PC", app="CR", language=language,user_list=user_cohort_list
-    )
-    LA = metrics.get_totals_by_metric(
-        daterange, countries_list, stat="LA", app="CR", language=language,user_list=user_cohort_list
-    )
-    GC = metrics.get_totals_by_metric(
-        daterange, countries_list, "GC", app="CR", language=language,user_list=user_cohort_list
-    )
-    RA = metrics.get_totals_by_metric(
-        daterange, countries_list, "RA", app="CR", language=language,user_list=user_cohort_list
-    )
-
-    funnel_data = {
-        "Title": [
-            "Learners Reached",
-            "Puzzle Completed",
-            "Learners Acquired",
-            "Readers Acquired",
-            "Game Completed",
-        ],
-        "Count": [LR, PC, LA,RA, GC],
-    }
-
-    fig = uic.create_engagement_figure(funnel_data, "acq-4")
-    col2.plotly_chart(fig, use_container_width=True,key="uvcr-2")
-
+    col1.metric(label="Avg # Sessions / User", value=f"{average_number_sessions_unity:.2f}")
+    col1.metric(label="Avg Total Play Time / User", value=f"{average_total_sessions_time_unity:.2f} min")
+    col1.metric(label="Avg Session Length / User", value=f"{average_session_length_unity:.2f} min")
+    col2.metric(label="Avg # Sessions / User", value=f"{average_number_sessions_cr:.2f}")
+    col2.metric(label="Avg Total Play Time / User", value=f"{average_total_sessions_time_cr:.2f} min")
+    col2.metric(label="Avg Session Length / User", value=f"{average_session_length_cr:.2f} min")
+ 
+    with col1:
+        uic.create_funnels(countries_list=countries_list,daterange=daterange,app="Unity",key_prefix="u-1",languages=languages,user_list=user_cohort_list_unity)
+    with col2:
+        uic.create_funnels(countries_list=countries_list,daterange=daterange,app="CR",funnel_size="compact",key_prefix="u-2",languages=languages,user_list=user_cohort_list_cr)
  

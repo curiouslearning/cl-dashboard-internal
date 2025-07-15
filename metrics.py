@@ -619,16 +619,18 @@ def get_user_cohort_list(
 
 
 @st.cache_data(ttl="1d", show_spinner=False)
-def calculate_average_metric_per_user(user_cohort_list, column_name):
+def calculate_average_metric_per_user(user_cohort_list, app, column_name):
     df_cr_app_launch = st.session_state["df_cr_app_launch"]
+    df_unity_users = st.session_state["df_unity_users"]
 
     if len(user_cohort_list) == 0:
         return 0
 
     # Filter rows where cr_user_id is in the cohort list
-    df_filtered = df_cr_app_launch[df_cr_app_launch["cr_user_id"].isin(user_cohort_list)]
-
-    u = pd.DataFrame(user_cohort_list)
+    if app == "CR":
+        df_filtered = df_cr_app_launch[df_cr_app_launch["cr_user_id"].isin(user_cohort_list)]
+    elif  app == "Unity":  
+        df_filtered = df_unity_users[df_unity_users["user_pseudo_id"].isin(user_cohort_list)]
 
     # Sum the selected column and calculate the average
     total = df_filtered[column_name].sum()

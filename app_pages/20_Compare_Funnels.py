@@ -11,15 +11,15 @@ import pandas as pd
 
 # --- Helper Functions ---
 
-def get_metrics_for_cohort(user_list):
-    """Returns calculated and Firebase metrics for a given user list."""
+def get_metrics_for_cohort(user_cohort_list):
+
     return {
-        "Avg Sessions/User": metrics.calculate_average_metric_per_user(user_list, "engagement_event_count"),
-        "Avg Total Time/User (min)": metrics.calculate_average_metric_per_user(user_list, "total_time_minutes"),
+        "Avg Sessions/User": metrics.calculate_average_metric_per_user(user_cohort_list=user_cohort_list, app="CR",column_name="engagement_event_count"),
+        "Avg Total Time/User (min)": metrics.calculate_average_metric_per_user(user_cohort_list=user_cohort_list,app="CR",column_name="total_time_minutes"),
     }
 
 def show_dual_metric_table(title, home_metrics):
-    """Displays home vs Firebase metrics with no visible index."""
+
     df = pd.DataFrame({
         "Metric": list(home_metrics.keys()),
         "App Calculated": [f"{v:.2f}" for v in home_metrics.values()],
@@ -82,8 +82,8 @@ if len(countries_listA) and len(countries_listB):
     user_listB = user_cohort_listB["cr_user_id"]
     metrics_home_B = get_metrics_for_cohort(user_listB)
 
-    # Logic for displayLR
-    displayLR = 'All' in app_versionsA and 'All' in app_versionsB
+    funnel_size = "large" if "All" in app_versionsA and "All" in app_versionsB else "medium"
+
 
     # --- Output Section ---
     with col1:
@@ -93,7 +93,8 @@ if len(countries_listA) and len(countries_listB):
             countries_list=countries_listA,
             languages=languageA,
             key_prefix="cf-10",
-            displayLR=displayLR,
+            app="CR",
+            funnel_size=funnel_size,
             user_list=user_listA,
             app_versions=app_versionsA,
         )
@@ -114,11 +115,13 @@ if len(countries_listA) and len(countries_listB):
             countries_list=countries_listB,
             languages=languageB,
             key_prefix="cf-20",
-            displayLR=displayLR,
+            funnel_size=funnel_size,
+            app="CR",
             user_list=user_listB,
             app_versions=app_versionsB,
         )
         csvB = ui.convert_for_download(user_cohort_listB)
+        
         st.download_button(
             label="Download Cohort B CSV",
             data=csvB,

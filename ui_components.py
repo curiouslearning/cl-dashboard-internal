@@ -942,61 +942,70 @@ def top_and_bottom_languages_per_level(selection, min_LR):
 
 
 #Added user_list which is a list of cr_user_id to filter with
-
+@st.cache_data(ttl="1d", show_spinner=False)
 def create_funnels(countries_list=["All"],
                    daterange=default_daterange,
                    languages=["All"],
                    app_versions="All",
                    key_prefix="abc",
-                   displayLR=True,
+                   app="CR",
+                   funnel_size="large",  # new parameter: "compact", "medium", or "large"
                    user_list=[]):
-    
-    statsB = ["LR","DC", "TS","SL",  "PC", "LA", "RA" ,"GC",]
-    statsC = ["DC", "TS","SL",  "PC", "LA", "RA" ,"GC",]
-    titlesB = [
-            "Learner Reached (app_launch)", "Download Completed", "Tapped Start", 
-            "Selected Level", "Puzzle Completed", "Learners Acquired", "Readers Acquired", "Game Completed"
-        ]
-    titlesC = ["Download Completed", "Tapped Start", 
-            "Selected Level", "Puzzle Completed", "Learners Acquired", "Readers Acquired", "Game Completed"
-        ]
 
+    funnel_variants = {
+        "compact": {
+            "stats": ["LR", "PC", "LA", "RA", "GC"],
+            "titles": ["Learner Reached", "Puzzle Completed", "Learners Acquired", "Readers Acquired", "Game Completed"]
+        },
+        "large": {
+            "stats": ["LR", "DC", "TS", "SL", "PC", "LA", "RA", "GC"],
+            "titles": ["Learner Reached", "Download Completed", "Tapped Start", 
+                       "Selected Level", "Puzzle Completed", "Learners Acquired", "Readers Acquired", "Game Completed"]
+        },
+        "medium": {
+            "stats": ["DC", "TS", "SL", "PC", "LA", "RA", "GC"],
+            "titles": ["Download Completed", "Tapped Start", "Selected Level", 
+                       "Puzzle Completed", "Learners Acquired", "Readers Acquired", "Game Completed"]
+        }
+    }
 
-    stats = statsB
-    titles = titlesB
+    # Default fallback
+    if funnel_size not in funnel_variants:
+        funnel_size = "large"
+
+    stats = funnel_variants[funnel_size]["stats"]
+    titles = funnel_variants[funnel_size]["titles"]
+
+    # Override stats/titles for Unity app — always use "compact"
+    if app == "Unity":
+        stats = funnel_variants["compact"]["stats"]
+        titles = funnel_variants["compact"]["titles"]
 
     if len(daterange) == 2:
         start = daterange[0].strftime("%b %d, %Y")
         end = daterange[1].strftime("%b %d, %Y")
-        st.caption(start + " to " + end)
+        st.caption(f"{start} to {end}")
 
-        metrics_data = {}
-        for stat in stats:
-            metrics_data[stat] = metrics.get_totals_by_metric(
+        metrics_data = {
+            stat: metrics.get_totals_by_metric(
                 daterange,
                 stat=stat,
                 cr_app_versions=app_versions,
                 language=languages,
                 countries_list=countries_list,
-                app="CR",
+                app=app,
                 user_list=user_list
             )
-        
-        if displayLR:
-            funnel_data = {
-                "Title": titles,
-                "Count": [metrics_data[stat] for stat in stats]
-            }
-        else:
-            stats = statsC 
-            titles = titlesC
-            funnel_data = {
-                "Title": titles,
-                "Count": [metrics_data[stat] for stat in stats],
-            }
+            for stat in stats
+        }
+
+        funnel_data = {
+            "Title": titles,
+            "Count": [metrics_data[stat] for stat in stats]
+        }
 
         fig = create_engagement_figure(funnel_data, key=f"{key_prefix}-5")
-        st.plotly_chart(fig, use_container_width=True,key=f"{key_prefix}-6")
+        st.plotly_chart(fig, use_container_width=True, key=f"{key_prefix}-6")
 
 
 def lr_lrc_bar_chart(df_totals_per_month):
