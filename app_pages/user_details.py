@@ -47,8 +47,6 @@ if (len(cr_user_id) > 0):
         info_row("CR Last Event Date:", safe_value(user["last_event_date"].iloc[0]))
         info_row("Calculated Engagement events:", safe_value(user["engagement_event_count"].iloc[0]))
         info_row("Calculated Engagement time:", safe_value(user["total_time_minutes"].iloc[0]))
-        info_row("Firebase Engagement events:", safe_value(user["firebase_session_count"].iloc[0]))
-        info_row("Firebase Engagement time:", safe_value(user["firebase_total_time_minutes"].iloc[0]))
         info_row("Mobile brand:", safe_value(user["device_mobile_brand_name"].iloc[0]))
         info_row("Mobile model:", safe_value(user["device_mobile_model_name"].iloc[0]))
         info_row("Mobile marketing name:", safe_value(user["device_mobile_marketing_name"].iloc[0]))
