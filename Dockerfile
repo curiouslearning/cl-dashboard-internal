@@ -17,6 +17,8 @@ RUN apt-get update && apt-get install -y \
     software-properties-common \
     && rm -rf /var/lib/apt/lists/*
 
+COPY . /cl-dashboard-internal
+
 
 # ✅ Now this will actually respect the --build-arg value
 RUN if [ "$BUILD_MODE" = "remote" ]; then \
