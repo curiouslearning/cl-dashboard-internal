@@ -30,7 +30,7 @@ jobs:
         key: ${{ secrets.GCE_SSH_KEY }}
         script: |
           cd ~/src/cl-dashboard-internal
-          docker build -t cl-dashboard-internal .
+          docker build -t cl-dashboard-internal . --build-arg BUILD_MODE=local
           docker stop cl-dashboard-internal || true
           docker rm cl-dashboard-internal || true
           docker run -d \

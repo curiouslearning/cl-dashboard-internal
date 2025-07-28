@@ -1,8 +1,8 @@
 ARG  CODE_VERSION=latest
+ARG  BUILD_MODE=remote
 FROM python:3.12.3-bookworm
 
 WORKDIR /cl-dashboard-internal
-
 
 RUN apt-get update && apt-get install -y \
     build-essential \
@@ -11,7 +11,10 @@ RUN apt-get update && apt-get install -y \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-RUN git clone https://github.com/curiouslearning/cl-dashboard-internal.git .
+# Conditionally clone the repo only if in 'remote' build mode
+RUN if [ "$BUILD_MODE" = "remote" ]; then \
+      git clone https://github.com/curiouslearning/cl-dashboard-internal.git . ; \
+    fi
 
 RUN pip3 install -r requirements.txt
 
