@@ -1,0 +1,39 @@
+name: Deploy to GCE VM
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v3
+
+    - name: Copy files via SSH
+      uses: appleboy/scp-action@v0.1.4
+      with:
+        host: ${{ secrets.GCE_HOST }}
+        username: ${{ secrets.GCE_USER }}
+        key: ${{ secrets.GCE_SSH_KEY }}
+        source: "."
+        target: "~/src/cl-dashboard-internal"
+        strip_components: 1  # 👈 Optional: avoids nested folder if repo has top-level dir
+
+    - name: SSH into VM and restart container
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.GCE_HOST }}
+        username: ${{ secrets.GCE_USER }}
+        key: ${{ secrets.GCE_SSH_KEY }}
+        script: |
+          cd ~/src/cl-dashboard-internal
+          docker build -t cl-dashboard-internal .
+          docker stop cl-dashboard-internal || true
+          docker rm cl-dashboard-internal || true
+          docker run -d \
+            --name cl-dashboard-internal \
+            -p 80:8501 \
+            cl-dashboard-internal
