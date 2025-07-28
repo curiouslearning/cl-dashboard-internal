@@ -26,3 +26,8 @@ RUN if [ "$BUILD_MODE" = "remote" ]; then \
     fi
 
 RUN pip3 install --no-cache-dir -r requirements.txt
+
+ENV PORT=8501
+
+CMD python add_ga.py && \
+    streamlit run main.py --server.port=$PORT --server.address=0.0.0.0
