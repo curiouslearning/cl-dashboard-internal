@@ -20,7 +20,7 @@ jobs:
         key: ${{ secrets.GCE_SSH_KEY }}
         source: "."
         target: "~/src/cl-dashboard-internal"
-        strip_components: 1  # 👈 Optional: avoids nested folder if repo has top-level dir
+
 
     - name: SSH into VM and restart container
       uses: appleboy/ssh-action@v1.0.0
@@ -30,10 +30,9 @@ jobs:
         key: ${{ secrets.GCE_SSH_KEY }}
         script: |
           cd ~/src/cl-dashboard-internal
-          docker build -t cl-dashboard-internal . --build-arg BUILD_MODE=local
+          ls -al  # 👈 Add this temporarily to confirm contents
+          docker build --build-arg BUILD_MODE=local -t cl-dashboard-internal .
           docker stop cl-dashboard-internal || true
           docker rm cl-dashboard-internal || true
-          docker run -d \
-            --name cl-dashboard-internal \
-            -p 80:8501 \
-            cl-dashboard-internal
+          docker run -d -p 80:8501 --name cl-dashboard-internal cl-dashboard-internal
+
