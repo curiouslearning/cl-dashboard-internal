@@ -18,6 +18,7 @@ RUN if [ "$BUILD_MODE" = "remote" ]; then \
 
 RUN pip3 install -r requirements.txt
 
-EXPOSE 8080
+EXPOSE 8501
 
-CMD ["sh", "-c", "python add_ga.py && streamlit run main.py --server.port=8080"]
+ENV PORT=8501
+CMD ["sh", "-c", "python add_ga.py && streamlit run main.py --server.port=$PORT --server.address=0.0.0.0"]
