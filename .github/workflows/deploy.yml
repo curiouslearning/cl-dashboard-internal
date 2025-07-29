@@ -16,23 +16,21 @@ jobs:
       uses: appleboy/scp-action@v0.1.4
       with:
         host: ${{ secrets.GCE_HOST }}
-        username: ${{ secrets.GCE_USER }}
+        username: debian                    
         key: ${{ secrets.GCE_SSH_KEY }}
         source: "."
         target: "~/src/cl-dashboard-internal"
-
 
     - name: SSH into VM and restart container
       uses: appleboy/ssh-action@v1.0.0
       with:
         host: ${{ secrets.GCE_HOST }}
-        username: ${{ secrets.GCE_USER }}
+        username: debian                    
         key: ${{ secrets.GCE_SSH_KEY }}
         script: |
           cd ~/src/cl-dashboard-internal
-          ls -al  # 👈 Add this temporarily to confirm contents
+          ls -al  # Optional sanity check
           docker build --build-arg BUILD_MODE=local -t cl-dashboard-internal .
           docker stop cl-dashboard-internal || true
           docker rm cl-dashboard-internal || true
           docker run -d -p 80:8501 --name cl-dashboard-internal cl-dashboard-internal
-
