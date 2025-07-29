@@ -10,7 +10,7 @@ millify
 plost
 plotly
 streamlit_option_menu
-pyinstrument
+pyinstrument>=4.0
 db-dtypes
 st-pages
 BeautifulSoup4

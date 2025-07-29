@@ -4,6 +4,7 @@ from rich import print as print
 import numpy as np
 from pyinstrument import Profiler
 import asyncio
+import sys
 
 # How far back to obtain user data.  Currently the queries pull back to 01/01/2021
 start_date = "2021/01/01"
@@ -14,7 +15,6 @@ start_date = "2021/01/01"
 # This would all be unncessery if dev had included the app user id per the spec.
 
 
-import logging
 import streamlit as st
 
 async def get_users_list():
@@ -102,8 +102,8 @@ async def get_users_list():
         max_level_indices_unity = df_unity_users.groupby('user_pseudo_id')['max_user_level'].idxmax()
         df_unity_users = df_unity_users.loc[max_level_indices_unity].reset_index()
 
-    p.print(color="red")
-    
+
+    p.print(out=sys.stdout, flush=True, color=True)
     return  df_cr_users, df_unity_users,  df_cr_app_launch
 
 
