@@ -12,6 +12,15 @@ jobs:
     - name: Checkout repo
       uses: actions/checkout@v3
 
+    - name: Test SSH connection
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.GCE_HOST }}
+        username: ${{ secrets.GCE_USER }}
+        key: ${{ secrets.GCE_SSH_KEY }}
+        script: echo "✅ SSH connection succeeded"
+   
+
     - name: Copy files via SSH
       uses: appleboy/scp-action@v0.1.4
       with:
