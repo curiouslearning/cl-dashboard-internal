@@ -4,7 +4,7 @@ from rich import print as print
 import numpy as np
 from pyinstrument import Profiler
 import asyncio
-import sys
+from pyinstrument.renderers.console import ConsoleRenderer
 
 # How far back to obtain user data.  Currently the queries pull back to 01/01/2021
 start_date = "2021/01/01"
@@ -103,7 +103,8 @@ async def get_users_list():
         df_unity_users = df_unity_users.loc[max_level_indices_unity].reset_index()
 
 
-    p.print(out=sys.stdout, flush=True, color=True)
+    print(p.output(ConsoleRenderer()))
+    
     return  df_cr_users, df_unity_users,  df_cr_app_launch
 
 
