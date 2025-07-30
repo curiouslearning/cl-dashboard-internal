@@ -1,14 +1,11 @@
-# Declare the argument globally for default values
+# Set the build mode (default to remote)
 ARG BUILD_MODE=remote
-
 FROM python:3.12.3-bookworm
 
-WORKDIR /cl-dashboard-internal
-
-# 👇 Define it again inside the image so it's available to RUN
 ARG BUILD_MODE
 ENV BUILD_MODE=${BUILD_MODE}
 
+# Install required tools
 RUN apt-get update && apt-get install -y \
     build-essential \
     curl \
@@ -17,13 +14,21 @@ RUN apt-get update && apt-get install -y \
     software-properties-common \
     && rm -rf /var/lib/apt/lists/*
 
-COPY . /cl-dashboard-internal
+# Set the workdir to a neutral temp folder first
+WORKDIR /tmp/build-context
 
-
-# ✅ Now this will actually respect the --build-arg value
+# Clone OR copy conditionally
 RUN if [ "$BUILD_MODE" = "remote" ]; then \
-      git clone https://github.com/curiouslearning/cl-dashboard-internal.git . ; \
+      git clone https://github.com/curiouslearning/cl-dashboard-internal.git /cl-dashboard-internal ; \
     fi
+
+# Copy only if local
+COPY . /tmp/local-copy
+RUN if [ "$BUILD_MODE" = "local" ]; then \
+      cp -r /tmp/local-copy /cl-dashboard-internal ; \
+    fi
+
+WORKDIR /cl-dashboard-internal
 
 RUN pip3 install --no-cache-dir -r requirements.txt
 
@@ -31,5 +36,5 @@ ENV PORT=8501
 
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
-ENTRYPOINT ["/entrypoint.sh"]
 
+ENTRYPOINT ["/entrypoint.sh"]

@@ -58,3 +58,7 @@ jobs:
           docker stop cl-dashboard-internal || true
           docker rm cl-dashboard-internal || true
           docker run -d -p 80:8501 --name cl-dashboard-internal cl-dashboard-internal
+
+    - name: Prune unused Docker data
+      run: |
+        docker system prune -af --volumes          
