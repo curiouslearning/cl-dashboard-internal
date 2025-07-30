@@ -12,33 +12,48 @@ jobs:
     - name: Checkout repo
       uses: actions/checkout@v3
 
+    - name: Show workspace files (sanity check)
+      run: ls -alh
+
     - name: Test SSH connection
       uses: appleboy/ssh-action@v1.0.0
       with:
         host: ${{ secrets.GCE_HOST }}
-        username: ${{ secrets.GCE_USER }}
+        username: debian
         key: ${{ secrets.GCE_SSH_KEY }}
         script: echo "✅ SSH connection succeeded"
-   
+
+    - name: Ensure target directory exists
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.GCE_HOST }}
+        username: debian
+        key: ${{ secrets.GCE_SSH_KEY }}
+        script: |
+          mkdir -p /home/debian/src/cl-dashboard-internal
+          chown -R debian:debian /home/debian/src/cl-dashboard-internal
 
     - name: Copy files via SSH
       uses: appleboy/scp-action@v0.1.4
       with:
         host: ${{ secrets.GCE_HOST }}
-        username: debian                    
+        username: debian
         key: ${{ secrets.GCE_SSH_KEY }}
         source: "."
         target: "/home/debian/src/cl-dashboard-internal"
+        debug: true  # <-- Important for verbose error messages
 
     - name: SSH into VM and restart container
       uses: appleboy/ssh-action@v1.0.0
       with:
         host: ${{ secrets.GCE_HOST }}
-        username: debian                    
+        username: debian
         key: ${{ secrets.GCE_SSH_KEY }}
         script: |
           cd /home/debian/src/cl-dashboard-internal
-          ls -al  # Optional sanity check
+          echo "📁 Directory contents:"
+          ls -al
+          echo "🔄 Rebuilding Docker container..."
           docker build --build-arg BUILD_MODE=local -t cl-dashboard-internal .
           docker stop cl-dashboard-internal || true
           docker rm cl-dashboard-internal || true
