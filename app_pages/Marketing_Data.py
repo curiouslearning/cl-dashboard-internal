@@ -56,29 +56,34 @@ if len(daterange) == 2 and len(countries_list) > 0:
     col1, col2, col3 = st.columns(3)
 
     LR = metrics.get_totals_by_metric(
-        daterange, countries_list, stat="LR", language=language
+        daterange=daterange, countries_list=countries_list, stat="LR", language=language,app="CR"
     )
+    
+    RA = metrics.get_totals_by_metric(
+        daterange=daterange, countries_list=countries_list, stat="RA", language=language,app="CR"
+    )
+    
     col1.metric(label="Learners Reached", value=prettify(int(LR)))
 
     total = metrics.get_totals_by_metric(
-        daterange, countries_list, "LA",  language=language
+        daterange, countries_list, "LA",  language=language,app="CR"
     )
     col2.metric(label="Learners Acquired", value=prettify(int(total)))
 
     total = metrics.get_totals_by_metric(
-        daterange, countries_list, "RA",  language=language
+        daterange, countries_list, "RA",  language=language,app="CR"
     )
     col3.metric(label="Readers Acquired", value=prettify(int(total)))
 
     total = metrics.get_totals_by_metric(
-        daterange, countries_list, "GC",  language=language
+        daterange, countries_list, "GC",  language=language,app="CR"
     )
     col1.metric(label="Games Completed", value=prettify(int(total)))
 
-    total = metrics.get_GPP_avg(daterange, countries_list,  language=language)
+    total = metrics.get_GPP_avg(daterange, countries_list,  language=language,app="CR")
     col2.metric(label="Game Progress Percent", value=f"{total:.2f}%")
 
-    total = metrics.get_GC_avg(daterange, countries_list, language=language)
+    total = metrics.get_GC_avg(daterange, countries_list, language=language,app="CR")
     col3.metric(label="Game Completion Avg", value=f"{total:.2f}%")
 
     df_campaigns_all = st.session_state["df_campaigns_all"]
@@ -89,6 +94,7 @@ if len(daterange) == 2 and len(countries_list) > 0:
     col1.metric(label="Cost", value=f"${prettify(int(cost))}")
 
     col2.metric(label="LRC", value=f"${cost/LR:.2f}" if LR != 0 else "N/A")
+    col3.metric(label="RAC", value=f"${cost/RA:.2f}" if RA != 0 else "N/A")
     # LR vs LRC chart
     st.divider()
 

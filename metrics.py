@@ -536,7 +536,7 @@ def get_totals_per_month(daterange, stat, countries_list, language):
 
         # Get totals within the clipped date range
         total = get_totals_by_metric(
-            daterange=clipped_range, countries_list=countries_list, stat=stat, language=language
+            daterange=clipped_range, countries_list=countries_list, stat=stat, language=language,app="CR"
         )
         
         # Filter campaigns based on the clipped date range
