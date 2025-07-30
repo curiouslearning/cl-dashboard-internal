@@ -28,7 +28,7 @@ jobs:
         username: debian                    
         key: ${{ secrets.GCE_SSH_KEY }}
         source: "."
-        target: "~/src/cl-dashboard-internal"
+        target: "/home/debian/src/cl-dashboard-internal"
 
     - name: SSH into VM and restart container
       uses: appleboy/ssh-action@v1.0.0
@@ -37,7 +37,7 @@ jobs:
         username: debian                    
         key: ${{ secrets.GCE_SSH_KEY }}
         script: |
-          cd ~/src/cl-dashboard-internal
+          cd /home/debian/src/cl-dashboard-internal
           ls -al  # Optional sanity check
           docker build --build-arg BUILD_MODE=local -t cl-dashboard-internal .
           docker stop cl-dashboard-internal || true
