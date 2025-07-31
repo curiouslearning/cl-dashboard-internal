@@ -70,26 +70,32 @@ if len(daterange) == 2 and countries_list:
         app="CR"
     )
 
-    col1, col2 = st.columns((1, 1), gap="large")
+    # --- Calculate metrics ---
+    metrics_unity = {
+        "Avg # Sessions / User": metrics.calculate_average_metric_per_user(user_cohort_list_unity, app="Unity", column_name="engagement_event_count"),
+        "Avg Total Play Time / User": metrics.calculate_average_metric_per_user(user_cohort_list_unity, app="Unity", column_name="total_time_minutes"),
+        "Avg Session Length / User": metrics.calculate_average_metric_per_user(user_cohort_list_unity, app="Unity", column_name="avg_session_length_minutes"),
+        "Active Span / User": metrics.calculate_average_metric_per_user(user_cohort_list_unity, app="Unity", column_name="active_span"),
+    }
 
-    # --- Funnel Charts ---
-    with col1:
-        uic.create_funnels(
-            countries_list=countries_list,
-            daterange=daterange,
-            app="Unity",
-            key_prefix="u-1",
-            languages=languages,
-            user_list=user_cohort_list_unity
-        )
+    metrics_cr = {
+        "Avg # Sessions / User": metrics.calculate_average_metric_per_user(user_cohort_list_cr, app="CR", column_name="engagement_event_count"),
+        "Avg Total Play Time / User": metrics.calculate_average_metric_per_user(user_cohort_list_cr, app="CR", column_name="total_time_minutes"),
+        "Avg Session Length / User": metrics.calculate_average_metric_per_user(user_cohort_list_cr, app="CR", column_name="avg_session_length_minutes"),
+        "Active Span / User": metrics.calculate_average_metric_per_user(user_cohort_list_cr, app="CR", column_name="active_span"),
+    }
 
-    with col2:
-        uic.create_funnels(
-            countries_list=countries_list,
-            daterange=daterange,
-            app="CR",
-            funnel_size="compact",
-            key_prefix="u-2",
-            languages=languages,
-            user_list=user_cohort_list_cr)
-        
+    # --- Metric Display Columns ---
+    col_unity_metrics, col_cr_metrics = st.columns((1, 1), gap="large")
+
+    with col_unity_metrics:
+        for label, value in metrics_unity.items():
+            unit = " days" if "Span" in label else " min" if "Time" in label or "Length" in label else ""
+            st.metric(label=label, value=f"{value:.2f}{unit}")
+
+    with col_cr_metrics:
+        for label, value in metrics_cr.items():
+            unit = " days" if "Span" in label else " min" if "Time" in label or "Length" in label else ""
+            st.metric(label=label, value=f"{value:.2f}{unit}")
+
+            

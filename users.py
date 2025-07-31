@@ -5,6 +5,7 @@ import numpy as np
 from pyinstrument import Profiler
 from pyinstrument.renderers.console import ConsoleRenderer
 import asyncio
+import settings
 
 
 # How far back to obtain user data.  Currently the queries pull back to 01/01/2021
@@ -103,8 +104,8 @@ async def get_users_list():
         max_level_indices_unity = df_unity_users.groupby('user_pseudo_id')['max_user_level'].idxmax()
         df_unity_users = df_unity_users.loc[max_level_indices_unity].reset_index()
 
-
-    print(p.output(ConsoleRenderer(show_all=False,timeline=True,color=True,unicode=True,short_mode=True)))
+    logger = settings.get_logger()
+    logger.debug(p.output(ConsoleRenderer(show_all=False,timeline=True,color=True,unicode=True,short_mode=False)))
     
     return  df_cr_users, df_unity_users,  df_cr_app_launch
 

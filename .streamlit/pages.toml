@@ -62,3 +62,9 @@ icon = ":small_orange_diamond:"
 path = "app_pages/engagement_over_time.py"
 name = "Engagement Over Time"
 icon = ":small_orange_diamond:"
+
+[[pages]]
+path = "app_pages/unity_cr_engagement_metrics.py"
+name = "Unity and CR Session Metrics"
+icon = ":small_orange_diamond:"
+

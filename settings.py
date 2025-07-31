@@ -12,6 +12,22 @@ import asyncio
 
 default_daterange = [dt.datetime(2021, 1, 1).date(), dt.date.today()]
 
+import logging
+
+def get_logger(name="dashboard_logger"):
+    logger = logging.getLogger(name)
+    if not logger.handlers:
+        logger.setLevel(logging.DEBUG)
+        
+        # Console handler or file handler
+        handler = logging.StreamHandler()  # or logging.FileHandler("logs/app.log")
+        
+        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+        handler.setFormatter(formatter)
+        
+        logger.addHandler(handler)
+        logger.propagate = False  # Prevent double logging
+    return logger
 
 def get_gcp_credentials():
     # first get credentials to secret manager

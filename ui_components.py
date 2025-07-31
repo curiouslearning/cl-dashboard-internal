@@ -359,7 +359,7 @@ def lrc_scatter_chart(option,display_category,df_campaigns,daterange):
         st.write("No data for selected period")
 
 
-#@st.cache_data(ttl="1d", show_spinner=False)
+@st.cache_data(ttl="1d", show_spinner=False)
 def spend_by_country_map(df_campaigns,source):
 
     if source == 'Both':
@@ -402,7 +402,6 @@ def spend_by_country_map(df_campaigns,source):
     st.plotly_chart(country_fig)
 
 
-@st.cache_data(ttl="1d", show_spinner=False)
 def campaign_funnel_chart():
     df_campaigns = st.session_state.df_campaigns
     impressions = df_campaigns["impressions"].sum()
@@ -603,8 +602,6 @@ def funnel_change_line_chart(df, graph_type='sum'):
     st.plotly_chart(fig, use_container_width=True)
 
 
-
-@st.cache_data(ttl="1d", show_spinner=False)
 def top_campaigns_by_downloads_barchart(n):
     df_campaigns = st.session_state.df_campaigns
     df = df_campaigns.filter(["campaign_name", "mobile_app_install"], axis=1)
@@ -942,7 +939,7 @@ def top_and_bottom_languages_per_level(selection, min_LR):
 
 
 #Added user_list which is a list of cr_user_id to filter with
-#@st.cache_data(ttl="1d", show_spinner=False)
+
 def create_funnels(countries_list=["All"],
                    daterange=default_daterange,
                    languages=["All"],
