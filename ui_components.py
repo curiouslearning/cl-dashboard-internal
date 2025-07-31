@@ -942,7 +942,7 @@ def top_and_bottom_languages_per_level(selection, min_LR):
 
 
 #Added user_list which is a list of cr_user_id to filter with
-@st.cache_data(ttl="1d", show_spinner=False)
+#@st.cache_data(ttl="1d", show_spinner=False)
 def create_funnels(countries_list=["All"],
                    daterange=default_daterange,
                    languages=["All"],

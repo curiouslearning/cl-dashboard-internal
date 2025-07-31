@@ -6,6 +6,8 @@ import ui_components as uic
 import ui_widgets as ui
 import users
 import metrics
+from pyinstrument import Profiler
+from pyinstrument.renderers.console import ConsoleRenderer
 
 settings.initialize()
 settings.init_user_list()
@@ -52,67 +54,71 @@ with col_cr_head:
     st.markdown("<strong><div style='text-align: center;'>Curious Reader</div></strong>", unsafe_allow_html=True)
 
 # --- Metrics + Funnels ---
-if len(daterange) == 2 and countries_list:
+p = Profiler(async_mode="disabled")
+with p:
+    if len(daterange) == 2 and countries_list:
 
-    # --- Get user cohorts ---
-    user_cohort_list_unity = metrics.get_user_cohort_list(
-        daterange=daterange,
-        languages=language,
-        countries_list=countries_list,
-        app="Unity"
-    )
-    user_cohort_list_cr = metrics.get_user_cohort_list(
-        daterange=daterange,
-        languages=language,
-        countries_list=countries_list,
-        app="CR"
-    )
-
-    # --- Calculate metrics ---
-    metrics_unity = {
-        "Avg # Sessions / User": metrics.calculate_average_metric_per_user(user_cohort_list_unity, app="Unity", column_name="engagement_event_count"),
-        "Avg Total Play Time / User": metrics.calculate_average_metric_per_user(user_cohort_list_unity, app="Unity", column_name="total_time_minutes"),
-        "Avg Session Length / User": metrics.calculate_average_metric_per_user(user_cohort_list_unity, app="Unity", column_name="avg_session_length_minutes"),
-        "Active Span / User": metrics.calculate_average_metric_per_user(user_cohort_list_unity, app="Unity", column_name="active_span"),
-    }
-
-    metrics_cr = {
-        "Avg # Sessions / User": metrics.calculate_average_metric_per_user(user_cohort_list_cr, app="CR", column_name="engagement_event_count"),
-        "Avg Total Play Time / User": metrics.calculate_average_metric_per_user(user_cohort_list_cr, app="CR", column_name="total_time_minutes"),
-        "Avg Session Length / User": metrics.calculate_average_metric_per_user(user_cohort_list_cr, app="CR", column_name="avg_session_length_minutes"),
-        "Active Span / User": metrics.calculate_average_metric_per_user(user_cohort_list_cr, app="CR", column_name="active_span"),
-    }
-
-    # --- Metric Display Columns ---
-    col_unity_metrics, col_cr_metrics = st.columns((1, 1), gap="large")
-
-    with col_unity_metrics:
-        for label, value in metrics_unity.items():
-            unit = " days" if "Span" in label else " min" if "Time" in label or "Length" in label else ""
-            st.metric(label=label, value=f"{value:.2f}{unit}")
-
-    with col_cr_metrics:
-        for label, value in metrics_cr.items():
-            unit = " days" if "Span" in label else " min" if "Time" in label or "Length" in label else ""
-            st.metric(label=label, value=f"{value:.2f}{unit}")
-
-    # --- Funnel Charts ---
-    with col_unity_metrics:
-        uic.create_funnels(
-            countries_list=countries_list,
+        # --- Get user cohorts ---
+        user_cohort_list_unity = metrics.get_user_cohort_list(
             daterange=daterange,
-            app="Unity",
-            key_prefix="u-1",
-            languages=languages,
-            user_list=user_cohort_list_unity
+            languages=language,
+            countries_list=countries_list,
+            app="Unity"
+        )
+        user_cohort_list_cr = metrics.get_user_cohort_list(
+            daterange=daterange,
+            languages=language,
+            countries_list=countries_list,
+            app="CR"
         )
 
-    with col_cr_metrics:
-        uic.create_funnels(
-            countries_list=countries_list,
-            daterange=daterange,
-            app="CR",
-            funnel_size="compact",
-            key_prefix="u-2",
-            languages=languages,
-            user_list=user_cohort_list_cr)
+        # --- Calculate metrics ---
+        metrics_unity = {
+            "Avg # Sessions / User": metrics.calculate_average_metric_per_user(user_cohort_list_unity, app="Unity", column_name="engagement_event_count"),
+            "Avg Total Play Time / User": metrics.calculate_average_metric_per_user(user_cohort_list_unity, app="Unity", column_name="total_time_minutes"),
+            "Avg Session Length / User": metrics.calculate_average_metric_per_user(user_cohort_list_unity, app="Unity", column_name="avg_session_length_minutes"),
+            "Active Span / User": metrics.calculate_average_metric_per_user(user_cohort_list_unity, app="Unity", column_name="active_span"),
+        }
+
+        metrics_cr = {
+            "Avg # Sessions / User": metrics.calculate_average_metric_per_user(user_cohort_list_cr, app="CR", column_name="engagement_event_count"),
+            "Avg Total Play Time / User": metrics.calculate_average_metric_per_user(user_cohort_list_cr, app="CR", column_name="total_time_minutes"),
+            "Avg Session Length / User": metrics.calculate_average_metric_per_user(user_cohort_list_cr, app="CR", column_name="avg_session_length_minutes"),
+            "Active Span / User": metrics.calculate_average_metric_per_user(user_cohort_list_cr, app="CR", column_name="active_span"),
+        }
+
+        # --- Metric Display Columns ---
+        col_unity_metrics, col_cr_metrics = st.columns((1, 1), gap="large")
+
+        with col_unity_metrics:
+            for label, value in metrics_unity.items():
+                unit = " days" if "Span" in label else " min" if "Time" in label or "Length" in label else ""
+                st.metric(label=label, value=f"{value:.2f}{unit}")
+
+        with col_cr_metrics:
+            for label, value in metrics_cr.items():
+                unit = " days" if "Span" in label else " min" if "Time" in label or "Length" in label else ""
+                st.metric(label=label, value=f"{value:.2f}{unit}")
+
+        # --- Funnel Charts ---
+        with col_unity_metrics:
+            uic.create_funnels(
+                countries_list=countries_list,
+                daterange=daterange,
+                app="Unity",
+                key_prefix="u-1",
+                languages=languages,
+                user_list=user_cohort_list_unity
+            )
+
+        with col_cr_metrics:
+            uic.create_funnels(
+                countries_list=countries_list,
+                daterange=daterange,
+                app="CR",
+                funnel_size="compact",
+                key_prefix="u-2",
+                languages=languages,
+                user_list=user_cohort_list_cr)
+            
+print(p.output(ConsoleRenderer(show_all=False,timeline=True,color=True,unicode=True,short_mode=False)))

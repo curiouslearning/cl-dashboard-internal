@@ -146,10 +146,10 @@ def filter_user_data(
 
 
 # Average Game Progress Percent
-def get_GPP_avg(daterange, countries_list, app="Both", language="All"):
+def get_GPP_avg(daterange, countries_list, app="Both", language="All", user_list=[]):
     # Use LA as the baseline
     df_user_list = filter_user_data(
-        daterange, countries_list, stat="LA", app=app, language=language
+        daterange, countries_list, stat="LA", app=app, language=language,user_list=user_list
     )
     df_user_list["gpc"] = df_user_list["gpc"].fillna(0)
     
@@ -157,10 +157,10 @@ def get_GPP_avg(daterange, countries_list, app="Both", language="All"):
 
 
 # Average Game Complete
-def get_GC_avg(daterange, countries_list, app="Both", language="All"):
+def get_GC_avg(daterange, countries_list, app="Both", language="All", user_list=[]):
     # Use LA as the baseline
     df_user_list = filter_user_data(
-        daterange, countries_list, stat="LA", app=app, language=language
+        daterange, countries_list, stat="LA", app=app, language=language,user_list=user_list
     )
     df_user_list["gpc"] = df_user_list["gpc"].fillna(0)
     
@@ -180,7 +180,7 @@ def weeks_since(daterange):
 
 
 # Returns a DataFrame list of counts by language or counts by country
-@st.cache_data(ttl="1d", show_spinner=False)
+#@st.cache_data(ttl="1d", show_spinner=False)
 def get_counts(
     type="app_language",
     daterange=default_daterange,
@@ -266,7 +266,7 @@ def get_counts(
 
 #Added new parameter user_list.  If passed, only return the funnel based on that set of users
 
-@st.cache_data(ttl="1d", show_spinner=False)
+#@st.cache_data(ttl="1d", show_spinner=False)
 def build_funnel_dataframe(
     index_col="language",
     daterange=default_daterange,
@@ -469,7 +469,7 @@ def add_level_percents(df):
 
 
 # Get the campaign data and filter by date, language, and country selections
-@st.cache_data(ttl="1d", show_spinner=False)
+#@st.cache_data(ttl="1d", show_spinner=False)
 def filter_campaigns(df_campaigns_all,daterange,selected_languages,countries_list):
 
     # Drop the campaigns that don't meet the naming convention
@@ -514,7 +514,7 @@ def get_month_ranges(start_date, end_date):
     return month_ranges
 
 #Returns a dataframe of the totals of a stat for each month
-@st.cache_data(ttl="1d", show_spinner=False)
+#@st.cache_data(ttl="1d", show_spinner=False)
 def get_totals_per_month(daterange, stat, countries_list, language):
     # First, get all campaign data
     df_campaigns_all = st.session_state["df_campaigns_all"]
@@ -560,7 +560,7 @@ def get_totals_per_month(daterange, stat, countries_list, language):
     # Display the DataFrame
     return df_totals
 
-@st.cache_data(ttl="1d", show_spinner=False)
+#@st.cache_data(ttl="1d", show_spinner=False)
 def get_date_cohort_dataframe(
     daterange=default_daterange,
     languages=["All"],
@@ -584,7 +584,7 @@ def get_date_cohort_dataframe(
     
     return df
 
-@st.cache_data(ttl="1d", show_spinner=False)
+#@st.cache_data(ttl="1d", show_spinner=False)
 def get_user_cohort_list(
     daterange=default_daterange,
     languages=["All"],
@@ -618,7 +618,7 @@ def get_user_cohort_list(
         return user_cohort_df
 
 
-@st.cache_data(ttl="1d", show_spinner=False)
+#@st.cache_data(ttl="1d", show_spinner=False)
 def calculate_average_metric_per_user(user_cohort_list, app, column_name):
     df_cr_app_launch = st.session_state["df_cr_app_launch"]
     df_unity_users = st.session_state["df_unity_users"]
