@@ -71,14 +71,17 @@ if len(daterange) == 2 and countries_list:
     )
 
     # --- Calculate metrics ---
-    metrics_unity = {
-        "Avg # Sessions / User": metrics.calculate_average_metric_per_user(user_cohort_list_unity, app="Unity", column_name="engagement_event_count"),
-        "Avg Total Play Time / User": metrics.calculate_average_metric_per_user(user_cohort_list_unity, app="Unity", column_name="total_time_minutes"),
-        "Avg Session Length / User": metrics.calculate_average_metric_per_user(user_cohort_list_unity, app="Unity", column_name="avg_session_length_minutes"),
-        "Active Span / User": metrics.calculate_average_metric_per_user(user_cohort_list_unity, app="Unity", column_name="active_span"),
-    }
+    with st.spinner("Calculating Unity metrics..."):
 
-    metrics_cr = {
+        metrics_unity = {
+            "Avg # Sessions / User": metrics.calculate_average_metric_per_user(user_cohort_list_unity, app="Unity", column_name="engagement_event_count"),
+            "Avg Total Play Time / User": metrics.calculate_average_metric_per_user(user_cohort_list_unity, app="Unity", column_name="total_time_minutes"),
+            "Avg Session Length / User": metrics.calculate_average_metric_per_user(user_cohort_list_unity, app="Unity", column_name="avg_session_length_minutes"),
+            "Active Span / User": metrics.calculate_average_metric_per_user(user_cohort_list_unity, app="Unity", column_name="active_span"),
+        }
+
+    with st.spinner("Calculating CR metrics..."):
+        metrics_cr = {
         "Avg # Sessions / User": metrics.calculate_average_metric_per_user(user_cohort_list_cr, app="CR", column_name="engagement_event_count"),
         "Avg Total Play Time / User": metrics.calculate_average_metric_per_user(user_cohort_list_cr, app="CR", column_name="total_time_minutes"),
         "Avg Session Length / User": metrics.calculate_average_metric_per_user(user_cohort_list_cr, app="CR", column_name="avg_session_length_minutes"),

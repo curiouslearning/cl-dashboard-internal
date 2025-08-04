@@ -623,7 +623,6 @@ def get_user_cohort_list(
         return user_cohort_df
 
 
-
 def calculate_average_metric_per_user(user_cohort_list, app, column_name):
     df_cr_app_launch = st.session_state["df_cr_app_launch"]
     df_unity_users = st.session_state["df_unity_users"]
