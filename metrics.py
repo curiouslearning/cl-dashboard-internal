@@ -15,7 +15,7 @@ def get_totals_by_metric(
     cr_app_versions="All",
     app="Both",
     language="All",
-    user_list=[] #New parameter allowing a filter of results by cr_user_id list
+    user_list=None 
 ):
 
     # if no list passed in then get the full list
@@ -25,53 +25,56 @@ def get_totals_by_metric(
     df_user_list = filter_user_data(
         daterange=daterange, countries_list=countries_list, stat=stat, app=app, cr_app_versions=cr_app_versions, language=language,user_list=user_list
     )
+    
+    if (len(df_user_list) > 0):
 
-    if stat not in ["DC", "TS", "SL", "PC", "LA"]:
-        return len(df_user_list) #All LR 
+        if stat not in ["DC", "TS", "SL", "PC", "LA"]:
+            return len(df_user_list) #All LR 
+        else:
+            download_completed_count = len(
+                df_user_list[df_user_list["furthest_event"] == "download_completed"]
+            )
+
+            tapped_start_count = len(
+                df_user_list[df_user_list["furthest_event"] == "tapped_start"]
+            )
+            selected_level_count = len(
+                df_user_list[df_user_list["furthest_event"] == "selected_level"]
+            )
+            puzzle_completed_count = len(
+                df_user_list[df_user_list["furthest_event"] == "puzzle_completed"]
+            )
+            level_completed_count = len(
+                df_user_list[df_user_list["furthest_event"] == "level_completed"]
+            )
+
+            if stat == "DC":
+                return (
+                    download_completed_count
+                    + tapped_start_count
+                    + selected_level_count
+                    + puzzle_completed_count
+                    + level_completed_count
+                )
+
+            if stat == "TS":
+                return (
+                    tapped_start_count
+                    + selected_level_count
+                    + puzzle_completed_count
+                    + level_completed_count
+                )
+
+            if stat == "SL":  # all PC and SL users implicitly imply those events
+                return selected_level_count + puzzle_completed_count + level_completed_count
+
+            if stat == "PC":
+                return puzzle_completed_count + level_completed_count
+
+            if stat == "LA":
+                return level_completed_count
     else:
-        download_completed_count = len(
-            df_user_list[df_user_list["furthest_event"] == "download_completed"]
-        )
-
-        tapped_start_count = len(
-            df_user_list[df_user_list["furthest_event"] == "tapped_start"]
-        )
-        selected_level_count = len(
-            df_user_list[df_user_list["furthest_event"] == "selected_level"]
-        )
-        puzzle_completed_count = len(
-            df_user_list[df_user_list["furthest_event"] == "puzzle_completed"]
-        )
-        level_completed_count = len(
-            df_user_list[df_user_list["furthest_event"] == "level_completed"]
-        )
-
-        if stat == "DC":
-            return (
-                download_completed_count
-                + tapped_start_count
-                + selected_level_count
-                + puzzle_completed_count
-                + level_completed_count
-            )
-
-        if stat == "TS":
-            return (
-                tapped_start_count
-                + selected_level_count
-                + puzzle_completed_count
-                + level_completed_count
-            )
-
-        if stat == "SL":  # all PC and SL users implicitly imply those events
-            return selected_level_count + puzzle_completed_count + level_completed_count
-
-        if stat == "PC":
-            return puzzle_completed_count + level_completed_count
-
-        if stat == "LA":
-            return level_completed_count
-
+        return 0
 
 # Takes the complete user lists (cr_user_id) and filters based on input data, and returns
 # a new filtered dataset
@@ -82,7 +85,7 @@ def filter_user_data(
     stat="LR",
     app="Both",
     language=["All"],
-    user_list=[]
+    user_list=None
 ):
     #default column to filter user cohort list
     user_list_key = "cr_user_id"
@@ -94,6 +97,7 @@ def filter_user_data(
     # Select the appropriate dataframe based on app and stat
     if app == "Unity":
         df = st.session_state.df_unity_users #Unity users are in one table only
+
         user_list_key = "user_pseudo_id"
     elif app == "Both" and stat == "LR":
         df1 = st.session_state.df_unity_users
@@ -139,7 +143,9 @@ def filter_user_data(
     df = df.loc[mask]
 
     #If user list subset was passed in, filter on that as well
-    if (len (user_list) > 0):
+    if user_list is not None:
+        if len(user_list) == 0:
+            return pd.DataFrame()  # No matches — return empty
         df = df[df[user_list_key].isin(user_list)]
 
     return df
@@ -273,7 +279,7 @@ def build_funnel_dataframe(
     languages=["All"],
     app="Both",
     countries_list=["All"],
-    user_list=[]
+    user_list=None
 ):
     if app == "CR":
         levels = ["LR", "DC", "TS", "SL", "PC", "LA", "RA", "GC"]

@@ -61,4 +61,8 @@ jobs:
 
     - name: Prune unused Docker data
       run: |
-        docker system prune -af --volumes          
+        docker container prune -f
+        docker volume prune -f
+        docker image prune -a -f
+        docker builder prune -a -f
+        docker system prune -a -f --volumes          

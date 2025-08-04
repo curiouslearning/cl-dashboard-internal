@@ -868,7 +868,12 @@ def top_and_bottom_languages_per_level(selection, min_LR):
         ascending = True
     
     languages = users.get_language_list()
-    df = metrics.build_funnel_dataframe(index_col="language", languages=languages)
+    user_cohort_list_cr = metrics.get_user_cohort_list(
+        languages=languages,
+        app="CR"
+    )
+    
+    df = metrics.build_funnel_dataframe(index_col="language", languages=languages,app="CR",user_list=user_cohort_list_cr)
 
     # Remove anything where Learners Reached is less than 5000 (arbitrary to have a decent sample size)
     df = df[df["LR"] > min_LR]
