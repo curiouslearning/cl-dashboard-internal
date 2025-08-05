@@ -115,7 +115,12 @@ def filter_user_data(
 
 
     # Initialize a boolean mask
-    mask = (df['first_open'] >= daterange[0]) & (df['first_open'] <= daterange[1])
+    mask = (
+        df["first_open"] >= pd.to_datetime(daterange[0])
+    ) & (
+        df["first_open"] <= pd.to_datetime(daterange[1])
+    )
+
 
     if "All" not in cr_app_versions and app == "CR":
         mask &= df["app_version"].isin(cr_app_versions)

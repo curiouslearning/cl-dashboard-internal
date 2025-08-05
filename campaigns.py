@@ -5,6 +5,7 @@ import campaigns
 import metrics
 import asyncio
 from pyinstrument import Profiler
+import settings
 
 start_date = '2024-05-01'
 # Starting 05/01/2024, campaign names were changed to support an indication of 
@@ -16,7 +17,7 @@ start_date = '2024-05-01'
 async def get_campaign_data():
     p = Profiler(async_mode="disabled")
     with p:
-        bq_client = st.session_state.bq_client
+        _, bq_client = settings.get_gcp_credentials()
 
         # Helper function to run BigQuery queries asynchronously
         async def run_query(query):

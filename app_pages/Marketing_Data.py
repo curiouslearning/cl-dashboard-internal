@@ -23,7 +23,6 @@ data_notes = pd.DataFrame(
 )
 ui.display_definitions_table("Data Notes",data_notes)
 settings.initialize()
-settings.init_user_list()
 settings.init_campaign_data()
 
 ui.colorize_multiselect_options()

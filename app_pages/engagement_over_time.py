@@ -6,7 +6,6 @@ import ui_widgets as ui
 import ui_components as uic
 
 settings.initialize()
-settings.init_user_list()
 settings.init_cr_app_version_list()
 
 # Get options

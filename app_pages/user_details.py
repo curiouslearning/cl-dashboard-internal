@@ -7,7 +7,6 @@ import settings
 
 
 settings.initialize()
-settings.init_user_list()
 
 def info_row(label, value, color="green"):
     st.markdown(f"<div style='margin-bottom: -10px'><span style='color:{color}; font-weight:500'>{label}</span> {value}</div>", unsafe_allow_html=True)
@@ -30,8 +29,9 @@ if (len(cr_user_id) > 0):
     df_cr_users = st.session_state.df_cr_users
     df_cr_app_launch = st.session_state.df_cr_app_launch
 
+    df_cr_app_launch["first_open"] = pd.to_datetime(df_cr_app_launch["first_open"])
     df_filtered = df_cr_app_launch[df_cr_app_launch['first_open'] >= pd.to_datetime('2025-01-01')]
-
+    
     user = df_cr_app_launch.loc[df_cr_app_launch['cr_user_id'] == cr_user_id]
     user_pseudo_id = None
 
@@ -47,9 +47,6 @@ if (len(cr_user_id) > 0):
         info_row("CR Last Event Date:", safe_value(user["last_event_date"].iloc[0]))
         info_row("Calculated Engagement events:", safe_value(user["engagement_event_count"].iloc[0]))
         info_row("Calculated Engagement time:", safe_value(user["total_time_minutes"].iloc[0]))
-        info_row("Mobile brand:", safe_value(user["device_mobile_brand_name"].iloc[0]))
-        info_row("Mobile model:", safe_value(user["device_mobile_model_name"].iloc[0]))
-        info_row("Mobile marketing name:", safe_value(user["device_mobile_marketing_name"].iloc[0]))
         info_row("App version:", safe_value(user["app_version"].iloc[0]))
     else:
         st.warning("No CR data found for this cr_user_id.")
@@ -69,7 +66,7 @@ if (len(cr_user_id) > 0):
 
     if st.button("Run Full Event Query for this User"):
         with st.spinner("Running BigQuery..."):
-            bq_client = st.session_state["bq_client"]
+            gcp_credentials, bq_client = settings.get_gcp_credentials()
 
             sql = f"""
                     SELECT

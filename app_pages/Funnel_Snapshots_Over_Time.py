@@ -9,7 +9,6 @@ import datetime as dt
 
 
 settings.initialize()
-settings.init_user_list()
 
 ui.display_definitions_table("Definitions",ui.level_percent_definitions)
 

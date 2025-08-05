@@ -31,7 +31,6 @@ def show_dual_metric_table(title, home_metrics):
 
 
 settings.initialize()
-settings.init_user_list()
 settings.init_cr_app_version_list()
 
 languages = users.get_language_list()
