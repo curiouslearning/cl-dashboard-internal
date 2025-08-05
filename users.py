@@ -7,7 +7,6 @@ from pyinstrument.renderers.console import ConsoleRenderer
 import asyncio
 import settings
 
-
 # How far back to obtain user data.  Currently the queries pull back to 01/01/2021
 start_date = "2021/01/01"
 
@@ -18,7 +17,6 @@ start_date = "2021/01/01"
 
 
 async def get_users_list():
-
 
     p = Profiler(async_mode="disabled")
     with p:
