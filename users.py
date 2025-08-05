@@ -17,17 +17,17 @@ start_date = "2021/01/01"
 # This would all be unncessery if dev had included the app user id per the spec.
 
 
-import streamlit as st
-
 async def get_users_list():
+
+
     p = Profiler(async_mode="disabled")
     with p:
-
         bq_client = st.session_state.bq_client
 
-        # Helper function to run BigQuery in a thread
         async def run_query(query):
-            return await asyncio.to_thread(bq_client.query(query).to_dataframe)
+            return await asyncio.to_thread(
+                lambda: bq_client.query(query).result().to_dataframe(create_bqstorage_client=True)
+            )
 
         # Define the queries
         sql_unity_users = f"""
@@ -35,7 +35,7 @@ async def get_users_list():
             FROM `dataexploration-193817.user_data.unity_user_progress`
             WHERE first_open BETWEEN PARSE_DATE('%Y/%m/%d','{start_date}') AND CURRENT_DATE()
         """
-        
+
         sql_cr_users = f"""
             SELECT *
             FROM `dataexploration-193817.user_data.cr_user_progress`
@@ -48,66 +48,43 @@ async def get_users_list():
             WHERE first_open BETWEEN PARSE_DATE('%Y/%m/%d','{start_date}') AND CURRENT_DATE()
         """
 
-
-        # Run all the queries asynchronously
+        # Run all the queries in parallel
         df_cr_users, df_unity_users, df_cr_app_launch = await asyncio.gather(
             run_query(sql_cr_users),
             run_query(sql_unity_users),
             run_query(sql_cr_app_launch),
         )
 
-        # Fix data typos
-        df_cr_app_launch["app_language"] = df_cr_app_launch["app_language"].replace(
-            "ukranian", "ukrainian"
-        )
-        df_cr_app_launch["app_language"] = df_cr_app_launch["app_language"].replace(
-            "malgache", "malagasy"
-        )
-        df_cr_app_launch["app_language"] = df_cr_app_launch["app_language"].replace(
-            "arabictest", "arabic"
-        )
-        df_cr_app_launch["app_language"] = df_cr_app_launch["app_language"].replace(
-            "farsitest", "farsi"
-        )
-        
-        df_cr_users["app_language"] = df_cr_users["app_language"].replace(
-            "ukranian", "ukrainian"
-        )
-        df_cr_users["app_language"] = df_cr_users["app_language"].replace(
-            "malgache", "malagasy"
-        )
-        df_cr_users["app_language"] = df_cr_users["app_language"].replace(
-            "arabictest", "arabic"
-        )
-        
-        df_cr_users["app_language"] = df_cr_users["app_language"].replace(
-        "farsitest", "farsi"
-    )        
-        df_unity_users["app_language"] = df_unity_users["app_language"].replace(
-            "ukranian", "ukrainian"
-        )
-        df_unity_users["app_language"] = df_unity_users["app_language"].replace(
-            "malgache", "malagasy"
-        )
+        # Language cleanup
+        def clean_language_column(df):
+            return df["app_language"].replace({
+                "ukranian": "ukrainian",
+                "malgache": "malagasy",
+                "arabictest": "arabic",
+                "farsitest": "farsi"
+            })
 
-        # We have an unknown anomalie where users from FTM do not show up in the CR events.  We 
-        # need to remove them so we have a true funnel.
+        df_cr_app_launch["app_language"] = clean_language_column(df_cr_app_launch)
+        df_cr_users["app_language"] = clean_language_column(df_cr_users)
+        df_unity_users["app_language"] = clean_language_column(df_unity_users)
+
+        # Remove anomalous users from cr_user_progress
         missing_users = df_cr_users[~df_cr_users["cr_user_id"].isin(df_cr_app_launch["cr_user_id"])]
-
-        # Remove missing users from df_cr_users - NOTE: Same users with multiple country combinations
-        # will still be in df_cr_app_launch 
         df_cr_users = df_cr_users[~df_cr_users["cr_user_id"].isin(missing_users["cr_user_id"])]
 
-        df_cr_app_launch,df_cr_users = clean_cr_users_to_single_language(df_cr_app_launch,df_cr_users)
+        # Clean to single language
+        df_cr_app_launch, df_cr_users = clean_cr_users_to_single_language(df_cr_app_launch, df_cr_users)
 
-        #clean unity users to the one with the furthest progress
-        max_level_indices_unity = df_unity_users.groupby('user_pseudo_id')['max_user_level'].idxmax()
-        df_unity_users = df_unity_users.loc[max_level_indices_unity].reset_index()
+        # Deduplicate Unity users to the one with max progress
+        max_level_indices_unity = df_unity_users.groupby("user_pseudo_id")["max_user_level"].idxmax()
+        df_unity_users = df_unity_users.loc[max_level_indices_unity].reset_index(drop=True)
 
+    # Log profiling info
     logger = settings.get_logger()
-    logger.debug(p.output(ConsoleRenderer(show_all=False,timeline=True,color=True,unicode=True,short_mode=False)))
-    
-    return  df_cr_users, df_unity_users,  df_cr_app_launch
+    logger.debug(p.output(ConsoleRenderer(show_all=False, timeline=True, color=True, unicode=True, short_mode=False)))
+
+    return df_cr_users, df_unity_users, df_cr_app_launch
+
 
 
 @st.cache_data(ttl="1d", show_spinner=False)

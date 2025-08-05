@@ -7,7 +7,6 @@ import users
 
 default_daterange = [dt.datetime(2021, 1, 1).date(), dt.date.today()]
 
-
 def get_totals_by_metric(
     daterange=default_daterange,
     countries_list=[],
