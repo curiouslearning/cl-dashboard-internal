@@ -1,21 +1,19 @@
+import time
+start = time.time()
 import streamlit as st
-import settings
-from rich import print as rprint
-from millify import prettify
-import ui_components as uic
+from  settings import initialize
+from  ui_components import create_funnels
 import ui_widgets as ui
 import users
-import metrics
-from settings import get_logger
+from  metrics import get_user_cohort_list
 
-settings.initialize()
+st.write("Imports done", time.time() - start)
+initialize()
 
 ui.display_definitions_table("Data Notes",ui.data_notes)
 countries_list = users.get_country_list()
 
 ui.colorize_multiselect_options()
-
-logger = settings.get_logger()
 
 # --- Filter Row ---
 col_date, col_lang, col_country = st.columns((1, 1, 1), gap="large")
@@ -56,13 +54,13 @@ with col_cr_head:
 if len(daterange) == 2 and countries_list:
 
     # --- Get user cohorts ---
-    user_cohort_list_unity = metrics.get_user_cohort_list(
+    user_cohort_list_unity = get_user_cohort_list(
         daterange=daterange,
         languages=language,
         countries_list=countries_list,
         app="Unity"
     )
-    user_cohort_list_cr = metrics.get_user_cohort_list(
+    user_cohort_list_cr = get_user_cohort_list(
         daterange=daterange,
         languages=language,
         countries_list=countries_list,
@@ -73,7 +71,7 @@ if len(daterange) == 2 and countries_list:
 
     # --- Funnel Charts ---
     with col1:
-        uic.create_funnels(
+        create_funnels(
             countries_list=countries_list,
             daterange=daterange,
             app="Unity",
@@ -83,7 +81,7 @@ if len(daterange) == 2 and countries_list:
         )
 
     with col2:
-        uic.create_funnels(
+        create_funnels(
             countries_list=countries_list,
             daterange=daterange,
             app="CR",
