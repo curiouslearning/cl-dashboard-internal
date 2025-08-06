@@ -1,16 +1,8 @@
-import time
-start = time.time()
+
 import streamlit as st
-st.write("Streamlit import", time.time() - start)
-start = time.time()
 from  settings import initialize
-st.write("Settings import", time.time() - start)
-start = time.time()
 from  ui_components import create_funnels
-st.write("UI Components", time.time() - start)
-start = time.time()
 import ui_widgets as ui
-st.write("UI Widgets", time.time() - start)
 
 initialize()
 
@@ -52,6 +44,9 @@ with col_country:
         key="acq-2",
         placement="middle"
     )
+    
+from users import init_user_list
+init_user_list()
 
 # --- Date Display ---
 if len(daterange) == 2:

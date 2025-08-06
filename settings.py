@@ -61,7 +61,7 @@ def get_gcp_credentials():
 def initialize():  
     pd.options.mode.copy_on_write = True
     pd.set_option("display.max_columns", 20)            
-    users.init_user_list()
+
         
  
 def init_cr_app_version_list():

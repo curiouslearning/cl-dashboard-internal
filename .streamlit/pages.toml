@@ -9,10 +9,6 @@ path = "app_pages/Unity_vs_CR.py"
 name = "Unity vs Curious Reader Funnel"
 icon = ":small_orange_diamond:"
 
-[[pages]]
-path = "app_pages/test.py"
-name = "Test Performance Page"
-icon = ":small_orange_diamond:"
 
 [[pages]]
 path = "app_pages/CR_Funnel.py"
