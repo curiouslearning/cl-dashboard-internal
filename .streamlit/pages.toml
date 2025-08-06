@@ -1,4 +1,9 @@
 [[pages]]
+path = "app_pages/test.py"
+name = "Test Performance Page"
+icon = ":small_orange_diamond:"
+
+[[pages]]
 name = "Internal Dashboard"
 icon = ":house:"
 is_section = true
@@ -67,4 +72,5 @@ icon = ":small_orange_diamond:"
 path = "app_pages/unity_cr_engagement_metrics.py"
 name = "Unity and CR Session Metrics"
 icon = ":small_orange_diamond:"
+
 

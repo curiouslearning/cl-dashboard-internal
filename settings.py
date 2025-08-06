@@ -11,12 +11,12 @@ import json
 import asyncio
 from pyinstrument import Profiler
 from pyinstrument.renderers.console import ConsoleRenderer
-
+import logging
 
 default_daterange = [dt.datetime(2021, 1, 1).date(), dt.date.today()]
 
-import logging
 
+@st.cache_resource(ttl="1d")
 def get_logger(name="dashboard_logger"):
     logger = logging.getLogger(name)
     if not logger.handlers:
