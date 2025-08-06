@@ -1,17 +1,27 @@
 import time
 start = time.time()
 import streamlit as st
+st.write("Streamlit import", time.time() - start)
+start = time.time()
 from  settings import initialize
+st.write("Settings import", time.time() - start)
+start = time.time()
 from  ui_components import create_funnels
+st.write("UI Components", time.time() - start)
+start = time.time()
 import ui_widgets as ui
-import users
-from  metrics import get_user_cohort_list
+st.write("UI Widgets", time.time() - start)
 
-st.write("Imports done", time.time() - start)
 initialize()
 
 ui.display_definitions_table("Data Notes",ui.data_notes)
-countries_list = users.get_country_list()
+
+@st.cache_data
+def load_countries():
+    from users import get_country_list
+    return get_country_list()
+
+countries_list = load_countries()
 
 ui.colorize_multiselect_options()
 
@@ -24,7 +34,13 @@ with col_date:
     daterange = ui.convert_date_to_range(selected_date, option)
 
 with col_lang:
-    languages = users.get_language_list()
+    @st.cache_data
+    def load_languages():
+        from users import get_language_list
+        return get_language_list()
+
+    languages = load_languages()
+
     language = ui.single_selector(
         languages, placement="middle", title="Select a language", key="acq-1"
     )
@@ -53,14 +69,25 @@ with col_cr_head:
 
 if len(daterange) == 2 and countries_list:
 
+    #delayed loading of import
+    @st.cache_data(show_spinner="Loading user cohorts…")
+    def get_user_cohort_list_lazy(daterange, languages, countries_list, app):
+        from metrics import get_user_cohort_list
+        return get_user_cohort_list(
+            daterange=daterange,
+            languages=languages,
+            countries_list=countries_list,
+            app=app
+        )
+
     # --- Get user cohorts ---
-    user_cohort_list_unity = get_user_cohort_list(
+    user_cohort_list_unity = get_user_cohort_list_lazy(
         daterange=daterange,
         languages=language,
         countries_list=countries_list,
         app="Unity"
     )
-    user_cohort_list_cr = get_user_cohort_list(
+    user_cohort_list_cr = get_user_cohort_list_lazy(
         daterange=daterange,
         languages=language,
         countries_list=countries_list,
