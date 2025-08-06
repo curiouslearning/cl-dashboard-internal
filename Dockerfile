@@ -41,7 +41,7 @@ RUN if [ "$BUILD_MODE" = "local" ]; then \
 # 📦 Install Python Requirements
 # ─────────────────────────────
 WORKDIR /cl-dashboard-internal
-COPY requirements.txt requirements.txt  # In case not already copied
+
 RUN pip install --no-cache-dir -r requirements.txt
 
 # ─────────────────────────────
