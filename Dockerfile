@@ -1,41 +1,39 @@
-FROM python:3.12-slim-bookworm
+# Set the build mode (default to remote)
+ARG BUILD_MODE=remote
+FROM python:3.12.3-bookworm
 
-# Install required system dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    git \
-    gcc \
+ARG BUILD_MODE
+ENV BUILD_MODE=${BUILD_MODE}
+
+# Install required tools
+RUN apt-get update && apt-get install -y \
+    build-essential \
     curl \
-    libpq-dev \
-    python3-distutils \
-    && apt-get clean \
+    git \
+    python3-pip \
+    software-properties-common \
     && rm -rf /var/lib/apt/lists/*
 
-ARG BUILD_MODE=remote
-ENV BUILD_MODE=${BUILD_MODE}
-ENV PORT=8501
-
-# Use neutral temp folder for staging
+# Set the workdir to a neutral temp folder first
 WORKDIR /tmp/build-context
 
-# Remote clone from GitHub
+# Clone OR copy conditionally
 RUN if [ "$BUILD_MODE" = "remote" ]; then \
       git clone https://github.com/curiouslearning/cl-dashboard-internal.git /cl-dashboard-internal ; \
     fi
 
-# Optional: local copy
+# Copy only if local
 COPY . /tmp/local-copy
 RUN if [ "$BUILD_MODE" = "local" ]; then \
       cp -r /tmp/local-copy /cl-dashboard-internal ; \
     fi
 
-# Cleanup temp build folders
-RUN rm -rf /tmp/local-copy /tmp/build-context /tmp/remote-copy || true
-
-# Move into app and install requirements
 WORKDIR /cl-dashboard-internal
-RUN pip install --no-cache-dir -r requirements.txt
 
-# Entrypoint
+RUN pip3 install --no-cache-dir -r requirements.txt
+
+ENV PORT=8501
+
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
