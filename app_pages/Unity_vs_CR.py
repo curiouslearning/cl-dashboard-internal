@@ -6,17 +6,16 @@ import ui_widgets as ui
 from metrics import get_user_cohort_list
 
 initialize()
-
+if st.sidebar.button("🔄 Refresh data"):
+    st.cache_data.clear()
+    st.rerun()
+    
+    
 ui.display_definitions_table("Data Notes",ui.data_notes)
 
-@st.cache_data
-def load_countries():
-    from users import get_country_list
-    return get_country_list()
+from users import get_country_list
+countries_list =  get_country_list()
 
-countries_list = load_countries()
-
-ui.colorize_multiselect_options()
 
 # --- Filter Row ---
 col_date, col_lang, col_country = st.columns((1, 1, 1), gap="large")
@@ -27,12 +26,9 @@ with col_date:
     daterange = ui.convert_date_to_range(selected_date, option)
 
 with col_lang:
-    @st.cache_data
-    def load_languages():
-        from users import get_language_list
-        return get_language_list()
 
-    languages = load_languages()
+    from users import get_language_list
+    languages =  get_language_list()
 
     language = ui.single_selector(
         languages, placement="middle", title="Select a language", key="acq-1"
@@ -45,9 +41,10 @@ with col_country:
         key="acq-2",
         placement="middle"
     )
-    
-from users import init_user_list
-init_user_list()
+
+
+from users import ensure_user_data_initialized
+ensure_user_data_initialized()
 
 # --- Date Display ---
 if len(daterange) == 2:

@@ -29,6 +29,8 @@ data_notes = pd.DataFrame(
 
 
 settings.initialize()
+from users import ensure_user_data_initialized
+ensure_user_data_initialized()
 
 ui.display_definitions_table("Definitions",ui.level_percent_definitions)
 ui.display_definitions_table("Data Notes",data_notes)

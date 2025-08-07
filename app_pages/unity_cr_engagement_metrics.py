@@ -9,6 +9,8 @@ import metrics
 from settings import get_logger
 
 settings.initialize()
+from users import ensure_user_data_initialized
+ensure_user_data_initialized()
 
 ui.display_definitions_table("Data Notes",ui.data_notes)
 countries_list = users.get_country_list()

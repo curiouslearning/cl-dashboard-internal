@@ -5,8 +5,9 @@ import pandas as pd
 
 import settings
 
-
 settings.initialize()
+from users import ensure_user_data_initialized
+ensure_user_data_initialized()
 
 def info_row(label, value, color="green"):
     st.markdown(f"<div style='margin-bottom: -10px'><span style='color:{color}; font-weight:500'>{label}</span> {value}</div>", unsafe_allow_html=True)

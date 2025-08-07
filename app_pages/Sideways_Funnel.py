@@ -7,9 +7,11 @@ import ui_widgets as ui
 import users
 import metrics
 from dateutil.relativedelta import relativedelta
-import datetime as dt
+
 
 settings.initialize()
+from users import ensure_user_data_initialized
+ensure_user_data_initialized()
 
 ui.display_definitions_table("Definitions",ui.level_percent_definitions)
 

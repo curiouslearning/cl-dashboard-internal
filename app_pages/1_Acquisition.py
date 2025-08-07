@@ -10,8 +10,10 @@ import datetime as dt
 
 settings.initialize()
 settings.init_campaign_data()
-ui.display_definitions_table("Definitions",ui.level_definitions)
+from users import ensure_user_data_initialized
+ensure_user_data_initialized()
 
+ui.display_definitions_table("Definitions",ui.level_definitions)
 ui.colorize_multiselect_options()
 
 data_notes = pd.DataFrame(

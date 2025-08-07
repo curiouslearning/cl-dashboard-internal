@@ -9,7 +9,10 @@ import metrics
 import pandas as pd
 
 
-# --- Helper Functions ---
+settings.initialize()
+settings.init_cr_app_version_list()
+from users import ensure_user_data_initialized
+ensure_user_data_initialized()
 
 def get_metrics_for_cohort(user_cohort_list):
 
@@ -30,8 +33,7 @@ def show_dual_metric_table(title, home_metrics):
     st.table(df)
 
 
-settings.initialize()
-settings.init_cr_app_version_list()
+
 
 languages = users.get_language_list()
 countries_list = users.get_country_list()
