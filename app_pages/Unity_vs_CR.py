@@ -3,6 +3,7 @@ import streamlit as st
 from  settings import initialize
 from  ui_components import create_funnels
 import ui_widgets as ui
+from metrics import get_user_cohort_list
 
 initialize()
 
@@ -64,30 +65,20 @@ with col_cr_head:
 
 if len(daterange) == 2 and countries_list:
 
-    #delayed loading of import
-    @st.cache_data(show_spinner="Loading user cohorts…")
-    def get_user_cohort_list_lazy(daterange, languages, countries_list, app):
-        from metrics import get_user_cohort_list
-        return get_user_cohort_list(
-            daterange=daterange,
-            languages=languages,
-            countries_list=countries_list,
-            app=app
-        )
-
     # --- Get user cohorts ---
-    user_cohort_list_unity = get_user_cohort_list_lazy(
+    user_cohort_list_unity = get_user_cohort_list(
         daterange=daterange,
         languages=language,
         countries_list=countries_list,
         app="Unity"
     )
-    user_cohort_list_cr = get_user_cohort_list_lazy(
+    user_cohort_list_cr = get_user_cohort_list(
         daterange=daterange,
         languages=language,
         countries_list=countries_list,
         app="CR"
     )
+
 
     col1, col2 = st.columns((1, 1), gap="large")
 
