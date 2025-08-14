@@ -87,7 +87,7 @@ def filter_user_data(
     user_list=None,
     offline_filter=None
 ):
-    print(offline_filter)
+    
     #default column to filter user cohort list
     user_list_key = "cr_user_id"
     # Check if necessary dataframes are available
