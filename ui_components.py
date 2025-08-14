@@ -464,7 +464,7 @@ def levels_multi_group_chart(
     countries_list,
     app="Both",
     language="All",
-    group_defs=None,   # [{label:..., offline_filter:...}, ...]
+    group_defs=None,
 ):
     if group_defs is None:
         group_defs = [
@@ -475,7 +475,7 @@ def levels_multi_group_chart(
     for group in group_defs:
         group_label = group.get("label", "Group")
         offline_filter = group.get("offline_filter", None)
-        # Add other filter parameters as needed
+        # Add other filters as needed
         df_user_list = metrics.filter_user_data(
             daterange=daterange,
             countries_list=countries_list,
@@ -492,8 +492,11 @@ def levels_multi_group_chart(
         if not df.empty:
             first_level_count = df["count"].iloc[0]
             df["percent_reached"] = df["count"] / first_level_count * 100
+            # Calculate percent drop from previous level
+            df["percent_drop"] = df["percent_reached"].diff().fillna(0)
         else:
             df["percent_reached"] = 0
+            df["percent_drop"] = 0
         df["group"] = group_label
 
         trace = go.Scatter(
@@ -504,8 +507,10 @@ def levels_multi_group_chart(
             hovertemplate=(
                 "Max Level: %{x}<br>"
                 "Percent reached: %{y:.2f}%<br>"
+                "Drop from previous: %{customdata:.2f}%%<br>"
                 "Group: %{text}"
             ),
+            customdata=df["percent_drop"],
             text=df["group"],
         )
         traces.append(trace)
@@ -517,6 +522,7 @@ def levels_multi_group_chart(
     )
     fig = go.Figure(data=traces, layout=layout)
     st.plotly_chart(fig, use_container_width=True)
+    return fig
 
 @st.cache_data(ttl="1d", show_spinner=False)
 def funnel_change_line_chart(df, graph_type='sum'):
