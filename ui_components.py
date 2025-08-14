@@ -158,7 +158,7 @@ def campaign_gantt_chart():
     )  # Display the plotly chart in Streamlit
 
 @st.cache_data(ttl="1d", show_spinner=False)
-def top_gpp_bar_chart(daterange, countries_list, app="Both", language="All",display_category="Country"):
+def top_gpp_bar_chart(daterange, countries_list, app="Both", language="All",display_category="Country",user_list=None):
 
     # Group by date and display_type, then count the users
     if display_category == "Country":
@@ -167,7 +167,7 @@ def top_gpp_bar_chart(daterange, countries_list, app="Both", language="All",disp
         display_group = "app_language"     
 
     df = metrics.get_counts(type=display_group,
-    daterange=daterange, countries_list=countries_list, app=app, language=language
+    daterange=daterange, countries_list=countries_list, app=app, language=language,user_list=user_list
     )
     
     df = df[[display_group, "GPP"]].sort_values(by="GPP", ascending=False).head(10)
@@ -179,7 +179,7 @@ def top_gpp_bar_chart(daterange, countries_list, app="Both", language="All",disp
     return df
 
 @st.cache_data(ttl="1d", show_spinner=False)
-def top_gca_bar_chart(daterange, countries_list, app="Both", language="All",display_category="Country"):
+def top_gca_bar_chart(daterange, countries_list, app="Both", language="All",display_category="Country",user_list=None):
 
     # Group by date and display_type, then count the users
     if display_category == "Country":
@@ -188,7 +188,7 @@ def top_gca_bar_chart(daterange, countries_list, app="Both", language="All",disp
         display_group = "app_language"     
     
     df = metrics.get_counts(type=display_group,
-        daterange=daterange, countries_list=countries_list, app=app, language=language
+        daterange=daterange, countries_list=countries_list, app=app, language=language,user_list=user_list
     )
 
     df = df[[display_group, "GCA"]].sort_values(by="GCA", ascending=False).head(10)
@@ -204,7 +204,7 @@ def top_gca_bar_chart(daterange, countries_list, app="Both", language="All",disp
     return df
 
 @st.cache_data(ttl="1d", show_spinner=False)
-def top_LR_LC_bar_chart(daterange, countries_list, option, app="Both", language="All",display_category="Country"):
+def top_LR_LC_bar_chart(daterange, countries_list, option, app="Both", language="All",display_category="Country",user_list=None):
     # Group by date and display_type, then count the users
     if display_category == "Country":
         display_group = "country"
@@ -212,12 +212,12 @@ def top_LR_LC_bar_chart(daterange, countries_list, option, app="Both", language=
         display_group = "app_language"      
 
     df = metrics.get_counts(type=display_group,
-        daterange=daterange, countries_list=countries_list, app=app, language=language
+        daterange=daterange, countries_list=countries_list, app=app, language=language,user_list=user_list
     )
 
 
     df = (
-        df[[display_group, "LR", "LA"]]
+        df[[display_group, "LR", "LA" , "RA"]]
         .sort_values(by=option, ascending=False)
         .head(10)
         .round(2)
@@ -459,48 +459,100 @@ def create_engagement_figure(funnel_data=[], key=""):
     return fig
 
 
-# Show the count of users max level for each level in the game
-@st.cache_data(ttl="1d", show_spinner=False)
-def levels_line_chart(daterange, countries_list, app="Both", language="All"):
-    df_user_list = metrics.filter_user_data(
-        daterange, countries_list, stat="LA", app=app, language=language
+def levels_language_or_offline_chart(
+    daterange,
+    countries_list,
+    app="Both",
+    language="All"
+):
+    plot_mode = st.radio(
+        "Plot Mode",
+        options=["By Language", "Offline vs Online"],
+        index=0,
+        help="Choose 'By Language' to see all users by language, or 'Offline vs Online' to compare these two groups."
     )
 
-    # Group by date, country, and app_language, then count the users
-    df = (
-        df_user_list.groupby(["max_user_level", "app_language"])
-        .size()
-        .reset_index(name="count")
-    )
-
-    # Calculate Percent remaining for hover text
-    df["percent_drop"] = df.groupby("app_language")["count"].pct_change() * 100
-
-    # Create separate traces for each app_language
     traces = []
-    for app_language, data in df.groupby("app_language"):
-        trace = go.Scatter(
-            x=data["max_user_level"],
-            y=data["count"],
-            mode="lines+markers",
-            name=app_language,
-            hovertemplate="Max Level: %{x}<br>Count: %{y}<br>Percent remaining: %{customdata:.2f}%<br>App Language: %{text}",
-            customdata=data["percent_drop"],
-            text=data["app_language"],  # Include app_language in hover text
-        )
-        traces.append(trace)
 
-    # Create a Plotly layout
+    if plot_mode == "By Language":
+        df_user_list = metrics.filter_user_data(
+            daterange=daterange,
+            countries_list=countries_list,
+            stat="LA",
+            app=app,
+            language=language,
+            offline_filter=None,
+        )
+        df = (
+            df_user_list.groupby(["max_user_level", "app_language"])
+            .size()
+            .reset_index(name="count")
+        )
+        df = df.sort_values(["app_language", "max_user_level"])
+        # Compute percent remaining from level 1 for each language
+        df["percent_remaining"] = df.groupby("app_language")["count"].apply(lambda x: x / x.iloc[0] * 100)
+
+        for app_language, data in df.groupby("app_language"):
+            trace = go.Scatter(
+                x=data["max_user_level"],
+                y=data["percent_remaining"],
+                mode="lines+markers",
+                name=app_language,
+                hovertemplate=(
+                    "Max Level: %{x}<br>"
+                    "Percent remaining: %{y:.2f}%<br>"
+                    "App Language: %{text}"
+                ),
+                text=data["app_language"],
+            )
+            traces.append(trace)
+
+    else:  # plot_mode == "Offline vs Online"
+        for group_label, offline_filter in [("Offline Users", True), ("Online Users", False)]:
+            df_user_list = metrics.filter_user_data(
+                daterange=daterange,
+                countries_list=countries_list,
+                stat="LA",
+                app=app,
+                language=language,
+                offline_filter=offline_filter,
+            )
+            df = (
+                df_user_list.groupby("max_user_level")
+                .size()
+                .reset_index(name="count")
+            )
+            df["app_language"] = group_label  # for uniformity
+            df = df.sort_values(["max_user_level"])
+            # Compute percent remaining from level 1 for each group
+            if not df.empty:
+                first_level_count = df["count"].iloc[0]
+                df["percent_remaining"] = df["count"] / first_level_count * 100
+            else:
+                df["percent_remaining"] = 0
+
+            trace = go.Scatter(
+                x=df["max_user_level"],
+                y=df["percent_remaining"],
+                mode="lines+markers",
+                name=group_label,
+                hovertemplate=(
+                    "Max Level: %{x}<br>"
+                    "Percent of users who reached this level: %{y:.2f}%<br>"
+                    "Group: %{text}"
+                ),
+                text=df["app_language"],
+            )
+            traces.append(trace)
+
     layout = go.Layout(
         xaxis=dict(title="Levels"),
-        yaxis=dict(title="Users"),
+        yaxis=dict(title="Percent of users who reached this level:"),
         height=500,
+        yaxis_tickformat='.0f'
     )
-    # Create a Plotly figure with all traces
     fig = go.Figure(data=traces, layout=layout)
     st.plotly_chart(fig, use_container_width=True)
-    return df
-
 
 @st.cache_data(ttl="1d", show_spinner=False)
 def funnel_change_line_chart(df, graph_type='sum'):

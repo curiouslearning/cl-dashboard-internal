@@ -19,6 +19,7 @@ def get_metrics_for_cohort(user_cohort_list):
     return {
         "Avg Sessions/User": metrics.calculate_average_metric_per_user(user_cohort_list=user_cohort_list, app="CR",column_name="engagement_event_count"),
         "Avg Total Time/User (min)": metrics.calculate_average_metric_per_user(user_cohort_list=user_cohort_list,app="CR",column_name="total_time_minutes"),
+        "Avg Level Reached": metrics.calculate_average_metric_per_user(user_cohort_list=user_cohort_list,app="CR",column_name="max_user_level"),
     }
 
 def show_dual_metric_table(title, home_metrics):
@@ -31,7 +32,6 @@ def show_dual_metric_table(title, home_metrics):
     df.set_index("Metric", inplace=True)  # 👈 hides default numeric index
     st.markdown(f"### {title}")
     st.table(df)
-
 
 
 

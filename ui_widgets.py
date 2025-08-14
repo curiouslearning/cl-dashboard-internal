@@ -463,28 +463,27 @@ def calendar_selector(placement="side", key="", index=0, title="Date"):
         "Presets",
     )
 
-    with st.expander(title):
 
-        if placement == "side":
-            option = st.sidebar.radio(
-                label="Select a date range", options=options, index=index, key=key + "1"
-            )
-        else:
-            option = st.radio(
-                label="Select a date range", options=options, index=index, key=key + "1"
-            )
+    if placement == "side":
+        option = st.sidebar.radio(
+            label="Select a date range", options=options, index=index, key=key + "1"
+        )
+    else:
+        option = st.radio(
+            label="Select a date range", options=options, index=index, key=key + "1"
+        )
 
-        if option == "Select year":
-            selected_date = year_selector(placement=placement, key=key)
-        elif option == "All time":
-            selected_date = [dt.datetime(2021, 1, 1).date(), dt.date.today()]
-        elif option == "Select month":
-            key = key + "x"
-            selected_date = month_selector(placement, key=key)
-        elif option == "Presets":
-            selected_date = presets_selector(placement, key=key, index=3)
-        else:
-            selected_date = custom_date_selection(placement, key=key)
+    if option == "Select year":
+        selected_date = year_selector(placement=placement, key=key)
+    elif option == "All time":
+        selected_date = [dt.datetime(2021, 1, 1).date(), dt.date.today()]
+    elif option == "Select month":
+        key = key + "x"
+        selected_date = month_selector(placement, key=key)
+    elif option == "Presets":
+        selected_date = presets_selector(placement, key=key, index=3)
+    else:
+        selected_date = custom_date_selection(placement, key=key)
 
     return selected_date, option
 

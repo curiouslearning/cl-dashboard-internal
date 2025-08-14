@@ -199,6 +199,7 @@ def weeks_since(daterange):
 
 
 # Returns a DataFrame list of counts by language or counts by country
+# Returns a DataFrame list of counts by language or counts by country
 @st.cache_data(ttl="1d", show_spinner=False)
 def get_counts(
     type="app_language",
@@ -206,10 +207,11 @@ def get_counts(
     countries_list=["All"],
     app="Both",
     language=["All"],
+    user_list=None
 ):
     dfLR = (
         filter_user_data(
-            daterange=daterange, countries_list=countries_list, stat="LR", app=app, language=language
+            daterange=daterange, countries_list=countries_list, stat="LR", app=app, language=language,user_list=user_list
         )
         .groupby(type)
         .size()
@@ -217,14 +219,14 @@ def get_counts(
         .reset_index()
     )
     dfLA = (
-        filter_user_data(daterange=daterange, countries_list=countries_list, stat="LA", app=app, language=language)
+        filter_user_data(daterange=daterange, countries_list=countries_list, stat="LA", app=app, language=language,user_list=user_list)
         .groupby(type)
         .size()
         .to_frame(name="LA")
         .reset_index()
     )    
     dfRA = (
-        filter_user_data(daterange=daterange, countries_list=countries_list,  stat="RA", app=app, language=language)
+        filter_user_data(daterange=daterange, countries_list=countries_list,  stat="RA", app=app, language=language,user_list=user_list)
         .groupby(type)
         .size()
         .to_frame(name="RA")
@@ -240,7 +242,7 @@ def get_counts(
 
     #### GPP ###
     df = filter_user_data(
-       daterange=daterange, countries_list=countries_list, stat="LA", app=app, language=language
+       daterange=daterange, countries_list=countries_list, stat="LA", app=app, language=language,user_list=user_list
        )
     avg_gpc_per_type = df.groupby(type)["gpc"].mean().round(2)
     dfGPP = pd.DataFrame(
@@ -253,7 +255,7 @@ def get_counts(
     counts = counts.merge(dfGPP, on=type, how="left").fillna(0)
 
     dfPC = (
-        filter_user_data(daterange=daterange, countries_list=countries_list, stat="PC", app=app, language=language)
+        filter_user_data(daterange=daterange, countries_list=countries_list, stat="PC", app=app, language=language,user_list=user_list)
         .groupby(type)
         .size()
         .to_frame(name="PC")
@@ -262,7 +264,7 @@ def get_counts(
 
     counts = counts.merge(dfPC, on=type, how="left").fillna(0)
     df = filter_user_data(
-        daterange=daterange, countries_list=countries_list, stat="LA", app=app, language=language
+        daterange=daterange, countries_list=countries_list, stat="LA", app=app, language=language,user_list=user_list
     )
     gpc_gt_90_counts = df[df["gpc"] >= 90].groupby(type)["user_pseudo_id"].count()
     total_user_counts = df.groupby(type)["user_pseudo_id"].count()

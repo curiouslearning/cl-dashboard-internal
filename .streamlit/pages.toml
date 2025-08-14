@@ -61,6 +61,11 @@ name = "User Lookup"
 icon = ":small_orange_diamond:"
 
 [[pages]]
+path = "app_pages/Engagement.py"
+name = "General Engagement"
+icon = ":small_orange_diamond:"
+
+[[pages]]
 path = "app_pages/engagement_over_time.py"
 name = "Engagement Over Time"
 icon = ":small_orange_diamond:"
