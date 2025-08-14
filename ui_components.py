@@ -459,97 +459,61 @@ def create_engagement_figure(funnel_data=[], key=""):
     return fig
 
 
-def levels_language_or_offline_chart(
+def levels_multi_group_chart(
     daterange,
     countries_list,
     app="Both",
-    language="All"
+    language="All",
+    group_defs=None,   # [{label:..., offline_filter:...}, ...]
 ):
-    plot_mode = st.radio(
-        "Plot Mode",
-        options=["By Language", "Offline vs Online"],
-        index=0,
-        help="Choose 'By Language' to see all users by language, or 'Offline vs Online' to compare these two groups."
-    )
-
+    if group_defs is None:
+        group_defs = [
+            {"label": "Offline Users", "offline_filter": True},
+            {"label": "Online Users", "offline_filter": False},
+        ]
     traces = []
-
-    if plot_mode == "By Language":
+    for group in group_defs:
+        group_label = group.get("label", "Group")
+        offline_filter = group.get("offline_filter", None)
+        # Add other filter parameters as needed
         df_user_list = metrics.filter_user_data(
             daterange=daterange,
             countries_list=countries_list,
             stat="LA",
             app=app,
             language=language,
-            offline_filter=None,
+            offline_filter=offline_filter,
         )
         df = (
-            df_user_list.groupby(["max_user_level", "app_language"])
+            df_user_list.groupby("max_user_level")
             .size()
             .reset_index(name="count")
         )
-        df = df.sort_values(["app_language", "max_user_level"])
-        # Compute percent remaining from level 1 for each language
-        df["percent_remaining"] = df.groupby("app_language")["count"].apply(lambda x: x / x.iloc[0] * 100)
+        if not df.empty:
+            first_level_count = df["count"].iloc[0]
+            df["percent_reached"] = df["count"] / first_level_count * 100
+        else:
+            df["percent_reached"] = 0
+        df["group"] = group_label
 
-        for app_language, data in df.groupby("app_language"):
-            trace = go.Scatter(
-                x=data["max_user_level"],
-                y=data["percent_remaining"],
-                mode="lines+markers",
-                name=app_language,
-                hovertemplate=(
-                    "Max Level: %{x}<br>"
-                    "Percent remaining: %{y:.2f}%<br>"
-                    "App Language: %{text}"
-                ),
-                text=data["app_language"],
-            )
-            traces.append(trace)
-
-    else:  # plot_mode == "Offline vs Online"
-        for group_label, offline_filter in [("Offline Users", True), ("Online Users", False)]:
-            df_user_list = metrics.filter_user_data(
-                daterange=daterange,
-                countries_list=countries_list,
-                stat="LA",
-                app=app,
-                language=language,
-                offline_filter=offline_filter,
-            )
-            df = (
-                df_user_list.groupby("max_user_level")
-                .size()
-                .reset_index(name="count")
-            )
-            df["app_language"] = group_label  # for uniformity
-            df = df.sort_values(["max_user_level"])
-            # Compute percent remaining from level 1 for each group
-            if not df.empty:
-                first_level_count = df["count"].iloc[0]
-                df["percent_remaining"] = df["count"] / first_level_count * 100
-            else:
-                df["percent_remaining"] = 0
-
-            trace = go.Scatter(
-                x=df["max_user_level"],
-                y=df["percent_remaining"],
-                mode="lines+markers",
-                name=group_label,
-                hovertemplate=(
-                    "Max Level: %{x}<br>"
-                    "Percent of users who reached this level: %{y:.2f}%<br>"
-                    "Group: %{text}"
-                ),
-                text=df["app_language"],
-            )
-            traces.append(trace)
+        trace = go.Scatter(
+            x=df["max_user_level"],
+            y=df["percent_reached"],
+            mode="lines+markers",
+            name=group_label,
+            hovertemplate=(
+                "Max Level: %{x}<br>"
+                "Percent reached: %{y:.2f}%<br>"
+                "Group: %{text}"
+            ),
+            text=df["group"],
+        )
+        traces.append(trace)
 
     layout = go.Layout(
         xaxis=dict(title="Levels"),
-        yaxis=dict(title="Percent of users who reached this level:"),
+        yaxis=dict(title="Percent of Original Group Reaching Level"),
         height=500,
-        yaxis_tickformat='.0f'
     )
     fig = go.Figure(data=traces, layout=layout)
     st.plotly_chart(fig, use_container_width=True)

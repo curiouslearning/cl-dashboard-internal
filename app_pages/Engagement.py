@@ -73,10 +73,9 @@ if len(daterange) == 2 and len(countries_list) > 0:
     col3.metric(label="Game Completion Avg", value=f"{total:.2f}%")
 
     st.divider()
-    st.subheader("Levels reached per language")
+    st.subheader("Levels reached")
     
-    by_language = st.toggle("Group by language", value=False)
-    df_download = uic.levels_language_or_offline_chart(daterange, countries_list, app=app, language=language)
+    uic.levels_multi_group_chart(daterange, countries_list, app=app, language=language)
     
     st.divider()
     st.subheader("Engagement across the world")
