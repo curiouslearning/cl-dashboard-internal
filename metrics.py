@@ -84,8 +84,10 @@ def filter_user_data(
     stat="LR",
     app="Both",
     language=["All"],
-    user_list=None
+    user_list=None,
+    offline_filter=None
 ):
+    print(offline_filter)
     #default column to filter user cohort list
     user_list_key = "cr_user_id"
     # Check if necessary dataframes are available
@@ -131,6 +133,13 @@ def filter_user_data(
     # Apply language filter if not "All" 
     if language[0] != "All":
         mask &= df['app_language'].isin(set(language))
+        
+    # Apply started_in_offline_mode filter if not None
+    if offline_filter is not None:
+        if offline_filter is True:
+            mask &= df["started_in_offline_mode"] == True
+        else:  # offline_filter is False
+            mask &= df["started_in_offline_mode"] != True
 
     # Apply stat-specific filters
     if stat == "LA":
@@ -600,7 +609,8 @@ def get_user_cohort_list(
     cr_app_versions="All",
     countries_list=["All"],
     app="CR",
-    as_list=True  # <-- NEW PARAM
+    as_list=True,
+    offline_filter=None
 ):
     """
     Returns a list of user identifiers (default) or a DataFrame of cohort info based on first_open date,
@@ -612,6 +622,7 @@ def get_user_cohort_list(
         app=app,
         language=languages,
         cr_app_versions=cr_app_versions,
+        offline_filter=offline_filter
     )
 
     if app == "CR":

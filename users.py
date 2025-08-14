@@ -5,8 +5,6 @@ import numpy as np
 import gcsfs
 import settings
 
-# How far back to obtain user data.  Currently the queries pull back to 01/01/2021
-start_date = "2021/01/01"
 
 @st.cache_data(ttl="1d", show_spinner=False)
 def load_parquet_from_gcs(file_pattern: str) -> pd.DataFrame:

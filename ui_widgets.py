@@ -290,6 +290,21 @@ def app_selector(placement="side"):
         )
     return app
 
+def offline_filter(key="123"):
+    offline_filter =  st.radio(
+            label="Offline Filter",
+            options=["None", "Offline only","Online only"],
+            horizontal=False,
+            index=0,
+            key=key
+     )
+    
+    if offline_filter == "Offline only":
+        return True
+    elif offline_filter == "Online only":
+        return False
+    else:
+        return None
 
 def colorize_multiselect_options() -> None:
     colors = [

@@ -4,13 +4,10 @@ from google.cloud import bigquery
 import campaigns
 from rich import print
 import pandas as pd
-import users
 import datetime as dt
 from google.cloud import secretmanager
 import json
 import asyncio
-from pyinstrument import Profiler
-from pyinstrument.renderers.console import ConsoleRenderer
 import logging
 
 default_daterange = [dt.datetime(2021, 1, 1).date(), dt.date.today()]
@@ -56,16 +53,14 @@ def get_gcp_credentials():
 
     return gcp_credentials, bq_client
 
-
-
 def initialize():  
     pd.options.mode.copy_on_write = True
     pd.set_option("display.max_columns", 20)            
 
         
- 
 def init_cr_app_version_list():
-    cr_app_versions_list = users.get_app_version_list()
+    from users import get_app_version_list
+    cr_app_versions_list = get_app_version_list()
     if "cr_app_versions_list" not in st.session_state:
         st.session_state.cr_app_versions_list = cr_app_versions_list
 

@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 from rich import print as print
-import campaigns
 import metrics
 import asyncio
 from pyinstrument import Profiler

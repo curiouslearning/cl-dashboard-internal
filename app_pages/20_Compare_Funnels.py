@@ -46,6 +46,7 @@ with col1:
     countries_listA = ui.multi_select_all(countries_list, title="Country Selection", key="cf-7", placement="middle")
     selected_date, option = ui.calendar_selector(placement="col", key="crf-4", title="Select date user cohort")
     daterangeA = ui.convert_date_to_range(selected_date, option)
+    offline_filterA = ui.offline_filter(key="A")
 
 with col2:
     app_versionsB = ui.app_version_selector(placement="col", key="cf-5")
@@ -53,6 +54,7 @@ with col2:
     countries_listB = ui.multi_select_all(countries_list, title="Country Selection", key="cf-8", placement="middle")
     selected_date, option = ui.calendar_selector(placement="col", key="crf-9", title="Select date user cohort")
     daterangeB = ui.convert_date_to_range(selected_date, option)
+    offline_filterB = ui.offline_filter(key="B")
 
 
 # --- Logic and Output ---
@@ -66,7 +68,9 @@ if len(countries_listA) and len(countries_listB):
         countries_list=countries_listA,
         app="CR",
         cr_app_versions=app_versionsA,
-        as_list=False
+        as_list=False,
+        offline_filter=offline_filterA
+        
     )
     user_listA = user_cohort_listA["cr_user_id"]
     metrics_home_A = get_metrics_for_cohort(user_listA)
@@ -78,7 +82,8 @@ if len(countries_listA) and len(countries_listB):
         countries_list=countries_listB,
         app="CR",
         cr_app_versions=app_versionsB,
-        as_list=False
+        as_list=False,
+        offline_filter=offline_filterB
     )
     user_listB = user_cohort_listB["cr_user_id"]
     metrics_home_B = get_metrics_for_cohort(user_listB)
