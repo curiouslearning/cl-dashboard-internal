@@ -424,40 +424,48 @@ def campaign_funnel_chart():
     st.plotly_chart(fig, use_container_width=True)
 
 
-def create_engagement_figure(funnel_data=[], key=""):
+def create_engagement_figure(funnel_data, key="", funnel_size="large"):
+    percent_2nd = funnel_data.get("PercentOfSecond", [None] * len(funnel_data["Count"]))
+
+    hovertemplate = []
+    for i, (title, count, pct2) in enumerate(zip(funnel_data["Title"], funnel_data["Count"], percent_2nd)):
+        pct2_txt = (
+            f"<br>% of DC: {pct2:.1f}%"
+            if funnel_size == "large" and pct2 is not None else ""
+        )
+        # Use Plotly's built-in variables for percent of previous and initial
+        hovertemplate.append(
+            f"<b>{title}</b><br>"
+            f"Count: {count:,d}"
+            "<br>% of previous: %{percentPrevious:.1%}"
+            "<br>% of first: %{percentInitial:.1%}"
+            f"{pct2_txt}<extra></extra>"
+        )
 
     fig = go.Figure(
         go.Funnel(
             y=funnel_data["Title"],
             x=funnel_data["Count"],
             textposition="auto",
-            #          textinfo="value+percent initial+percent previous",
-            hoverinfo="x+y+text+percent initial+percent previous",
-            #           key=key,
             marker={
                 "color": [
-                    "#4F420A",
-                    "#73600F",
-                    "#947C13",
-                    "#E0BD1D",
-                    "#B59818",
-                    "#D9B61C",
+                    "#4F420A", "#73600F", "#947C13", "#E0BD1D",
+                    "#B59818", "#D9B61C", "#6C5212", "#8B7121"
                 ],
                 "line": {
-                    "width": [4, 3, 2, 2, 2, 1],
-                    "color": ["wheat", "wheat", "wheat", "wheat"],
+                    "width": [4, 3, 2, 2, 2, 1, 1, 1],
+                    "color": ["wheat"] * 8,
                 },
             },
             connector={"line": {"color": "#4F3809", "dash": "dot", "width": 3}},
+            hovertemplate=hovertemplate,
         )
     )
     fig.update_traces(texttemplate="%{value:,d}")
     fig.update_layout(
         margin=dict(l=20, r=20, t=20, b=20),
     )
-
     return fig
-
 
 def levels_multi_group_chart(
     daterange,
@@ -967,29 +975,36 @@ def top_and_bottom_languages_per_level(selection, min_LR):
 
 #Added user_list which is a list of cr_user_id to filter with
 
-def create_funnels(countries_list=["All"],
-                   daterange=default_daterange,
-                   languages=["All"],
-                   app_versions="All",
-                   key_prefix="abc",
-                   app="CR",
-                   funnel_size="large",  # new parameter: "compact", "medium", or "large"
-                   user_list=[]):
-
+def create_funnels(
+    countries_list=["All"],
+    daterange=None,
+    languages=["All"],
+    app_versions="All",
+    key_prefix="abc",
+    app="CR",
+    funnel_size="large",  # "compact", "medium", or "large"
+    user_list=[]
+):
     funnel_variants = {
         "compact": {
             "stats": ["LR", "PC", "LA", "RA", "GC"],
-            "titles": ["Learner Reached", "Puzzle Completed", "Learners Acquired", "Readers Acquired", "Game Completed"]
+            "titles": [
+                "Learner Reached", "Puzzle Completed", "Learners Acquired", "Readers Acquired", "Game Completed"
+            ]
         },
         "large": {
             "stats": ["LR", "DC", "TS", "SL", "PC", "LA", "RA", "GC"],
-            "titles": ["Learner Reached", "Download Completed", "Tapped Start", 
-                       "Selected Level", "Puzzle Completed", "Learners Acquired", "Readers Acquired", "Game Completed"]
+            "titles": [
+                "Learner Reached", "Download Completed", "Tapped Start",
+                "Selected Level", "Puzzle Completed", "Learners Acquired", "Readers Acquired", "Game Completed"
+            ]
         },
         "medium": {
             "stats": ["DC", "TS", "SL", "PC", "LA", "RA", "GC"],
-            "titles": ["Download Completed", "Tapped Start", "Selected Level", 
-                       "Puzzle Completed", "Learners Acquired", "Readers Acquired", "Game Completed"]
+            "titles": [
+                "Download Completed", "Tapped Start", "Selected Level",
+                "Puzzle Completed", "Learners Acquired", "Readers Acquired", "Game Completed"
+            ]
         }
     }
 
@@ -1004,6 +1019,11 @@ def create_funnels(countries_list=["All"],
     if app == "Unity":
         stats = funnel_variants["compact"]["stats"]
         titles = funnel_variants["compact"]["titles"]
+        funnel_size = "compact"
+
+    if daterange is None:
+        from datetime import datetime, timedelta
+        daterange = [datetime.today() - timedelta(days=30), datetime.today()]
 
     if len(daterange) == 2:
         start = daterange[0].strftime("%b %d, %Y")
@@ -1023,14 +1043,28 @@ def create_funnels(countries_list=["All"],
             for stat in stats
         }
 
+        # Convert counts to a list for consistent indexing
+        counts = [metrics_data[stat] for stat in stats]
+
+        # Only calculate percent_of_second if funnel_size == "large"
+        percent_of_second = None
+        if funnel_size == "large" and len(counts) > 1 and counts[1]:
+            second_val = counts[1]
+            percent_of_second = [
+                (100 * c / second_val) if second_val != 0 else None for c in counts
+            ]
+
         funnel_data = {
             "Title": titles,
-            "Count": [metrics_data[stat] for stat in stats]
+            "Count": counts,
         }
+        if percent_of_second is not None:
+            funnel_data["PercentOfSecond"] = percent_of_second
 
-        fig = create_engagement_figure(funnel_data, key=f"{key_prefix}-5")
+        fig = create_engagement_figure(
+            funnel_data, key=f"{key_prefix}-5", funnel_size=funnel_size
+        )
         st.plotly_chart(fig, use_container_width=True, key=f"{key_prefix}-6")
-
 
 def lr_lrc_bar_chart(df_totals_per_month):
 
