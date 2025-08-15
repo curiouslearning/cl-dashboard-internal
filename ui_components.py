@@ -467,36 +467,35 @@ def create_engagement_figure(funnel_data, key="", funnel_size="large"):
     )
     return fig
 
-def levels_multi_group_chart(
-    daterange,
-    countries_list,
-    app="Both",
-    language="All",
-    group_defs=None,
-):
-    if group_defs is None:
-        group_defs = [
-            {"label": "Offline Users", "offline_filter": True},
-            {"label": "Online Users", "offline_filter": False},
+def levels_reached_chart():
+    app = "CR" # default
+
+    group_defs = [
+            {"label": "CR Offline Users", "offline_filter": True},
+            {"label": "CR Online Users", "offline_filter": False},
+            {"label": "Unity Users", "offline_filter": False},
         ]
+    
     traces = []
     for group in group_defs:
         group_label = group.get("label", "Group")
+        if group_label == "Unity Users":
+            app = "Unity"
         offline_filter = group.get("offline_filter", None)
         # Add other filters as needed
         df_user_list = metrics.filter_user_data(
-            daterange=daterange,
-            countries_list=countries_list,
             stat="LA",
             app=app,
-            language=language,
             offline_filter=offline_filter,
         )
+        
         df = (
-            df_user_list.groupby("max_user_level")
+            df_user_list[df_user_list["max_user_level"] <= 35]
+            .groupby("max_user_level")
             .size()
             .reset_index(name="count")
         )
+
         if not df.empty:
             first_level_count = df["count"].iloc[0]
             df["percent_reached"] = df["count"] / first_level_count * 100
