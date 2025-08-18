@@ -18,7 +18,7 @@ countries_list =  get_country_list()
 
 
 # --- Filter Row ---
-col_date, col_lang, col_country = st.columns((1, 1, 1), gap="large")
+col_date, col_lang, col_country = st.columns((2, 1, 1), gap="large")
 
 with col_date:
     st.caption("Select a Date")

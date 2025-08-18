@@ -154,36 +154,6 @@ def slider_callback():
     else:
         st.session_state.slider_date = (left_value, right_value)
 
-def custom_date_selection_slider(min_date, max_date, placement="side"):
-    today = dt.date.today()
-
-    # Initialize session state for slider and max_date
-    if "slider_date" not in st.session_state:
-        st.session_state.slider_date = (min_date, max_date)
-    if "max_date" not in st.session_state:
-        st.session_state.max_date = max_date
-
-    # Render the slider widget
-    if placement == "side":
-        st.sidebar.slider(
-            label="Select Range:",
-            min_value=dt.date(2023, 10, 1),
-            max_value=today,
-            value=st.session_state.slider_date,  # Use session state for initialization
-            key="slider_value",  # Separate key for the slider widget
-            on_change=slider_callback,  # Callback to sync state
-        )
-    else:
-        st.slider(
-            label="Select Range:",
-            min_value=dt.date(2023, 10, 1),
-            max_value=today,
-            value=st.session_state.slider_date,  # Use session state for initialization
-            key="slider_value",  # Separate key for the slider widget
-            on_change=slider_callback,  # Callback to sync state
-        )
-
-    return list(st.session_state.slider_date)
 
 def custom_date_selection(placement="side", key=""):
     min_date = dt.datetime.now().date() - dt.timedelta(30)
@@ -228,13 +198,14 @@ def quarter_start(month):
 
 def year_selector(placement="side", key=""):
     this_year = dt.datetime.now().year
+
     if placement == "side":
         report_year = st.sidebar.radio(
-            "Year", range(this_year, this_year - 4, -1), horizontal=True, index=0, key=key + "_year"
+            "Year", range(this_year, 2020, -1), horizontal=True, index=0, key=key + "_year"
         )
     else:
         report_year = st.radio(
-            "Year", range(this_year, this_year - 4, -1), horizontal=True, key=key + "_year", index=0
+            "Year", range(this_year, 2020, -1), horizontal=True, key=key + "_year", index=0
         )
 
     # Make sure to return None if report_year is not properly selected
