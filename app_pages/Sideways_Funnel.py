@@ -1,15 +1,10 @@
 import streamlit as st
-import settings
-from rich import print as rprint
-from millify import prettify
 import ui_components as uic
 import ui_widgets as ui
-import users
-import metrics
-from dateutil.relativedelta import relativedelta
 
 
-settings.initialize()
+from settings import initialize
+initialize()
 from users import ensure_user_data_initialized
 ensure_user_data_initialized()
 
@@ -18,7 +13,8 @@ ui.display_definitions_table("Definitions",ui.level_percent_definitions)
 
 col1, col2, col3 = st.columns(3)
 
-countries_list = users.get_country_list()
+from users import get_country_list
+countries_list = get_country_list()
 with col1:
     country = ui.single_selector(
         countries_list,
@@ -27,7 +23,8 @@ with col1:
         key="la-2",
     )
     app = ui.app_selector(placement="middle")
-    df_languages = metrics.get_counts(
+    from metrics import get_counts
+    df_languages = get_counts(
         type="app_language",
         app=app,
         language=["All"],
@@ -49,13 +46,15 @@ with col3:
     if st.toggle(label="Use Top 10 LR Languages", value=True):
         selected_languages = df_top10["app_language"].to_list()
     else:
-        df = users.get_language_list()
+        from users import get_language_list
+        df = get_language_list()
         selected_languages = ui.multi_select_all(
             df, placement="middle", title="Select languages", key="fa-1"
         )   
 
-    if (len(selected_languages) > 0):     
-        user_cohort_list = metrics.get_user_cohort_list(daterange=daterange,languages=selected_languages,countries_list=countries_list,app=app)
+    if (len(selected_languages) > 0):
+        from metrics import get_user_cohort_list     
+        user_cohort_list = get_user_cohort_list(daterange=daterange,languages=selected_languages,countries_list=countries_list,app=app)
         
     if (len(selected_languages) == 0 ):  # 40 is an arbitrary choice
         st.markdown(

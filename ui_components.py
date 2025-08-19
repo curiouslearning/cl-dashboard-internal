@@ -13,8 +13,6 @@ from datetime import timedelta
 import numpy as np
 from sklearn.linear_model import LinearRegression
 
-
-
 default_daterange = [dt.datetime(2021, 1, 1).date(), dt.date.today()]
 
 @st.cache_data(ttl="1d", show_spinner=False)
@@ -778,8 +776,6 @@ def funnel_change_by_language_chart(
     return df
 
 
-
-
 @st.cache_data(ttl="1d", show_spinner=False)
 def funnel_bar_chart(languages, countries_list, daterange,user_cohort_list):
 
@@ -1181,4 +1177,186 @@ def engagement_over_time_chart(df_list_with_labels, metric="Avg Total Time (minu
         xaxis=dict(rangeslider=dict(visible=True))
     )
 
+    st.plotly_chart(fig, use_container_width=True)
+    
+def days_to_ra_chart(df,by_months):
+    df_ra = df[df['days_to_ra'].notnull()].copy()
+    df_ra['months_to_ra'] = df_ra['days_to_ra'] / 30.44
+
+    # Top 10 languages
+    top_langs = df_ra['app_language'].value_counts().nlargest(20).index.tolist()
+    df_ra['lang_grouped'] = df_ra['app_language'].where(df_ra['app_language'].isin(top_langs), 'Other')
+
+
+
+    if by_months:
+        x_col = 'months_to_ra'
+        x_label = 'Months to RA'
+        hovertemplate = (
+            'Months to RA: %{x:.2f}<br>' +
+            'Days to RA: %{customdata[0]:.0f}<br>' +
+            'User: %{customdata[1]}<br>' +
+            'Language: %{customdata[2]}<br>' +
+            'Group: %{y}'
+        )
+    else:
+        x_col = 'days_to_ra'
+        x_label = 'Days to RA'
+        hovertemplate = (
+            'Days to RA: %{x:.0f}<br>' +
+            'Months to RA: %{customdata[0]:.2f}<br>' +
+            'User: %{customdata[1]}<br>' +
+            'Language: %{customdata[2]}<br>' +
+            'Group: %{y}'
+        )
+
+    # Custom data for both days and months always in hover
+    fig = px.scatter(
+        df_ra,
+        x=x_col,
+        y='lang_grouped',
+        color='lang_grouped',
+        opacity=0.25,
+        category_orders={'lang_grouped': top_langs + ['Other']},
+        hover_data={
+            'days_to_ra': True,
+            'months_to_ra': ':.2f',
+            'app_language': True,
+            'lang_grouped': False,
+        },
+        title=f"{x_label} to Reader Acquired (RA)",
+        height=600,
+    )
+
+    # Set custom hovertemplate for ALL traces
+    for trace in fig.data:
+        trace.hovertemplate = hovertemplate
+
+    fig.update_traces(marker=dict(size=4), selector=dict(mode='markers'))
+    fig.update_layout(
+        showlegend=True,
+        yaxis_title='App Language',
+        xaxis_title=x_label,
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
+def ra_ecdf_curve(df,by_months):
+    df_ra = df[df['days_to_ra'].notnull()].copy()
+    df_ra['months_to_ra'] = df_ra['days_to_ra'] / 30.44
+
+    x_col = 'months_to_ra' if by_months else 'days_to_ra'
+    x_label = 'Months to RA' if by_months else 'Days to RA'
+
+    # For hover, always provide both
+    xvals = np.sort(df_ra[x_col].values)
+    days_sorted = np.sort(df_ra['days_to_ra'].values)
+    months_sorted = np.sort(df_ra['months_to_ra'].values)
+    user_counts = np.arange(1, len(xvals) + 1)
+    percent_users = user_counts / len(xvals) * 100
+
+    ecdf_df = pd.DataFrame({
+        x_label: xvals,
+        "Days to RA": days_sorted,
+        "Months to RA": months_sorted,
+        "Cumulative Users": user_counts,
+        "Percent of Users": percent_users
+    })
+
+    fig = px.line(
+        ecdf_df,
+        x=x_label,
+        y="Cumulative Users",
+        title=f"Total Users vs {x_label} to Reader Acquired (RA)",
+        labels={x_label: x_label, "Cumulative Users": "Total Users"}
+    )
+
+    # Custom hover to always display both days & months, plus users and percent
+    fig.update_traces(
+        customdata=ecdf_df[["Days to RA", "Months to RA", "Percent of Users"]],
+        hovertemplate=
+            f"{x_label}: %{{x:.2f}}<br>" +
+            "Days to RA: %{customdata[0]:.0f}<br>" +
+            "Months to RA: %{customdata[1]:.2f}<br>" +
+            "Total Users: %{y:,}<br>" +
+            "Percent of Users: %{customdata[2]:.1f}%"
+    )
+
+    fig.update_layout(
+        yaxis_title="Total Users",
+        xaxis_title=x_label
+    )
+    st.plotly_chart(fig, use_container_width=True)
+    
+def avg_days_to_ra_by_dim_chart(df):
+    df_ra = df[df['days_to_ra'].notnull()].copy()
+    group_dim = st.radio("Grouping", ["Language", "Country"], key="123", index=0,horizontal=True)
+    group_col = 'app_language' if group_dim == "Language" else 'country'
+    group_label = 'App Language' if group_dim == "Language" else 'Country'
+
+    stats = (
+        df_ra.groupby(group_col)
+        .agg(
+            avg_days_to_ra=('days_to_ra', 'mean'),
+            avg_months_to_ra=('days_to_ra', lambda x: x.mean() / 30.44),
+            user_count=('user_pseudo_id', 'nunique'),
+        )
+        .reset_index()
+        .sort_values('avg_days_to_ra')
+    )
+
+    fig = px.scatter(
+        stats,
+        x=group_col,
+        y='avg_days_to_ra',
+        size='user_count',
+        hover_data={
+            group_col: True,
+            'avg_days_to_ra': ':.1f',
+            'avg_months_to_ra': ':.2f',
+            'user_count': True
+        },
+        title=f'Average to Reader Acquired by {group_label}',
+        labels={
+            group_col: group_label,
+            'avg_days_to_ra': 'Average Days to RA',
+            'avg_months_to_ra': 'Average Months to RA',
+            'user_count': 'User Count'
+        },
+        height=500
+    )
+    fig.update_traces(marker=dict(opacity=0.7, line=dict(width=1, color='DarkSlateGrey')))
+    fig.update_layout(
+        xaxis_title=group_label,
+        yaxis_title='Average Days to RA',
+        xaxis={'categoryorder':'total ascending'},
+        showlegend=False
+    )
+    st.plotly_chart(fig, use_container_width=True)
+    
+
+def ra_histogram_curve(df,by_months):
+    df_ra = df[df['days_to_ra'].notnull()].copy()
+    df_ra['months_to_ra'] = df_ra['days_to_ra'] / 30.44
+
+    x_col = 'months_to_ra' if by_months else 'days_to_ra'
+    x_label = 'Months to RA' if by_months else 'Days to RA'
+
+    fig = px.histogram(
+        df_ra,
+        x=x_col,
+        nbins=60 if by_months else 100,
+        title=f"Distribution of Users by {x_label} to Reader Acquired (RA)",
+        labels={x_col: x_label, 'count': 'Number of Users'},
+        opacity=0.8,
+        color_discrete_sequence=['royalblue']
+    )
+    fig.update_traces(
+        hovertemplate=
+            f"{x_label}: %{{x:.2f}}<br>" +
+            "Number of Users: %{y:,}<extra></extra>"
+    )
+    fig.update_layout(
+        yaxis_title="Number of Users",
+        xaxis_title=x_label
+    )
     st.plotly_chart(fig, use_container_width=True)
