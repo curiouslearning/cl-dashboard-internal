@@ -79,6 +79,8 @@ if len(daterange) == 2 and countries_list:
             "Avg Total Play Time / User": metrics.calculate_average_metric_per_user(user_cohort_list_unity, app="Unity", column_name="total_time_minutes"),
             "Avg Session Length / User": metrics.calculate_average_metric_per_user(user_cohort_list_unity, app="Unity", column_name="avg_session_length_minutes"),
             "Active Span / User": metrics.calculate_average_metric_per_user(user_cohort_list_unity, app="Unity", column_name="active_span"),
+            "Avg Days to RA":     metrics.calculate_average_metric_per_user(user_cohort_list_unity,column_name="days_to_ra",app="Unity")
+
         }
 
     with st.spinner("Calculating CR metrics..."):
@@ -87,6 +89,7 @@ if len(daterange) == 2 and countries_list:
         "Avg Total Play Time / User": metrics.calculate_average_metric_per_user(user_cohort_list_cr, app="CR", column_name="total_time_minutes"),
         "Avg Session Length / User": metrics.calculate_average_metric_per_user(user_cohort_list_cr, app="CR", column_name="avg_session_length_minutes"),
         "Active Span / User": metrics.calculate_average_metric_per_user(user_cohort_list_cr, app="CR", column_name="active_span"),
+        "Avg Days to RA":     metrics.calculate_average_metric_per_user(user_cohort_list_cr,column_name="days_to_ra",app="CR")
     }
 
     # --- Metric Display Columns ---

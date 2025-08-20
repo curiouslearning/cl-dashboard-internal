@@ -1183,7 +1183,6 @@ def days_to_ra_chart(df,by_months):
     df_ra = df[df['days_to_ra'].notnull()].copy()
     df_ra['months_to_ra'] = df_ra['days_to_ra'] / 30.44
 
-    # Top 10 languages
     top_langs = df_ra['app_language'].value_counts().nlargest(20).index.tolist()
     df_ra['lang_grouped'] = df_ra['app_language'].where(df_ra['app_language'].isin(top_langs), 'Other')
 
@@ -1287,18 +1286,24 @@ def ra_ecdf_curve(df,by_months):
     )
     st.plotly_chart(fig, use_container_width=True)
     
-def avg_days_to_ra_by_dim_chart(df):
+def avg_days_to_ra_by_dim_chart(df,app="CR"):
     df_ra = df[df['days_to_ra'].notnull()].copy()
+
     group_dim = st.radio("Grouping", ["Language", "Country"], key="123", index=0,horizontal=True)
     group_col = 'app_language' if group_dim == "Language" else 'country'
     group_label = 'App Language' if group_dim == "Language" else 'Country'
+
+    index_col = "cr_user_id"
+
+    if app == "Unity":
+       index_col = "user_pseudo_id"
 
     stats = (
         df_ra.groupby(group_col)
         .agg(
             avg_days_to_ra=('days_to_ra', 'mean'),
             avg_months_to_ra=('days_to_ra', lambda x: x.mean() / 30.44),
-            user_count=('user_pseudo_id', 'nunique'),
+            user_count=(index_col, 'nunique'),
         )
         .reset_index()
         .sort_values('avg_days_to_ra')
