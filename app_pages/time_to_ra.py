@@ -38,6 +38,12 @@ if (len(selected_languages) > 0 and len(selected_languages) > 0):
     from metrics import get_user_cohort_list     
     user_cohort_list = get_user_cohort_list(daterange=daterange,languages=selected_languages,countries_list=countries_list,app=app)
     
+    from metrics import calculate_average_metric_per_user
+    average_days_to_ra= calculate_average_metric_per_user(user_cohort_list,column_name="days_to_ra",app=app)
+
+    col1.metric(label="Avg Days to RA", value=f"{average_days_to_ra:.2f}")
+
+    
     start = daterange[0].strftime("%b %d, %Y")
     end = daterange[1].strftime("%b %d, %Y")
     st.write("Timerange: " + start + " to " + end)  

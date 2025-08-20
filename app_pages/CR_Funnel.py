@@ -42,7 +42,7 @@ if len(countries_list) > 0  and (len(daterange) == 2):
     average_total_sessions_time_cl = metrics.calculate_average_metric_per_user(user_cohort_list,column_name="total_time_minutes",app="CR")
     average_level_reached= metrics.calculate_average_metric_per_user(user_cohort_list,column_name="max_user_level",app="CR")
     average_days_to_ra= metrics.calculate_average_metric_per_user(user_cohort_list,column_name="days_to_ra",app="CR")
- 
+
     col1.metric(label="Avg # Sessions / User", value=f"{average_number_sessions_cl:.2f}")
     col1.metric(label="Avg Total Session Time / User", value=f"{average_total_sessions_time_cl:.2f} min")
     col1.metric(label="Avg Level Reached", value=f"{average_level_reached:.2f}")

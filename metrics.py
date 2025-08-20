@@ -642,9 +642,7 @@ def get_user_cohort_list(
 
 def calculate_average_metric_per_user(user_cohort_list, app, column_name):
     df_cr_app_launch = st.session_state["df_cr_app_launch"]
-    df_cr_app_launch.info()
     df_unity_users = st.session_state["df_unity_users"]
-    df_unity_users.info()
       
     if column_name == "days_to_ra":
         df_cr_app_launch = df_cr_app_launch[df_cr_app_launch["days_to_ra"].notnull()]
@@ -664,7 +662,7 @@ def calculate_average_metric_per_user(user_cohort_list, app, column_name):
 
     total = np.sum(df_filtered[column_name].values)
 
-    average = total / len(user_cohort_list)
+    average = total / len(df_filtered)
 
     return average
 
