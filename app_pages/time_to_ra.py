@@ -35,6 +35,8 @@ with col3:
     )   
 
 if (len(selected_languages) > 0 and len(selected_languages) > 0):
+
+    
     from metrics import get_user_cohort_list     
     user_cohort_list = get_user_cohort_list(daterange=daterange,languages=selected_languages,countries_list=countries_list,app=app)
     
@@ -54,6 +56,9 @@ if (len(selected_languages) > 0 and len(selected_languages) > 0):
     df = filter_user_data(countries_list=countries_list,stat="RA",app=app,language=selected_languages,user_list=user_cohort_list)
     df_ra = df[df['days_to_ra'].notnull()].copy()
     df_ra['months_to_ra'] = df_ra['days_to_ra'] / 30.44
+    csv = ui.convert_for_download(df_ra)
+    st.sidebar.download_button(label="Download CSV",data=csv,file_name="RAUsers.csv",key="a-12",icon=":material/download:",mime="text/csv")
+
     
     days_to_ra_chart(df_ra,by_months)
     st.divider()
