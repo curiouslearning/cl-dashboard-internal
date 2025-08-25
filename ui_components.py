@@ -1339,29 +1339,42 @@ def avg_days_to_ra_by_dim_chart(df,app="CR"):
     st.plotly_chart(fig, use_container_width=True)
     
 
-def ra_histogram_curve(df,by_months):
+
+def ra_histogram_curve(df, by_months):
     df_ra = df[df['days_to_ra'].notnull()].copy()
     df_ra['months_to_ra'] = df_ra['days_to_ra'] / 30.44
 
     x_col = 'months_to_ra' if by_months else 'days_to_ra'
     x_label = 'Months to RA' if by_months else 'Days to RA'
 
+    # Set your bin size
+    bin_size = 5 if not by_months else 0.5
+    x_start = 0
+    x_end = df_ra[x_col].max()
+
     fig = px.histogram(
         df_ra,
         x=x_col,
-        nbins=60 if by_months else 100,
         title=f"Distribution of Users by {x_label} to Reader Acquired (RA)",
         labels={x_col: x_label, 'count': 'Number of Users'},
         opacity=0.8,
-        color_discrete_sequence=['royalblue']
+        color_discrete_sequence=['royalblue'],
+        nbins=int((x_end - x_start) // bin_size)
     )
+
+    # Explicitly set bin edges
     fig.update_traces(
-        hovertemplate=
-            f"{x_label}: %{{x:.2f}}<br>" +
-            "Number of Users: %{y:,}<extra></extra>"
+        xbins=dict(
+            start=x_start,
+            end=x_end,
+            size=bin_size
+        )
     )
+
     fig.update_layout(
         yaxis_title="Number of Users",
         xaxis_title=x_label
     )
+
     st.plotly_chart(fig, use_container_width=True)
+
