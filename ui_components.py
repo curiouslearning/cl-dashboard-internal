@@ -1178,9 +1178,10 @@ def engagement_over_time_chart(df_list_with_labels, metric="Avg Total Time (minu
     )
 
     st.plotly_chart(fig, use_container_width=True)
+
     
-def days_to_ra_chart(df,by_months):
-    df_ra = df[df['days_to_ra'].notnull()].copy()
+def days_to_ra_chart(df_ra,by_months):
+
     df_ra['months_to_ra'] = df_ra['days_to_ra'] / 30.44
 
     top_langs = df_ra['app_language'].value_counts().nlargest(20).index.tolist()
@@ -1239,9 +1240,7 @@ def days_to_ra_chart(df,by_months):
     )
     st.plotly_chart(fig, use_container_width=True)
 
-def ra_ecdf_curve(df,by_months):
-    df_ra = df[df['days_to_ra'].notnull()].copy()
-    df_ra['months_to_ra'] = df_ra['days_to_ra'] / 30.44
+def ra_ecdf_curve(df_ra,by_months):
 
     x_col = 'months_to_ra' if by_months else 'days_to_ra'
     x_label = 'Months to RA' if by_months else 'Days to RA'
@@ -1286,8 +1285,7 @@ def ra_ecdf_curve(df,by_months):
     )
     st.plotly_chart(fig, use_container_width=True)
     
-def avg_days_to_ra_by_dim_chart(df,app="CR"):
-    df_ra = df[df['days_to_ra'].notnull()].copy()
+def avg_days_to_ra_by_dim_chart(df_ra,app="CR"):
 
     group_dim = st.radio("Grouping", ["Language", "Country"], key="123", index=0,horizontal=True)
     group_col = 'app_language' if group_dim == "Language" else 'country'
@@ -1340,9 +1338,7 @@ def avg_days_to_ra_by_dim_chart(df,app="CR"):
     
 
 
-def ra_histogram_curve(df, by_months):
-    df_ra = df[df['days_to_ra'].notnull()].copy()
-    df_ra['months_to_ra'] = df_ra['days_to_ra'] / 30.44
+def ra_histogram_curve(df_ra, by_months):
 
     x_col = 'months_to_ra' if by_months else 'days_to_ra'
     x_label = 'Months to RA' if by_months else 'Days to RA'

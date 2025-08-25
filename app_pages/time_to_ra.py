@@ -52,14 +52,16 @@ if (len(selected_languages) > 0 and len(selected_languages) > 0):
     
     from metrics import filter_user_data
     df = filter_user_data(countries_list=countries_list,stat="RA",app=app,language=selected_languages,user_list=user_cohort_list)
-
-    days_to_ra_chart(df,by_months)
+    df_ra = df[df['days_to_ra'].notnull()].copy()
+    df_ra['months_to_ra'] = df_ra['days_to_ra'] / 30.44
+    
+    days_to_ra_chart(df_ra,by_months)
     st.divider()
-    avg_days_to_ra_by_dim_chart(df,app)
+    avg_days_to_ra_by_dim_chart(df_ra,app)
     st.divider()
-    ra_ecdf_curve(df,by_months)
+    ra_ecdf_curve(df_ra,by_months)
     st.divider()
-    ra_histogram_curve(df,by_months)
+    ra_histogram_curve(df_ra,by_months)
 
 
     
