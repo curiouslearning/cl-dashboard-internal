@@ -98,23 +98,14 @@ def filter_user_data(
     # Select the appropriate dataframe based on app and stat
     if app == "Unity":
         df = st.session_state.df_unity_users #Unity users are in one table only
-
-        user_list_key = "user_pseudo_id"
-    elif app == "Both" and stat == "LR":
-        df1 = st.session_state.df_unity_users
-        df2 = st.session_state.df_cr_app_launch
-        df =  pd.concat([df1, df2], axis=0)
-        user_list_key = "user_pseudo_id"
-       
-    elif app == "Both" and stat != "LR":
-        df1 = st.session_state.df_unity_users
-        df2 = st.session_state.df_cr_users
-        df =  pd.concat([df1, df2], axis=0)
+        user_list_key = "user_pseudo_id"       
+    elif app == "StandAloneHindi":
+        df = st.session_state.df_cr_users
+        df = (df[df["app"] == "StandAloneHindi"])
     elif app == "CR" and stat == "LR":
         df = st.session_state.df_cr_app_launch
     else:
         df = st.session_state.df_cr_users
-
 
     # Initialize a boolean mask
     mask = (
@@ -123,9 +114,9 @@ def filter_user_data(
         df["first_open"] <= pd.to_datetime(daterange[1])
     )
 
-
     if "All" not in cr_app_versions and app == "CR":
         mask &= df["app_version"].isin(cr_app_versions)
+    
     # Apply country filter if not "All"
     if countries_list[0] != "All":
         mask &= df['country'].isin(set(countries_list))
@@ -133,7 +124,7 @@ def filter_user_data(
     # Apply language filter if not "All" 
     if language[0] != "All":
         mask &= df['app_language'].isin(set(language))
-        
+  
     # Apply started_in_offline_mode filter if not None
     if offline_filter is not None:
         if offline_filter is True:
@@ -151,14 +142,16 @@ def filter_user_data(
     elif stat == "LR":
         # No additional filters for these stats beyond daterange and optional countries/language
         pass
-    
-    # Filter the dataframe with the combined mask
+
+    # Filter the dataframe with the combined mask 
     df = df.loc[mask]
 
     #If user list subset was passed in, filter on that as well
     if user_list is not None:
+
         if len(user_list) == 0:
             return pd.DataFrame()  # No matches — return empty
+
         df = df[df[user_list_key].isin(user_list)]
 
     return df
@@ -624,10 +617,11 @@ def get_user_cohort_list(
         app=app,
         language=languages,
         cr_app_versions=cr_app_versions,
-        offline_filter=offline_filter
+        offline_filter=offline_filter,
+        user_list=None
     )
 
-    if app == "CR":
+    if app in ["CR", "StandAloneHindi"]:
         user_cohort_df = df_user_cohort[["cr_user_id", "first_open","country", "app_language", "app_version"]]
         user_id_col = "cr_user_id"
     else:
@@ -639,31 +633,57 @@ def get_user_cohort_list(
     else:
         return user_cohort_df
 
-
+@st.cache_data(ttl="1d", show_spinner=False)
 def calculate_average_metric_per_user(user_cohort_list, app, column_name):
-    df_cr_app_launch = st.session_state["df_cr_app_launch"]
+    df_cr_users = st.session_state["df_cr_users"]
     df_unity_users = st.session_state["df_unity_users"]
       
     if column_name == "days_to_ra":
-        df_cr_app_launch = df_cr_app_launch[df_cr_app_launch["days_to_ra"].notnull()]
+        df_cr_users = df_cr_users[df_cr_users["days_to_ra"].notnull()]
         df_unity_users = df_unity_users[df_unity_users["days_to_ra"].notnull()]
 
     if len(user_cohort_list) == 0:
         return 0
 
     # Filter rows where cr_user_id is in the cohort list
-    if app == "CR":
-        df_filtered = df_cr_app_launch[df_cr_app_launch["cr_user_id"].isin(user_cohort_list)]
-    elif  app == "Unity":  
-        df_filtered = df_unity_users[df_unity_users["user_pseudo_id"].isin(user_cohort_list)]
 
-    # Sum the selected column and calculate the average
-    import numpy as np
-
+    if app == "Unity":  
+        df_filtered = df_unity_users[
+            (df_unity_users["user_pseudo_id"].isin(user_cohort_list)) &
+            (df_unity_users["max_user_level"] >= 1)]   
+    else:
+        df_filtered = df_cr_users[
+            (df_cr_users["cr_user_id"].isin(user_cohort_list)) &
+            (df_cr_users["max_user_level"] >= 1)
+        ]
+        
     total = np.sum(df_filtered[column_name].values)
 
-    average = total / len(df_filtered)
+    average = total / len(df_filtered) if len(df_filtered) > 0 else 0
 
     return average
+
+@st.cache_data(ttl="1d", show_spinner=False)
+def get_metrics_for_cohort(user_cohort_list,app):
+
+    return {
+        "Avg Level Reached": calculate_average_metric_per_user(user_cohort_list=user_cohort_list,app=app,column_name="max_user_level"),
+        "Avg # Sessions / User": calculate_average_metric_per_user(user_cohort_list=user_cohort_list,app=app, column_name="engagement_event_count"),
+        "Avg Total Play Time / User": calculate_average_metric_per_user(user_cohort_list=user_cohort_list,app=app,column_name="total_time_minutes"),
+        "Avg Session Length / User": calculate_average_metric_per_user(user_cohort_list=user_cohort_list,app=app, column_name="avg_session_length_minutes"),
+        "Active Span / User": calculate_average_metric_per_user(user_cohort_list=user_cohort_list,app=app, column_name="active_span"),
+        "Avg Days to RA":     calculate_average_metric_per_user(user_cohort_list=user_cohort_list,app=app,column_name="days_to_ra")
+    }
+
+def show_dual_metric_table(title, home_metrics):
+
+    df = pd.DataFrame({
+        "Metric": list(home_metrics.keys()),
+        "App Calculated": [f"{v:.2f}" for v in home_metrics.values()],
+
+    })
+    df.set_index("Metric", inplace=True)  # 👈 hides default numeric index
+    st.markdown(f"### {title}")
+    st.table(df)
 
 

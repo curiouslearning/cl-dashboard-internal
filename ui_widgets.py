@@ -89,6 +89,10 @@ data_notes = pd.DataFrame(
             "Curious Reader LR",
             "Individual users may have multiple languages or countries so we select their entry with the furthest progress and eliminate their other entries",
         ],
+        [
+            "Session Data",
+            "All session data is calculated for users that have reached level 1 (LA) or higher",
+        ],
     ],
     columns=["Note", "Description"],
 )
@@ -243,39 +247,26 @@ def app_version_selector(placement="side", key=""):
 
     return selected_options
 
-def app_selector(placement="side"):
+def app_selector(placement="side",key="123"):
 
     if placement == "side":
         app = st.sidebar.radio(
             label="Application",
-            options=["Unity", "CR"],
+            options=["Unity", "CR", "StandAloneHindi"],
             horizontal=True,
             index=1,
+            key=key
         )
     else:
         app = st.radio(
             label="Application",
-            options=["Unity", "CR"],
+            options=["Unity", "CR", "StandAloneHindi"],
             horizontal=True,
             index=1,
+            key=key
         )
     return app
 
-def offline_filter(key="123"):
-    offline_filter =  st.radio(
-            label="Offline Filter",
-            options=["None", "Offline only","Online only"],
-            horizontal=False,
-            index=0,
-            key=key
-     )
-    
-    if offline_filter == "Offline only":
-        return True
-    elif offline_filter == "Online only":
-        return False
-    else:
-        return None
 
 def colorize_multiselect_options() -> None:
     colors = [

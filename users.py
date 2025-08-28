@@ -11,6 +11,7 @@ def load_parquet_from_gcs(file_pattern: str) -> pd.DataFrame:
     credentials, _ = settings.get_gcp_credentials()
     fs = gcsfs.GCSFileSystem(project="dataexploration-193817", token=credentials)
     files = fs.glob(file_pattern)
+
     if not files:
         raise FileNotFoundError(f"No files matching pattern: {file_pattern}")
     df = pd.read_parquet(files, filesystem=fs).copy()
@@ -22,7 +23,7 @@ def load_unity_user_progress_from_gcs():
     return load_parquet_from_gcs("user_data_parquet_cache/unity_user_progress_*.parquet")
 
 def load_cr_user_progress_from_gcs():
-    return load_parquet_from_gcs("user_data_parquet_cache/cr_user_progress_*.parquet")
+    return load_parquet_from_gcs("user_data_parquet_cache/cr_user_progress_a*.parquet")
 
 def load_cr_app_launch_from_gcs():
     return load_parquet_from_gcs("user_data_parquet_cache/cr_app_launch_*.parquet")
@@ -52,12 +53,14 @@ def init_user_data():
         with profiler:
             # Cached fast parquet loads
             df_cr_users = load_cr_user_progress_from_gcs()
+
             df_unity_users = load_unity_user_progress_from_gcs()
             df_cr_app_launch = load_cr_app_launch_from_gcs()
 
             # Validation
             if df_cr_users.empty or df_unity_users.empty or df_cr_app_launch.empty:
                 raise ValueError("❌ One or more dataframes were empty after loading.")
+            
 
             # Fix dates and clean
             df_cr_users = fix_date_columns(df_cr_users, ["first_open", "last_event_date"])
@@ -70,11 +73,11 @@ def init_user_data():
             df_cr_app_launch["app_language"] = clean_language_column(df_cr_app_launch)
             df_cr_users["app_language"] = clean_language_column(df_cr_users)
 
-            missing_users = df_cr_users[~df_cr_users["cr_user_id"].isin(df_cr_app_launch["cr_user_id"])]
-            df_cr_users = df_cr_users[~df_cr_users["cr_user_id"].isin(missing_users["cr_user_id"])]
+          #  missing_users = df_cr_users[~df_cr_users["cr_user_id"].isin(df_cr_app_launch["cr_user_id"])]
+          #  df_cr_users = df_cr_users[~df_cr_users["cr_user_id"].isin(missing_users["cr_user_id"])]
 
             df_cr_app_launch, df_cr_users = clean_cr_users_to_single_language(df_cr_app_launch, df_cr_users)
-
+            
             # Assign to session state
             st.session_state["df_cr_users"] = df_cr_users
             st.session_state["df_unity_users"] = df_unity_users
@@ -221,7 +224,12 @@ def clean_cr_users_to_single_language(df_app_launch, df_cr_users):
     
     # This is a fix for a nasty bug where a user can have a different first_open in one dataframe vs the other.
     # Its because cr_app_launch is Curious Reader first open but cr_user_progress is FTM first_open
-    df_cr_users["first_open"] = df_cr_users["cr_user_id"].map(df_app_launch.set_index("cr_user_id")["first_open"])
+    mask_cr = df_cr_users["app"] == "CR"
+    df_cr_users.loc[mask_cr, "first_open"] = df_cr_users.loc[mask_cr, "cr_user_id"].map(
+        df_app_launch.set_index("cr_user_id")["first_open"]
+    )
+    
+
     return df_app_launch, df_cr_users
 
 @st.cache_data(ttl="1d", show_spinner=False)

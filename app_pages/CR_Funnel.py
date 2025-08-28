@@ -13,8 +13,9 @@ from users import ensure_user_data_initialized
 ensure_user_data_initialized()
 
 ui.display_definitions_table("Definitions",ui.level_percent_definitions)
-
+ui.display_definitions_table("Data Notes",ui.data_notes)
 col1, col2 = st.columns(2)
+
 
 languages = users.get_language_list()
 countries_list = users.get_country_list()
