@@ -55,7 +55,9 @@ with col1:
     daterange = ui.convert_date_to_range(selected_date, option)
 
 with col2:
-    app = ui.app_selector(placement="middle")
+    distinct_apps = ui.get_apps()
+    app = ui.single_selector(distinct_apps, placement="col", title="Select an App", key="a-10",include_All=False)
+
     option = st.radio(
         "Select a statistic", ("LR", "LA"), index=0, horizontal=True, key="a-1"
     )

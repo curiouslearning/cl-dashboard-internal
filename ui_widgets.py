@@ -146,18 +146,6 @@ def month_selector(placement="side", key=""):
     return report_month, report_year
 
 
-def slider_callback():
-    # Ensure the session state reflects the slider value
-    left_value, right_value = st.session_state.slider_value
-
-    # Validate and correct if the right value exceeds max_date
-    if right_value > st.session_state.max_date:
-        st.session_state.slider_date = (left_value, st.session_state.max_date)
-        st.session_state.slider_value = st.session_state.slider_date  # Update slider_value to reflect change
-        st.info ("You can't select a date inside the buffer zone. Resetting to end of buffer zone.", icon="⚠️")
-    else:
-        st.session_state.slider_date = (left_value, right_value)
-
 
 def custom_date_selection(placement="side", key=""):
     min_date = dt.datetime.now().date() - dt.timedelta(30)
@@ -247,26 +235,6 @@ def app_version_selector(placement="side", key=""):
 
     return selected_options
 
-def app_selector(placement="side",key="123"):
-
-    if placement == "side":
-        app = st.sidebar.radio(
-            label="Application",
-            options=["Unity", "CR", "StandAloneHindi"],
-            horizontal=True,
-            index=1,
-            key=key
-        )
-    else:
-        app = st.radio(
-            label="Application",
-            options=["Unity", "CR", "StandAloneHindi"],
-            horizontal=True,
-            index=1,
-            key=key
-        )
-    return app
-
 
 def colorize_multiselect_options() -> None:
     colors = [
@@ -286,29 +254,31 @@ def colorize_multiselect_options() -> None:
 
 
 # Restricts selection to a single country
-def single_selector(selections, placement="side", title="", key="key"):
-    # first time called for list, add 'All' option
-    if selections[0] != "All":
-        selections.insert(0, "All")
+def single_selector(selections, placement="side", title="", key="key", include_All=True):
+    options = list(selections)  # Defensive copy
+
+    if include_All:
+        if "All" not in options:
+            options = ["All"] + [s for s in options if s != "All"]
+    else:
+        options = [s for s in options if s != "All"]
 
     if placement == "side":
         selection = st.sidebar.selectbox(
             label=title,
-            options=selections,
-            index=0,
+            options=options,
             key=key,
         )
-
     else:
         selection = st.selectbox(
             label=title,
-            options=selections,
-            index=0,
+            options=options,
             key=key,
         )
 
-    selection_list = [selection]
-    return selection_list
+    return [selection]
+
+
 
 
 # Pass a unique key into the function in order to use this on multiple pages safel
@@ -571,3 +541,9 @@ def level_comparison_selector(placement="side"):
 @st.cache_data
 def convert_for_download(df):
     return df.to_csv().encode("utf-8")
+
+def get_apps():
+    distinct_apps = sorted(st.session_state["df_cr_users"]["app"].dropna().unique())
+    distinct_apps.append("Unity")
+    distinct_apps.sort()
+    return distinct_apps

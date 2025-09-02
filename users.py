@@ -100,7 +100,7 @@ def clean_language_column(df):
 
 @st.cache_data(ttl="1d", show_spinner=False)
 def get_language_list():
-    lang_list = ["All"]
+
     _, bq_client = settings.get_gcp_credentials()
 
     sql_query = f"""

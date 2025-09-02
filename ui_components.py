@@ -16,7 +16,7 @@ from sklearn.linear_model import LinearRegression
 default_daterange = [dt.datetime(2021, 1, 1).date(), dt.date.today()]
 
 @st.cache_data(ttl="1d", show_spinner=False)
-def stats_by_country_map(daterange, countries_list, app="Both", language="All", option="LR"):
+def stats_by_country_map(daterange, countries_list, app=["CR"], language="All", option="LR"):
 
     df = metrics.get_counts(type="country",
     daterange=daterange, countries_list=countries_list, app=app, language=language
@@ -156,7 +156,7 @@ def campaign_gantt_chart():
     )  # Display the plotly chart in Streamlit
 
 @st.cache_data(ttl="1d", show_spinner=False)
-def top_gpp_bar_chart(daterange, countries_list, app="Both", language="All",display_category="Country",user_list=None):
+def top_gpp_bar_chart(daterange, countries_list, app=["CR"], language="All",display_category="Country",user_list=None):
 
     # Group by date and display_type, then count the users
     if display_category == "Country":
@@ -177,7 +177,7 @@ def top_gpp_bar_chart(daterange, countries_list, app="Both", language="All",disp
     return df
 
 @st.cache_data(ttl="1d", show_spinner=False)
-def top_gca_bar_chart(daterange, countries_list, app="Both", language="All",display_category="Country",user_list=None):
+def top_gca_bar_chart(daterange, countries_list, app=["CR"], language="All",display_category="Country",user_list=None):
 
     # Group by date and display_type, then count the users
     if display_category == "Country":
@@ -202,7 +202,7 @@ def top_gca_bar_chart(daterange, countries_list, app="Both", language="All",disp
     return df
 
 @st.cache_data(ttl="1d", show_spinner=False)
-def top_LR_LC_bar_chart(daterange, countries_list, option, app="Both", language="All",display_category="Country",user_list=None):
+def top_LR_LC_bar_chart(daterange, countries_list, option, app=["CR"], language="All",display_category="Country",user_list=None):
     # Group by date and display_type, then count the users
     if display_category == "Country":
         display_group = "country"
@@ -250,7 +250,7 @@ def top_LR_LC_bar_chart(daterange, countries_list, option, app="Both", language=
 
 @st.cache_data(ttl="1d", show_spinner=False)
 def LR_LA_line_chart_over_time(
-    daterange, countries_list, option, app="Both", language="All", display_category="Country", aggregate=True
+    daterange, countries_list, option, app=["CR"], language="All", display_category="Country", aggregate=True
 ):
     df_user_list = metrics.filter_user_data(
         daterange=daterange, countries_list=countries_list, stat=option, app=app, language=language
@@ -816,13 +816,14 @@ def funnel_bar_chart(languages, countries_list, daterange,user_cohort_list):
     
 
 @st.cache_data(ttl="1d", show_spinner=False)
-def funnel_line_chart_percent(languages, countries_list, daterange, user_cohort_list, app="Both"):
+def funnel_line_chart_percent(languages, countries_list, daterange, user_cohort_list, app="CR"):
     # Determine levels first, BEFORE using in logic below
-    if app == "CR":
-        levels = ["LR", "DC", "TS", "SL", "PC", "LA", "RA", "GC"]
-    else:
+      
+    if app[0] == "Unity":
         levels = ["LR", "PC", "LA", "RA", "GC"]
-
+    else:
+        levels = ["LR", "DC", "TS", "SL", "PC", "LA", "RA", "GC"]
+        
     # Build funnel dataframe
     df = metrics.build_funnel_dataframe(
         index_col="language",
@@ -840,6 +841,10 @@ def funnel_line_chart_percent(languages, countries_list, daterange, user_cohort_
     columns_to_normalize.remove("LR")
     df_percent[columns_to_normalize] = df_percent[columns_to_normalize].div(df["LR"], axis=0) * 100
     df_percent["LR"] = 100  # Set LR as 100% baseline
+
+    cols_after_lr = ['DC', 'TS', 'SL', 'PC', 'LA', 'RA', 'GC']
+    # Keep only rows where at least one column after LR is nonzero and not blank/NaN
+    df_percent = df_percent[df_percent[cols_after_lr].fillna(0).astype(float).any(axis=1)].reset_index(drop=True)
 
     # Plotting
     fig = go.Figure()

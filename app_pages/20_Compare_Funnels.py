@@ -18,34 +18,34 @@ ui.display_definitions_table("Data Notes",ui.data_notes)
 languages = get_language_list()
 countries_list = get_country_list()
 
+distinct_apps = ui.get_apps()
+
 col1, col2 = st.columns(2)
 
 with col1:
     app_versionsA = ui.app_version_selector(placement="col", key="cf-1")
     languageA = ui.single_selector(languages, placement="col", title="Select a language", key="cf-2")
-    countries_listA = ui.multi_select_all(countries_list, title="Country Selection", key="cf-7", placement="middle")
+    countries_listA = ui.multi_select_all(countries_list, title="Country Selection", key="cf-3", placement="middle")
     selected_date, option = ui.calendar_selector(placement="col", key="crf-4", title="Select date user cohort")
     daterangeA = ui.convert_date_to_range(selected_date, option)
-    appA = ui.app_selector(placement="middle",key="cf-19")
-    if appA == "Unity":
+    appA = ui.single_selector(distinct_apps, placement="col", title="Select an App", key="cf-5",include_All=False)
+
+    if appA[0] == "Unity":
         user_idA = "user_pseudo_id"
     else:
         user_idA = "cr_user_id"
 
 with col2:
-    app_versionsB = ui.app_version_selector(placement="col", key="cf-5")
-    languageB = ui.single_selector(languages, placement="col", title="Select a language", key="cf-6")
+    app_versionsB = ui.app_version_selector(placement="col", key="cf-6")
+    languageB = ui.single_selector(languages, placement="col", title="Select a language", key="cf-7")
     countries_listB = ui.multi_select_all(countries_list, title="Country Selection", key="cf-8", placement="middle")
     selected_date, option = ui.calendar_selector(placement="col", key="crf-9", title="Select date user cohort")
     daterangeB = ui.convert_date_to_range(selected_date, option)
-    appB = ui.app_selector(placement="middle",key="cf-20")
-    if appB == "Unity":
+    appB = ui.single_selector(distinct_apps, placement="col", title="Select an App", key="cf-10",include_All=False)
+    if appB[0] == "Unity":
         user_idB = "user_pseudo_id"
     else:
         user_idB = "cr_user_id"
-
-# --- Logic and Output ---
-
 
 if len(countries_listA) and len(countries_listB):
 
@@ -59,6 +59,7 @@ if len(countries_listA) and len(countries_listB):
         as_list=False,
         
     )
+
     user_listA = user_cohort_listA[user_idA]
     metrics_home_A = get_metrics_for_cohort(user_listA,appA)
 
@@ -90,7 +91,7 @@ if len(countries_listA) and len(countries_listB):
             daterange=daterangeA,
             countries_list=countries_listA,
             languages=languageA,
-            key_prefix="cf-10",
+            key_prefix="cf-11",
             app=appA,
             funnel_size=funnel_size,
             user_list=user_listA,
@@ -101,7 +102,7 @@ if len(countries_listA) and len(countries_listB):
             label="Download Cohort A CSV",
             data=csvA,
             file_name="user_cohort_listA.csv",
-            key="cf-15",
+            key="cf-12",
             icon=":material/download:",
             mime="text/csv",
         )
@@ -112,7 +113,7 @@ if len(countries_listA) and len(countries_listB):
             daterange=daterangeB,
             countries_list=countries_listB,
             languages=languageB,
-            key_prefix="cf-20",
+            key_prefix="cf-13",
             funnel_size=funnel_size,
             app=appB,
             user_list=user_listB,
@@ -124,7 +125,7 @@ if len(countries_listA) and len(countries_listB):
             label="Download Cohort B CSV",
             data=csvB,
             file_name="user_cohort_listB.csv",
-            key="cf-25",
+            key="cf-14",
             icon=":material/download:",
             mime="text/csv",
         )

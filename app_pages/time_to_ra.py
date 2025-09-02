@@ -18,7 +18,9 @@ with col1:
         key="la-2",
     )
     
-    app = ui.app_selector(placement="middle")
+    distinct_apps = ui.get_apps()
+    app = ui.single_selector(distinct_apps, placement="col", title="Select an App", key="a-10",include_All=False)
+
     by_months = st.toggle("Show by Months", value=False)
     
 with col2:
