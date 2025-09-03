@@ -465,66 +465,91 @@ def create_engagement_figure(funnel_data, key="", funnel_size="large"):
     )
     return fig
 
-def levels_reached_chart():
-    app = "CR" # default
+import plotly.graph_objs as go
+import streamlit as st
+import pandas as pd
 
-    group_defs = [
-            {"label": "CR Offline Users", "offline_filter": True},
-            {"label": "CR Online Users", "offline_filter": False},
-            {"label": "Unity Users", "offline_filter": False},
-        ]
-    
+def levels_reached_chart(
+    app_names=None,
+    stat="LA",
+    max_plot_level=35,
+    title="Levels Reached by App"
+):
+    """
+    Plot percent of original cohort reaching each level for multiple apps.
+
+    Parameters
+    ----------
+    app_names : list[str]
+        List of app names, e.g. ["CR", "Unity", "StandAloneHindi"].
+        Defaults to ["CR", "Unity"] if not provided.
+    stat : str
+        Stat to pass into metrics.filter_user_data (default "LA").
+    max_plot_level : int
+        Maximum level to include on the x-axis (default 35).
+    title : str
+        Chart title.
+    """
+    if not app_names:
+        app_names = ["CR", "Unity"]
+
     traces = []
-    for group in group_defs:
-        group_label = group.get("label", "Group")
-        if group_label == "Unity Users":
-            app = "Unity"
-        offline_filter = group.get("offline_filter", None)
-        # Add other filters as needed
+
+    for app_name in app_names:
+        # Fetch user list for this app (note: app must be passed as a list)
         df_user_list = metrics.filter_user_data(
-            stat="LA",
-            app=app,
-            offline_filter=offline_filter,
-        )
-        
-        df = (
-            df_user_list[df_user_list["max_user_level"] <= 35]
-            .groupby("max_user_level")
-            .size()
-            .reset_index(name="count")
+            stat=stat,
+            app=[app_name]
         )
 
-        if not df.empty:
-            first_level_count = df["count"].iloc[0]
-            df["percent_reached"] = df["count"] / first_level_count * 100
-            # Calculate percent drop from previous level
-            df["percent_drop"] = df["percent_reached"].diff().fillna(0)
-        else:
-            df["percent_reached"] = 0
-            df["percent_drop"] = 0
-        df["group"] = group_label
+        if df_user_list is None or df_user_list.empty:
+            continue
+
+        # Count users by max_user_level up to the chosen max
+        df = (
+            df_user_list[df_user_list["max_user_level"].notnull()]
+            .query("max_user_level <= @max_plot_level")
+            .groupby("max_user_level", as_index=False)
+            .size()
+            .rename(columns={"size": "count"})
+            .sort_values("max_user_level", ascending=True)
+            .reset_index(drop=True)
+        )
+
+        if df.empty:
+            continue
+
+        first_level_count = df["count"].iloc[0]
+        if first_level_count == 0:
+            continue
+
+        df["percent_reached"] = df["count"] / first_level_count * 100.0
+        df["percent_drop"] = df["percent_reached"].diff().fillna(0.0)
 
         trace = go.Scatter(
             x=df["max_user_level"],
             y=df["percent_reached"],
             mode="lines+markers",
-            name=group_label,
+            name=app_name,
+            customdata=df["percent_drop"],
+            text=[app_name] * len(df),
             hovertemplate=(
+                "App: %{text}<br>"
                 "Max Level: %{x}<br>"
                 "Percent reached: %{y:.2f}%<br>"
-                "Drop from previous: %{customdata:.2f}%%<br>"
-                "Group: %{text}"
+                "Change from previous: %{customdata:.2f}%%<extra></extra>"
             ),
-            customdata=df["percent_drop"],
-            text=df["group"],
         )
         traces.append(trace)
 
     layout = go.Layout(
+        title=title,
         xaxis=dict(title="Levels"),
         yaxis=dict(title="Percent of Original Group Reaching Level"),
         height=500,
+        hovermode="x unified"
     )
+
     fig = go.Figure(data=traces, layout=layout)
     st.plotly_chart(fig, use_container_width=True)
     return fig
@@ -689,7 +714,7 @@ def funnel_change_by_language_chart(
                 stat=bottom_level,
                 language=language_list,
                 countries_list=countries_list,
-                app="CR",
+                app=["CR"],
                 user_list=user_list,
             )
 
@@ -698,7 +723,7 @@ def funnel_change_by_language_chart(
                 stat=upper_level,
                 language=language_list,
                 countries_list=countries_list,
-                app="CR",
+                app=["CR"],
                 user_list=user_list,
             )
 
@@ -816,7 +841,7 @@ def funnel_bar_chart(languages, countries_list, daterange,user_cohort_list):
     
 
 @st.cache_data(ttl="1d", show_spinner=False)
-def funnel_line_chart_percent(languages, countries_list, daterange, user_cohort_list, app="CR"):
+def funnel_line_chart_percent(languages, countries_list, daterange, user_cohort_list, app=["CR"]):
     # Determine levels first, BEFORE using in logic below
       
     if app[0] == "Unity":
@@ -852,8 +877,6 @@ def funnel_line_chart_percent(languages, countries_list, daterange, user_cohort_
     for idx, row in df_percent.iterrows():
         language = row["language"]
         denominator_value = df.loc[idx, "LR"]
-        if denominator_value < 100:
-            continue
 
         percent_values = row[levels]
         numerator_values = df.loc[idx, levels]
@@ -900,10 +923,10 @@ def top_and_bottom_languages_per_level(selection, min_LR):
     languages = users.get_language_list()
     user_cohort_list_cr = metrics.get_user_cohort_list(
         languages=languages,
-        app="CR"
+        app=["CR"]
     )
     
-    df = metrics.build_funnel_dataframe(index_col="language", languages=languages,app="CR",user_list=user_cohort_list_cr)
+    df = metrics.build_funnel_dataframe(index_col="language", languages=languages,app=["CR"],user_list=user_cohort_list_cr)
 
     # Remove anything where Learners Reached is less than 5000 (arbitrary to have a decent sample size)
     df = df[df["LR"] > min_LR]
@@ -981,7 +1004,7 @@ def create_funnels(
     languages=["All"],
     app_versions="All",
     key_prefix="abc",
-    app="CR",
+    app=["CR"],
     funnel_size="large",  # "compact", "medium", or "large"
     user_list=[]
 ):
@@ -1016,7 +1039,7 @@ def create_funnels(
     titles = funnel_variants[funnel_size]["titles"]
 
     # Override stats/titles for Unity app — always use "compact"
-    if app == "Unity":
+    if  "Unity" in app:
         stats = funnel_variants["compact"]["stats"]
         titles = funnel_variants["compact"]["titles"]
         funnel_size = "compact"
@@ -1290,7 +1313,7 @@ def ra_ecdf_curve(df_ra,by_months):
     )
     st.plotly_chart(fig, use_container_width=True)
     
-def avg_days_to_ra_by_dim_chart(df_ra,app="CR"):
+def avg_days_to_ra_by_dim_chart(df_ra,app=["CR"]):
 
     group_dim = st.radio("Grouping", ["Language", "Country"], key="123", index=0,horizontal=True)
     group_col = 'app_language' if group_dim == "Language" else 'country'

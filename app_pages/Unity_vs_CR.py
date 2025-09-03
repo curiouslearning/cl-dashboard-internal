@@ -73,7 +73,7 @@ if len(daterange) == 2 and countries_list:
         daterange=daterange,
         languages=language,
         countries_list=countries_list,
-        app="CR"
+        app=["CR"]
     )
 
 
@@ -94,7 +94,7 @@ if len(daterange) == 2 and countries_list:
         create_funnels(
             countries_list=countries_list,
             daterange=daterange,
-            app="CR",
+            app=["CR"],
             funnel_size="compact",
             key_prefix="u-2",
             languages=languages,

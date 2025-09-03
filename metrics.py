@@ -571,7 +571,7 @@ def get_totals_per_month(daterange, stat, countries_list, language):
 
         # Get totals within the clipped date range
         total = get_totals_by_metric(
-            daterange=clipped_range, countries_list=countries_list, stat=stat, language=language,app="CR"
+            daterange=clipped_range, countries_list=countries_list, stat=stat, language=language,app=["CR"]
         )
         
         # Filter campaigns based on the clipped date range
@@ -600,7 +600,7 @@ def get_date_cohort_dataframe(
     daterange=default_daterange,
     languages=["All"],
     countries_list=["All"],
-    app="CR"):
+    app=["CR"]):
     
     """
     Returns a DataFrame of activity for all users who first opened the app in the selected cohort.
@@ -608,7 +608,7 @@ def get_date_cohort_dataframe(
     """
 
     # Get all of the users in the user selected window - this is the cohort
-    df_user_cohort = filter_user_data(daterange=daterange,countries_list=countries_list,app="CR",language=languages)
+    df_user_cohort = filter_user_data(daterange=daterange,countries_list=countries_list,app=["CR"],language=languages)
 
     # All we need is their cr_user_id
     user_cohort_list = df_user_cohort["cr_user_id"]
@@ -625,7 +625,7 @@ def get_user_cohort_list(
     languages=["All"],
     cr_app_versions="All",
     countries_list=["All"],
-    app="CR",
+    app=["CR"],
     as_list=True,
     offline_filter=None
 ):

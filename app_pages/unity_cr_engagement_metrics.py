@@ -68,7 +68,7 @@ if len(daterange) == 2 and countries_list:
         daterange=daterange,
         languages=language,
         countries_list=countries_list,
-        app="CR"
+        app=["CR"]
     )
 
     # --- Calculate metrics ---
@@ -85,11 +85,11 @@ if len(daterange) == 2 and countries_list:
 
     with st.spinner("Calculating CR metrics..."):
         metrics_cr = {
-        "Avg # Sessions / User": metrics.calculate_average_metric_per_user(user_cohort_list_cr, app="CR", column_name="engagement_event_count"),
-        "Avg Total Play Time / User": metrics.calculate_average_metric_per_user(user_cohort_list_cr, app="CR", column_name="total_time_minutes"),
-        "Avg Session Length / User": metrics.calculate_average_metric_per_user(user_cohort_list_cr, app="CR", column_name="avg_session_length_minutes"),
-        "Active Span / User": metrics.calculate_average_metric_per_user(user_cohort_list_cr, app="CR", column_name="active_span"),
-        "Avg Days to RA":     metrics.calculate_average_metric_per_user(user_cohort_list_cr,column_name="days_to_ra",app="CR")
+        "Avg # Sessions / User": metrics.calculate_average_metric_per_user(user_cohort_list_cr, app=["CR"], column_name="engagement_event_count"),
+        "Avg Total Play Time / User": metrics.calculate_average_metric_per_user(user_cohort_list_cr, app=["CR"], column_name="total_time_minutes"),
+        "Avg Session Length / User": metrics.calculate_average_metric_per_user(user_cohort_list_cr, app=["CR"], column_name="avg_session_length_minutes"),
+        "Active Span / User": metrics.calculate_average_metric_per_user(user_cohort_list_cr, app=["CR"], column_name="active_span"),
+        "Avg Days to RA":     metrics.calculate_average_metric_per_user(user_cohort_list_cr,column_name="days_to_ra",app=["CR"])
     }
 
     # --- Metric Display Columns ---

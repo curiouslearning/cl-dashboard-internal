@@ -172,7 +172,7 @@ def build_campaign_table(df, daterange):
                 language=language,
                 daterange=daterange,
                 stat=stat,
-                app="CR",
+                app=["CR"],
             )
             df.at[idx, stat] = result
             df.at[idx, stat + "C"] = (

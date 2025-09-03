@@ -40,7 +40,7 @@ with col2:
 df_languages = metrics.get_counts(
     type="app_language",
     daterange=daterange,
-    app="CR",
+    app=["CR"],
     language=["All"],
 )
 df_top10 = (
@@ -64,7 +64,7 @@ if len(selected_languages) == 0 or len(selected_languages) > 40:
     )
 else:
     if len(daterange) == 2:       
-        user_cohort_list = metrics.get_user_cohort_list(daterange=daterange,languages=selected_languages,countries_list=country,app="CR")
+        user_cohort_list = metrics.get_user_cohort_list(daterange=daterange,languages=selected_languages,countries_list=country,app=["CR"])
         with st.spinner("Calculating..."):
             start = daterange[0].strftime("%b %d, %Y")
             end = daterange[1].strftime("%b %d, %Y")

@@ -254,7 +254,7 @@ def colorize_multiselect_options() -> None:
 
 
 # Restricts selection to a single country
-def single_selector(selections, placement="side", title="", key="key", include_All=True):
+def single_selector(selections, placement="side", title="", key="key", include_All=True,index=0):
     options = list(selections)  # Defensive copy
 
     if include_All:
@@ -265,12 +265,14 @@ def single_selector(selections, placement="side", title="", key="key", include_A
 
     if placement == "side":
         selection = st.sidebar.selectbox(
+            index=index,
             label=title,
             options=options,
             key=key,
         )
     else:
         selection = st.selectbox(
+            index=index,
             label=title,
             options=options,
             key=key,

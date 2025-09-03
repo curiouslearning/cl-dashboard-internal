@@ -37,12 +37,12 @@ with col2:
 
 
 if len(countries_list) > 0  and (len(daterange) == 2):
-    user_cohort_list = metrics.get_user_cohort_list(daterange=daterange,languages=language,countries_list=countries_list,app="CR")
+    user_cohort_list = metrics.get_user_cohort_list(daterange=daterange,languages=language,countries_list=countries_list,app=["CR"])
     
-    average_number_sessions_cl = metrics.calculate_average_metric_per_user(user_cohort_list,column_name="engagement_event_count",app="CR")
-    average_total_sessions_time_cl = metrics.calculate_average_metric_per_user(user_cohort_list,column_name="total_time_minutes",app="CR")
-    average_level_reached= metrics.calculate_average_metric_per_user(user_cohort_list,column_name="max_user_level",app="CR")
-    average_days_to_ra= metrics.calculate_average_metric_per_user(user_cohort_list,column_name="days_to_ra",app="CR")
+    average_number_sessions_cl = metrics.calculate_average_metric_per_user(user_cohort_list,column_name="engagement_event_count",app=["CR"])
+    average_total_sessions_time_cl = metrics.calculate_average_metric_per_user(user_cohort_list,column_name="total_time_minutes",app=["CR"])
+    average_level_reached= metrics.calculate_average_metric_per_user(user_cohort_list,column_name="max_user_level",app=["CR"])
+    average_days_to_ra= metrics.calculate_average_metric_per_user(user_cohort_list,column_name="days_to_ra",app=["CR"])
 
     col1.metric(label="Avg # Sessions / User", value=f"{average_number_sessions_cl:.2f}")
     col1.metric(label="Avg Total Session Time / User", value=f"{average_total_sessions_time_cl:.2f} min")

@@ -42,7 +42,7 @@ for i in range(num_cohorts):
     df_user_list = metrics.filter_user_data(
         countries_list=countries,
         stat="LR",
-        app="CR",
+        app=["CR"],
         cr_app_versions=cr_app_versions,
         language=language,
     )

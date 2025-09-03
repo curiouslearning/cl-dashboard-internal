@@ -28,7 +28,7 @@ with col1:
     countries_listA = ui.multi_select_all(countries_list, title="Country Selection", key="cf-3", placement="middle")
     selected_date, option = ui.calendar_selector(placement="col", key="crf-4", title="Select date user cohort")
     daterangeA = ui.convert_date_to_range(selected_date, option)
-    appA = ui.single_selector(distinct_apps, placement="col", title="Select an App", key="cf-5",include_All=False)
+    appA = ui.single_selector(distinct_apps, placement="col", title="Select an App", key="cf-5",include_All=False,index=1)
 
     if appA[0] == "Unity":
         user_idA = "user_pseudo_id"
@@ -41,7 +41,7 @@ with col2:
     countries_listB = ui.multi_select_all(countries_list, title="Country Selection", key="cf-8", placement="middle")
     selected_date, option = ui.calendar_selector(placement="col", key="crf-9", title="Select date user cohort")
     daterangeB = ui.convert_date_to_range(selected_date, option)
-    appB = ui.single_selector(distinct_apps, placement="col", title="Select an App", key="cf-10",include_All=False)
+    appB = ui.single_selector(distinct_apps, placement="col", title="Select an App", key="cf-10",include_All=False,index=0)
     if appB[0] == "Unity":
         user_idB = "user_pseudo_id"
     else:
@@ -77,7 +77,7 @@ if len(countries_listA) and len(countries_listB):
 
     metrics_home_B = get_metrics_for_cohort(user_listB,appB)
 
-    if appA == "Unity" or appB == "Unity":
+    if "Unity" in appA or "Unity" in appB:
         funnel_size = "compact"
     elif "All" in app_versionsA and "All" in app_versionsB:
         funnel_size = "large"

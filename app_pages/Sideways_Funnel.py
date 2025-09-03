@@ -10,7 +10,6 @@ ensure_user_data_initialized()
 
 ui.display_definitions_table("Definitions",ui.level_percent_definitions)
 
-
 col1, col2, col3 = st.columns(3)
 
 from users import get_country_list
@@ -23,7 +22,7 @@ with col1:
         key="la-2",
     )
     distinct_apps = ui.get_apps()
-    app = ui.single_selector(distinct_apps, placement="col", title="Select an App", key="a-10",include_All=False)
+    app = ui.single_selector(distinct_apps, placement="col", title="Select an App", key="sf-10",include_All=False)
 
     from metrics import get_counts
     df_languages = get_counts(
@@ -36,6 +35,7 @@ with col1:
 df_top10 = (
     df_languages[["app_language", "LR"]].sort_values(by="LR", ascending=False).head(10)
 )
+
     
 with col2:
 
@@ -81,7 +81,7 @@ with tab1:
                 user_cohort_list=user_cohort_list
             )
             csv = ui.convert_for_download(df_download)
-            st.download_button(label="Download CSV",data=csv,file_name="funnel_line_chart_percent.csv",key="sf-10",icon=":material/download:",mime="text/csv")
+            st.download_button(label="Download CSV",data=csv,file_name="funnel_line_chart_percent.csv",key="sf-12",icon=":material/download:",mime="text/csv")
 
 
 with tab2:
