@@ -74,6 +74,71 @@ def get_totals_by_metric(
                 return level_completed_count
     else:
         return 0
+    
+def get_cohort_totals_by_metric(
+    cohort_df,
+    stat="LR"
+):
+    """
+    Given a cohort_df (already filtered!), count users in each funnel stage or apply stat-specific filter.
+    - cohort_df: DataFrame, filtered to your user cohort (one row per user)
+    - stat: string, which funnel metric to count ("LR", "DC", "TS", "SL", "PC", "LA", "RA", "GC")
+    """
+
+    if cohort_df.empty:
+        return 0
+
+    # Stat-specific filters (formerly in filter_user_data)
+    if stat == "LA":
+        # Learners Acquired: max_user_level >= 1
+        return (cohort_df['max_user_level'] >= 1).sum()
+    elif stat == "RA":
+        # Readers Acquired: max_user_level >= 25
+        return (cohort_df['max_user_level'] >= 25).sum()
+    elif stat == "GC":
+        # Game Completed: max_user_level >= 1 AND gpc >= 90
+        return ((cohort_df['max_user_level'] >= 1) & (cohort_df['gpc'] >= 90)).sum()
+    elif stat == "LR":
+        # Learner Reached: all users in cohort
+        return len(cohort_df)
+
+    # Otherwise: classic funnel by furthest_event
+    furthest = cohort_df["furthest_event"]
+
+    download_completed_count = (furthest == "download_completed").sum()
+    tapped_start_count      = (furthest == "tapped_start").sum()
+    selected_level_count    = (furthest == "selected_level").sum()
+    puzzle_completed_count  = (furthest == "puzzle_completed").sum()
+    level_completed_count   = (furthest == "level_completed").sum()
+
+    if stat == "DC":
+        return (
+            download_completed_count
+            + tapped_start_count
+            + selected_level_count
+            + puzzle_completed_count
+            + level_completed_count
+        )
+    if stat == "TS":
+        return (
+            tapped_start_count
+            + selected_level_count
+            + puzzle_completed_count
+            + level_completed_count
+        )
+    if stat == "SL":
+        return (
+            selected_level_count
+            + puzzle_completed_count
+            + level_completed_count
+        )
+    if stat == "PC":
+        return (
+            puzzle_completed_count
+            + level_completed_count
+        )
+
+    return 0  # default fallback
 
 # Takes the complete user lists (cr_user_id) and filters based on input data, and returns
 # a new filtered dataset
@@ -178,6 +243,31 @@ def select_user_dataframe(app, stat, session_state):
         user_list_key = "cr_user_id"
         return df, user_list_key
 
+def select_user_dataframe_new(app, stat=None):
+    apps = [app] if isinstance(app, str) else app
+
+    if "Unity" in apps:
+        df = st.session_state.df_unity_users
+        user_list_key = "user_pseudo_id"
+        return df, user_list_key
+
+    elif any(a.endswith("-standalone") for a in apps if isinstance(a, str)):
+        df = st.session_state.df_cr_users
+        if "All" not in apps:
+            df = df[df["app"].isin(apps)]
+        user_list_key = "cr_user_id"
+        return df, user_list_key
+
+    elif apps == ["CR"] and stat == "LR":
+        df = st.session_state.df_cr_app_launch
+        user_list_key = "cr_user_id"
+        return df, user_list_key
+
+    else:
+        df = st.session_state.df_cr_users
+        user_list_key = "cr_user_id"
+        return df, user_list_key
+
 
 # Average Game Progress Percent
 def get_GPP_avg(daterange, countries_list, app=["CR"], language="All", user_list=[]):
@@ -188,6 +278,18 @@ def get_GPP_avg(daterange, countries_list, app=["CR"], language="All", user_list
     df_user_list["gpc"] = df_user_list["gpc"].fillna(0)
     
     return 0 if len(df_user_list) == 0 else np.average(df_user_list.gpc)
+
+def get_cohort_GPP_avg(cohort_df):
+    """
+    Calculates average 'gpc' for the LA cohort only (furthest_event == 'level_completed').
+    Returns 0 if no such users.
+    """
+    if cohort_df.empty:
+        return 0
+    la_df = cohort_df[cohort_df["furthest_event"] == "level_completed"]
+    if la_df.empty:
+        return 0
+    return np.average(la_df["gpc"].fillna(0))
 
 
 # Average Game Complete
@@ -202,6 +304,21 @@ def get_GC_avg(daterange, countries_list, app=["CR"], language="All", user_list=
     gc_count = df_user_list[(df_user_list["gpc"] >= 90)].shape[0]
 
     return 0 if cohort_count == 0 else gc_count / cohort_count * 100
+
+def get_cohort_GC_avg(cohort_df):
+    """
+    Returns the percentage of LA users (furthest_event == 'level_completed') with gpc >= 90.
+    """
+    if cohort_df.empty:
+        return 0
+    la_df = cohort_df[cohort_df["furthest_event"] == "level_completed"]
+    if la_df.empty:
+        return 0
+    gpc = la_df["gpc"].fillna(0)
+    gc_count = (gpc >= 90).sum()
+    la_count = len(la_df)
+    return gc_count / la_count * 100
+
 
 
 def weeks_since(daterange):
@@ -595,6 +712,43 @@ def get_totals_per_month(daterange, stat, countries_list, language):
     # Display the DataFrame
     return df_totals
 
+def get_totals_per_month_from_cohort(cohort_df, stat, daterange, date_col="first_open"):
+    """
+    Calculates totals per month by slicing a pre-built cohort_df on date_col for each month.
+    """
+    month_ranges = get_month_ranges(daterange[0], daterange[1])
+    df_campaigns_all = st.session_state["df_campaigns_all"]
+    totals_by_month = []
+
+    for start_date, end_date in month_ranges:
+        clipped_start_date = start_date
+        clipped_end_date = end_date
+        clipped_range = [clipped_start_date, clipped_end_date]
+
+        # Slice the cohort_df by date_col for this month
+        start = pd.to_datetime(clipped_start_date)
+        end = pd.to_datetime(clipped_end_date)
+        cohort_df[date_col] = pd.to_datetime(cohort_df[date_col])  # Ensures column type
+        df_month = cohort_df[
+            (cohort_df[date_col] >= start) & (cohort_df[date_col] <= end)
+        ]
+        total = get_cohort_totals_by_metric(df_month, stat=stat)
+
+        # Filter campaigns based on the clipped date range
+        df_campaigns = filter_campaigns(df_campaigns_all, clipped_range, cohort_df["app_language"].unique(), cohort_df["country"].unique())
+        cost = df_campaigns["cost"].sum()
+        lrc = (cost / total).round(2) if total != 0 else 0
+
+        totals_by_month.append({
+            "month": clipped_start_date.strftime("%B-%Y"),
+            "total": total,
+            "cost": cost,
+            "LRC": lrc
+        })
+
+    return pd.DataFrame(totals_by_month)
+
+
 @st.cache_data(ttl="1d", show_spinner=False)
 def get_date_cohort_dataframe(
     daterange=default_daterange,
@@ -656,6 +810,51 @@ def get_user_cohort_list(
         return user_cohort_df[user_id_col].dropna().tolist()
     else:
         return user_cohort_df
+
+def get_user_cohort_df(
+    session_df,
+    user_list_key="cr_user_id",
+    daterange=None,
+    languages=["All"],
+    cr_app_versions="All",
+    countries_list=["All"],
+    app=["CR"],
+    offline_filter=None
+):
+    """
+    Returns a DataFrame (all columns) for the cohort matching filters.
+    - df: DataFrame to filter (already chosen by select_user_dataframe)
+    - user_list_key: which column uniquely identifies users
+    """
+    cohort_df = session_df.copy()
+
+    # Apply filters
+    if daterange is not None and len(daterange) == 2:
+        start = pd.to_datetime(daterange[0])
+        end = pd.to_datetime(daterange[1])
+        cohort_df = cohort_df[
+        (cohort_df["first_open"] >= start) & (cohort_df["first_open"] <= end)
+        ]
+        
+    if countries_list and countries_list != ["All"]:
+        cohort_df = cohort_df[cohort_df["country"].isin(countries_list)]
+    if languages and languages != ["All"]:
+        lang_col = "app_language" if "app_language" in cohort_df.columns else "language"
+        cohort_df = cohort_df[cohort_df[lang_col].isin(languages)]
+    if cr_app_versions != "All" and "app_version" in cohort_df.columns:
+        if isinstance(cr_app_versions, str):
+            cr_app_versions = [cr_app_versions]
+        cohort_df = cohort_df[cohort_df["app_version"].isin(cr_app_versions)]
+    if app and app != ["All"] and "app" in cohort_df.columns:
+        apps = [app] if isinstance(app, str) else app
+        cohort_df = cohort_df[cohort_df["app"].isin(apps)]
+    if offline_filter is not None and "started_in_offline_mode" in cohort_df.columns:
+        cohort_df = cohort_df[cohort_df["started_in_offline_mode"] == offline_filter]
+
+    # Drop rows with null user IDs
+    cohort_df = cohort_df[cohort_df[user_list_key].notnull()]
+
+    return cohort_df
 
 
 

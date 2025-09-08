@@ -1,7 +1,6 @@
 import streamlit as st
 import settings
 from rich import print
-import metrics
 from millify import prettify
 import ui_components as uic
 import ui_widgets as ui
@@ -9,6 +8,7 @@ import users
 import datetime as dt
 import campaigns
 import pandas as pd
+from metrics import get_cohort_totals_by_metric,get_user_cohort_df,get_cohort_GPP_avg,get_cohort_GC_avg,filter_campaigns,get_totals_per_month_from_cohort,select_user_dataframe_new
 
 data_notes = pd.DataFrame(
     [
@@ -56,48 +56,51 @@ if len(daterange) == 2 and len(countries_list) > 0:
 
     col1, col2, col3 = st.columns(3)
     
-    user_cohort_list = metrics.get_user_cohort_list(
+    #First do this for LR where we expect a return of cr_app_launch users
+    session_df, user_list_key = select_user_dataframe_new(app="CR",stat="LR")
+
+    cohort_df = get_user_cohort_df(
+        session_df=session_df,
+        user_list_key=user_list_key,
         daterange=daterange,
         languages=language,
         countries_list=countries_list,
-        app=["CR"],
-        as_list=True
-    )
+        app="CR",
+        )
 
-    LR = metrics.get_totals_by_metric(
-        daterange=daterange, countries_list=countries_list, stat="LR", language=language,app=["CR"],user_list=user_cohort_list
-    )
-    
-    RA = metrics.get_totals_by_metric(
-        daterange=daterange, countries_list=countries_list, stat="RA", language=language,app=["CR"],user_list=user_cohort_list
-    )
-    
+    LR = get_cohort_totals_by_metric(cohort_df=cohort_df, stat="LR")
     col1.metric(label="Learners Reached", value=prettify(int(LR)))
+    
+    # now switch to cr_user_progress
 
-    total = metrics.get_totals_by_metric(
-        daterange, countries_list, "LA",  language=language,app=["CR"],user_list=user_cohort_list
-    )
-    col2.metric(label="Learners Acquired", value=prettify(int(total)))
+    session_df, user_list_key = select_user_dataframe_new(app="CR")
+    cohort_df = get_user_cohort_df(
+        session_df=session_df,
+        user_list_key=user_list_key,
+        daterange=daterange,
+        languages=language,
+        countries_list=countries_list,
+        app="CR",
+        )
 
-    total = metrics.get_totals_by_metric(
-        daterange, countries_list, "RA",  language=language,app=["CR"],user_list=user_cohort_list
-    )
-    col3.metric(label="Readers Acquired", value=prettify(int(total)))
+    LA = get_cohort_totals_by_metric(cohort_df=cohort_df, stat="LA")
+    col2.metric(label="Learners Acquired", value=prettify(int(LA)))
 
-    total = metrics.get_totals_by_metric(
-        daterange, countries_list, "GC",  language=language,app=["CR"],user_list=user_cohort_list
-    )
-    col1.metric(label="Games Completed", value=prettify(int(total)))
+    RA = get_cohort_totals_by_metric(cohort_df=cohort_df, stat="RA")
+    col3.metric(label="Readers Acquired", value=prettify(int(RA)))
 
-    total = metrics.get_GPP_avg(daterange, countries_list,  language=language,app=["CR"],user_list=user_cohort_list)
-    col2.metric(label="Game Progress Percent", value=f"{total:.2f}%")
+    GC = get_cohort_totals_by_metric(cohort_df=cohort_df, stat="GC")
+    col1.metric(label="Games Completed", value=prettify(int(GC)))
 
-    total = metrics.get_GC_avg(daterange, countries_list, language=language,app=["CR"],user_list=user_cohort_list)
-    col3.metric(label="Game Completion Avg", value=f"{total:.2f}%")
+    GPP = get_cohort_GPP_avg(cohort_df)
+    col2.metric(label="Game Progress Percent", value=f"{GPP:.2f}%")
+
+    GC_AVG = get_cohort_GC_avg(cohort_df)
+    col3.metric(label="Game Completion Avg", value=f"{GC_AVG:.2f}%")
 
     df_campaigns_all = st.session_state["df_campaigns_all"]
 
-    df_campaigns = metrics.filter_campaigns(df_campaigns_all,daterange,language,countries_list)
+    df_campaigns = filter_campaigns(df_campaigns_all,daterange,language,countries_list)
 
     cost = df_campaigns["cost"].sum()
     col1.metric(label="Cost", value=f"${prettify(int(cost))}")
@@ -108,8 +111,8 @@ if len(daterange) == 2 and len(countries_list) > 0:
     st.divider()
 
     st.markdown(header)
-
-    df_total_LR_per_month = metrics.get_totals_per_month(daterange,stat="LR",countries_list=countries_list,language=language)
+    session_df, user_list_key = select_user_dataframe_new(app="CR",stat="LR")
+    df_total_LR_per_month = get_totals_per_month_from_cohort(cohort_df=session_df,stat="LR",daterange=daterange)
     if len(df_total_LR_per_month) > 0:
         uic.lr_lrc_bar_chart(df_total_LR_per_month)
     st.divider()
