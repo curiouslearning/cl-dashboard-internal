@@ -3,7 +3,8 @@ from rich import print as rprint
 from millify import prettify
 from  ui_components import create_funnels
 import ui_widgets as ui
-from metrics import get_user_cohort_list,get_metrics_for_cohort,show_dual_metric_table
+from ui_components import show_dual_metric_table
+from metrics import get_user_cohort_list,get_metrics_for_cohort
 
 
 from settings import initialize,init_cr_app_version_list
@@ -47,7 +48,7 @@ with col2:
     else:
         user_idB = "cr_user_id"
 
-if len(countries_listA) and len(countries_listB):
+if len(countries_listA) and len(countries_listB) and len(daterangeA) == 2  and len(daterangeB) == 2 :
 
     # Cohort A
     user_cohort_listA = get_user_cohort_list(

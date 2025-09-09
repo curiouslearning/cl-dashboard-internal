@@ -248,25 +248,21 @@ def select_user_dataframe_new(app, stat=None):
 
     if "Unity" in apps:
         df = st.session_state.df_unity_users
-        user_list_key = "user_pseudo_id"
-        return df, user_list_key
+        return df
 
     elif any(a.endswith("-standalone") for a in apps if isinstance(a, str)):
         df = st.session_state.df_cr_users
         if "All" not in apps:
             df = df[df["app"].isin(apps)]
-        user_list_key = "cr_user_id"
-        return df, user_list_key
+        return df
 
     elif apps == ["CR"] and stat == "LR":
         df = st.session_state.df_cr_app_launch
-        user_list_key = "cr_user_id"
-        return df, user_list_key
+        return df
 
     else:
         df = st.session_state.df_cr_users
-        user_list_key = "cr_user_id"
-        return df, user_list_key
+        return df
 
 
 # Average Game Progress Percent
@@ -792,8 +788,6 @@ def get_user_cohort_list(
         countries_list=countries_list,
         app=app,
         language=languages,
-        cr_app_versions=cr_app_versions,
-        offline_filter=offline_filter,
         user_list=None
     )
 
@@ -813,13 +807,11 @@ def get_user_cohort_list(
 
 def get_user_cohort_df(
     session_df,
-    user_list_key="cr_user_id",
     daterange=None,
     languages=["All"],
     cr_app_versions="All",
     countries_list=["All"],
-    app=["CR"],
-    offline_filter=None
+    app=None,
 ):
     """
     Returns a DataFrame (all columns) for the cohort matching filters.
@@ -835,24 +827,18 @@ def get_user_cohort_df(
         cohort_df = cohort_df[
         (cohort_df["first_open"] >= start) & (cohort_df["first_open"] <= end)
         ]
-        
+
     if countries_list and countries_list != ["All"]:
         cohort_df = cohort_df[cohort_df["country"].isin(countries_list)]
+        
     if languages and languages != ["All"]:
         lang_col = "app_language" if "app_language" in cohort_df.columns else "language"
         cohort_df = cohort_df[cohort_df[lang_col].isin(languages)]
-    if cr_app_versions != "All" and "app_version" in cohort_df.columns:
-        if isinstance(cr_app_versions, str):
-            cr_app_versions = [cr_app_versions]
-        cohort_df = cohort_df[cohort_df["app_version"].isin(cr_app_versions)]
+        
     if app and app != ["All"] and "app" in cohort_df.columns:
         apps = [app] if isinstance(app, str) else app
         cohort_df = cohort_df[cohort_df["app"].isin(apps)]
-    if offline_filter is not None and "started_in_offline_mode" in cohort_df.columns:
-        cohort_df = cohort_df[cohort_df["started_in_offline_mode"] == offline_filter]
-
-    # Drop rows with null user IDs
-    cohort_df = cohort_df[cohort_df[user_list_key].notnull()]
+        
 
     return cohort_df
 
@@ -888,7 +874,7 @@ def calculate_average_metric_per_user(user_cohort_list, app, column_name):
 
     return average
 
-@st.cache_data(ttl="1d", show_spinner=False)
+@st.cache_data(ttl="1d", show_spinner="Calculating metrics")
 def get_metrics_for_cohort(user_cohort_list,app):
 
     return {
@@ -900,15 +886,18 @@ def get_metrics_for_cohort(user_cohort_list,app):
         "Avg Days to RA":     calculate_average_metric_per_user(user_cohort_list=user_cohort_list,app=app,column_name="days_to_ra")
     }
 
-def show_dual_metric_table(title, home_metrics):
 
-    df = pd.DataFrame({
-        "Metric": list(home_metrics.keys()),
-        "App Calculated": [f"{v:.2f}" for v in home_metrics.values()],
+def get_all_apps_combined_session_and_cohort_df(stat=None):
+    session_dfs = []
+    
+    from ui_widgets import get_apps
+    all_apps = get_apps()
+    
+    for app in all_apps:
+        session_df = select_user_dataframe_new(app=app, stat=stat)
+        session_dfs.append(session_df)
 
-    })
+    # Combine all the session dataframes
+    combined_session_df = pd.concat(session_dfs, ignore_index=True)
 
-    st.markdown(f"### {title}")
-    st.table(df)
-
-
+    return combined_session_df

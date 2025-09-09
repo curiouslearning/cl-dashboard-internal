@@ -298,42 +298,64 @@ def LR_LA_line_chart_over_time(
 
 
 @st.cache_data(ttl="1d", show_spinner=False)
-def lrc_scatter_chart(option,display_category,df_campaigns,daterange):
+def lrc_scatter_chart(option, display_category, df_campaigns, daterange, session_df, languages, countries_list):
+    """
+    option: "LRC" or "LAC"
+    display_category: "Country" or "Language"
+    df_campaigns: campaign spend data (filtered for date range, countries/languages)
+    daterange, session_df,  languages, countries_list: for user cohort filtering
+    """
+    import plotly.express as px
 
+    # Determine grouping
     if display_category == "Country":
-        display_group = "country"
-        countries_list = df_campaigns["country"].unique()
-        countries_list = list(countries_list)
-        df_counts = metrics.get_counts(
-            daterange=daterange,type=display_group,countries_list=countries_list
+        group_col = "country"
+        groups = df_campaigns[group_col].unique()
+    else:
+        group_col = "app_language"
+        groups = df_campaigns[group_col].unique()
+
+    # Get user-level metrics for all groups (use your cohort model)
+    group_counts = []
+    for group in groups:
+        if group_col == "country":
+            filtered_countries = [group]
+            filtered_languages = languages
+        else:
+            filtered_countries = countries_list
+            filtered_languages = [group]
+
+        cohort_df = metrics.get_user_cohort_df(
+            session_df=session_df,
+            daterange=daterange,
+            languages=filtered_languages,
+            countries_list=filtered_countries,
+            app=None
         )
-    elif display_category == "Language":
-        display_group = "app_language"   
-        language =  df_campaigns["app_language"].unique()  
-        language = list(language)
-        df_counts = metrics.get_counts(
-            daterange=daterange,type=display_group,language=language
-        )
+        LR = metrics.get_cohort_totals_by_metric(cohort_df=cohort_df, stat="LR")
+        LA = metrics.get_cohort_totals_by_metric(cohort_df=cohort_df, stat="LA")
+        group_counts.append({"group": group, "LR": LR, "LA": LA})
+
+    df_counts = pd.DataFrame(group_counts)
+    df_counts.rename(columns={"group": group_col}, inplace=True)
+
+    # Sum cost by group
+    df_campaigns_grouped = df_campaigns.groupby(group_col)["cost"].sum().reset_index()
+
+    # Merge user metrics with campaign cost
+    merged_df = pd.merge(df_campaigns_grouped, df_counts, on=group_col, how="outer")
 
     x = "LR" if option == "LRC" else "LA"
-    df_campaigns = df_campaigns.groupby(display_group)["cost"].sum().round(2).reset_index()
-
-    # Merge dataframes on 'country'
-    merged_df = pd.merge(df_campaigns, df_counts, on=display_group, how="right")
-    if merged_df.empty:
-        st.write("No data")
-        return
 
     min_value = 200
     merged_df = merged_df[(merged_df["LR"] > min_value) | (merged_df["LA"] > min_value)]
 
-    # Calculate LRC
     merged_df[option] = (merged_df["cost"] / merged_df[x]).round(2)
-
-    # Fill NaN values in LRC column with 0
     merged_df[option] = merged_df[option].fillna(0)
-    scatter_df = merged_df[[display_group, "cost", option, x]]
-    if len(scatter_df) > 0:
+
+    # Formatting for display
+    scatter_df = merged_df[[group_col, "cost", option, x]].copy()
+    if not scatter_df.empty:
         scatter_df["cost"] = "$" + scatter_df["cost"].apply(lambda x: "{:,.2f}".format(x))
         scatter_df[option] = "$" + scatter_df[option].apply(lambda x: "{:,.2f}".format(x))
         scatter_df[x] = scatter_df[x].apply(lambda x: "{:,}".format(x))
@@ -342,16 +364,15 @@ def lrc_scatter_chart(option,display_category,df_campaigns,daterange):
             scatter_df,
             x=x,
             y=option,
-            color=display_group,
+            color=group_col,
             title="Reach to Cost",
             hover_data={
                 "cost": True,
-                option: ":$,.2f",
-                x: ":,",
+                option: True,
+                x: True,
             },
         )
 
-        # Plot the chart
         st.plotly_chart(fig, use_container_width=True)
     else:
         st.write("No data for selected period")
@@ -1402,3 +1423,13 @@ def ra_histogram_curve(df_ra, by_months):
 
     st.plotly_chart(fig, use_container_width=True)
 
+def show_dual_metric_table(title, home_metrics):
+
+    df = pd.DataFrame({
+        "Metric": list(home_metrics.keys()),
+        "App Calculated": [f"{v:.2f}" for v in home_metrics.values()],
+
+    })
+
+    st.markdown(f"### {title}")
+    st.table(df)

@@ -8,7 +8,7 @@ import users
 import datetime as dt
 import campaigns
 import pandas as pd
-from metrics import get_cohort_totals_by_metric,get_user_cohort_df,get_cohort_GPP_avg,get_cohort_GC_avg,filter_campaigns,get_totals_per_month_from_cohort,select_user_dataframe_new
+from metrics import get_cohort_totals_by_metric,get_user_cohort_df,get_cohort_GPP_avg,get_cohort_GC_avg,filter_campaigns,get_totals_per_month_from_cohort,select_user_dataframe_new,get_all_apps_combined_session_and_cohort_df
 
 data_notes = pd.DataFrame(
     [
@@ -42,6 +42,9 @@ countries_list = ui.multi_select_all(
 selected_date, option = ui.calendar_selector()
 daterange = ui.convert_date_to_range(selected_date, option)
 
+apps = ui.get_apps()
+
+
 # In the case of datepicker, don't do anything until both start and end dates are picked
 if len(daterange) == 2 and len(countries_list) > 0:
 
@@ -50,50 +53,94 @@ if len(daterange) == 2 and len(countries_list) > 0:
     daterange[0] = max(daterange[0], dt.datetime(2024, 5, 1).date())
     date_start = daterange[0].strftime("%m-%d-%Y")
     date_end = daterange[1].strftime("%m-%d-%Y")
-    st.subheader("General Engagement")
+    st.subheader("General Engagement: All Apps")
     header = (f"**Selected date range :calendar::    :green[{date_start} to {date_end}]**" )
     st.markdown(header)
 
     col1, col2, col3 = st.columns(3)
     
-    #First do this for LR where we expect a return of cr_app_launch users
-    session_df, user_list_key = select_user_dataframe_new(app="CR",stat="LR")
+    #******* LR *******
+    session_df = get_all_apps_combined_session_and_cohort_df(
+        stat="LR"
+    )
 
     cohort_df = get_user_cohort_df(
         session_df=session_df,
-        user_list_key=user_list_key,
         daterange=daterange,
         languages=language,
         countries_list=countries_list,
-        app="CR",
         )
 
     LR = get_cohort_totals_by_metric(cohort_df=cohort_df, stat="LR")
     col1.metric(label="Learners Reached", value=prettify(int(LR)))
     
-    # now switch to cr_user_progress
+    #******* LA *******
+    session_df = get_all_apps_combined_session_and_cohort_df(
+        stat="LA"
+    )
 
-    session_df, user_list_key = select_user_dataframe_new(app="CR")
     cohort_df = get_user_cohort_df(
         session_df=session_df,
-        user_list_key=user_list_key,
         daterange=daterange,
         languages=language,
         countries_list=countries_list,
-        app="CR",
         )
 
     LA = get_cohort_totals_by_metric(cohort_df=cohort_df, stat="LA")
     col2.metric(label="Learners Acquired", value=prettify(int(LA)))
 
+    #******* RA *******
+    session_df = get_all_apps_combined_session_and_cohort_df(
+        stat="RA"
+    )
+
+    cohort_df = get_user_cohort_df(
+        session_df=session_df,
+        daterange=daterange,
+        languages=language,
+        countries_list=countries_list,
+        )
+
     RA = get_cohort_totals_by_metric(cohort_df=cohort_df, stat="RA")
     col3.metric(label="Readers Acquired", value=prettify(int(RA)))
+
+    #******* GC *******
+    session_df = get_all_apps_combined_session_and_cohort_df(
+        stat="GC"
+    )
+
+    cohort_df = get_user_cohort_df(
+        session_df=session_df,
+        daterange=daterange,
+        languages=language,
+        countries_list=countries_list,
+        )
 
     GC = get_cohort_totals_by_metric(cohort_df=cohort_df, stat="GC")
     col1.metric(label="Games Completed", value=prettify(int(GC)))
 
+    #******* GPP *******
+    session_df = get_all_apps_combined_session_and_cohort_df()
+
+    cohort_df = get_user_cohort_df(
+        session_df=session_df,
+        daterange=daterange,
+        languages=language,
+        countries_list=countries_list,
+        )
+
     GPP = get_cohort_GPP_avg(cohort_df)
     col2.metric(label="Game Progress Percent", value=f"{GPP:.2f}%")
+
+    #******* GCC_AVG *******
+    session_df = get_all_apps_combined_session_and_cohort_df()
+
+    cohort_df = get_user_cohort_df(
+        session_df=session_df,
+        daterange=daterange,
+        languages=language,
+        countries_list=countries_list,
+        )
 
     GC_AVG = get_cohort_GC_avg(cohort_df)
     col3.metric(label="Game Completion Avg", value=f"{GC_AVG:.2f}%")
@@ -107,11 +154,14 @@ if len(daterange) == 2 and len(countries_list) > 0:
 
     col2.metric(label="LRC", value=f"${cost/LR:.2f}" if LR != 0 else "N/A")
     col3.metric(label="RAC", value=f"${cost/RA:.2f}" if RA != 0 else "N/A")
-    # LR vs LRC chart
+    
+    #**** LR vs LRC chart ****
     st.divider()
-
     st.markdown(header)
-    session_df, user_list_key = select_user_dataframe_new(app="CR",stat="LR")
+    session_df = get_all_apps_combined_session_and_cohort_df(
+        stat="LR"
+    )
+    
     df_total_LR_per_month = get_totals_per_month_from_cohort(cohort_df=session_df,stat="LR",daterange=daterange)
     if len(df_total_LR_per_month) > 0:
         uic.lr_lrc_bar_chart(df_total_LR_per_month)
@@ -125,7 +175,7 @@ if len(daterange) == 2 and len(countries_list) > 0:
         uic.spend_by_country_map(df_campaigns,source)
     
         st.divider()
-        st.subheader("LRC / LAC")
+        st.subheader("LRC / LAC: : All apps")
         st.markdown(header)
 
         c1, c2, c3,c4 = st.columns(4)
@@ -137,22 +187,37 @@ if len(daterange) == 2 and len(countries_list) > 0:
             )
 
 
-        uic.lrc_scatter_chart(option,display_category,df_campaigns,daterange)
+    session_df = get_all_apps_combined_session_and_cohort_df(
+        stat="LR"
+        )
+
+    uic.lrc_scatter_chart(
+        option=option,
+        display_category=display_category,
+        df_campaigns=df_campaigns,
+        daterange=daterange,
+        session_df=session_df,
+        languages=language,
+        countries_list=countries_list,
+    )
+
         
-        st.divider()   
-        st.markdown(header)
+    st.divider()   
+    st.markdown(header)
     
-        col = df_campaigns.pop("country")
-        df_campaigns.insert(2, col.name, col)
-        df_campaigns.reset_index(drop=True, inplace=True)
+    col = df_campaigns.pop("country")
 
-        col = df_campaigns.pop("app_language")
-        df_campaigns.insert(3, col.name, col)
-        df_campaigns.reset_index(drop=True, inplace=True)
+    df_campaigns.insert(2, col.name, col)
+    df_campaigns.reset_index(drop=True, inplace=True)
 
-        st.subheader("Marketing metrics table")
-        df = campaigns.build_campaign_table(df_campaigns, daterange)
-        keys = [12, 13, 14, 15, 16]
-        ui.paginated_dataframe(df, keys, sort_col="country")
+    col = df_campaigns.pop("app_language")
+    df_campaigns.insert(3, col.name, col)
+    df_campaigns.reset_index(drop=True, inplace=True)
+
+    st.subheader("Marketing metrics table: : All apps")
+    df_campaign_table = campaigns.build_campaign_table(df_campaigns, session_df, daterange)
+
+    keys = [12, 13, 14, 15, 16]
+    ui.paginated_dataframe(df_campaign_table, keys, sort_col="country")
 
 

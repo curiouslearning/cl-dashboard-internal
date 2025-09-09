@@ -1,11 +1,10 @@
 import streamlit as st
 from rich import print as rprint
-from millify import prettify
-import ui_components as uic
+from ui_components import show_dual_metric_table,create_funnels
 import ui_widgets as ui
 import users
 import settings
-import metrics
+from metrics import get_metrics_for_cohort,get_user_cohort_list
 
 
 settings.initialize()
@@ -37,17 +36,11 @@ with col2:
 
 
 if len(countries_list) > 0  and (len(daterange) == 2):
-    user_cohort_list = metrics.get_user_cohort_list(daterange=daterange,languages=language,countries_list=countries_list,app=["CR"])
+    user_cohort_list = get_user_cohort_list(daterange=daterange,languages=language,countries_list=countries_list,app=["CR"])
     
-    average_number_sessions_cl = metrics.calculate_average_metric_per_user(user_cohort_list,column_name="engagement_event_count",app=["CR"])
-    average_total_sessions_time_cl = metrics.calculate_average_metric_per_user(user_cohort_list,column_name="total_time_minutes",app=["CR"])
-    average_level_reached= metrics.calculate_average_metric_per_user(user_cohort_list,column_name="max_user_level",app=["CR"])
-    average_days_to_ra= metrics.calculate_average_metric_per_user(user_cohort_list,column_name="days_to_ra",app=["CR"])
+    metrics = get_metrics_for_cohort(user_cohort_list,app="CR")
+    with col1:
+        show_dual_metric_table("CR", metrics)
 
-    col1.metric(label="Avg # Sessions / User", value=f"{average_number_sessions_cl:.2f}")
-    col1.metric(label="Avg Total Session Time / User", value=f"{average_total_sessions_time_cl:.2f} min")
-    col1.metric(label="Avg Level Reached", value=f"{average_level_reached:.2f}")
-    col1.metric(label="Avg Time to RA", value=f"{average_days_to_ra:.2f}")
-
-    uic.create_funnels(countries_list=countries_list,daterange=daterange,key_prefix="dc-1",languages=languages,funnel_size="large",user_list=user_cohort_list)
+    create_funnels(countries_list=countries_list,daterange=daterange,key_prefix="dc-1",languages=languages,funnel_size="large",user_list=user_cohort_list)
 

@@ -1,10 +1,10 @@
 import streamlit as st
 import pandas as pd
 from rich import print as print
-import metrics
 import asyncio
 from pyinstrument import Profiler
 import settings
+import metrics
 
 start_date = '2024-05-01'
 # Starting 05/01/2024, campaign names were changed to support an indication of 
@@ -148,54 +148,63 @@ def rollup_campaign_data(df):
 
 
 @st.cache_data(ttl="1d", show_spinner=True)
-def build_campaign_table(df, daterange):
+def build_campaign_table(df_campaigns, session_df, daterange):
+    """
+    df_campaigns: DataFrame with columns ['country', 'app_language', 'cost', ...]
+    session_df: the user cohort DataFrame (already filtered for daterange, apps, etc)
+    daterange: (start, end) date tuple for filtering
 
-    df = (
-        df.groupby(["country", "app_language"], as_index=False)
-        .agg(
-            {
-                "cost": "sum",
-            }
+    Returns: DataFrame with metrics for each (country, app_language) group
+    """
+    # 1. Get all unique country/language pairs in campaign data
+    group_cols = ["country", "app_language"]
+    group_keys = df_campaigns[group_cols].drop_duplicates().values.tolist()
+
+    rows = []
+    for country, app_language in group_keys:
+        # 2. Filter user data for this group (and current date range)
+        cohort_df = metrics.get_user_cohort_df(
+            session_df=session_df,
+            daterange=daterange,
+            countries_list=[country],
+            languages=[app_language],
+            app=None
         )
-        .round(2)
-    )
+        # 3. Metrics for this group
+        LR = metrics.get_cohort_totals_by_metric(cohort_df, stat="LR")
+        PC = metrics.get_cohort_totals_by_metric(cohort_df, stat="PC")
+        LA = metrics.get_cohort_totals_by_metric(cohort_df, stat="LA")
+        RA = metrics.get_cohort_totals_by_metric(cohort_df, stat="RA")
+        # 4. Total cost for this country/lang (can groupby sum if multiple campaigns per group)
+        cost = df_campaigns[
+            (df_campaigns["country"] == country) &
+            (df_campaigns["app_language"] == app_language)
+        ]["cost"].sum()
+        # 5. Calculate cost-per-metric and conversion rates
+        row = {
+            "country": country,
+            "app_language": app_language,
+            "cost": cost,
+            "LR": LR,
+            "PC": PC,
+            "LA": LA,
+            "RA": RA,
+            "LRC": (cost / LR) if LR else 0,
+            "PCC": (cost / PC) if PC else 0,
+            "LAC": (cost / LA) if LA else 0,
+            "RAC": (cost / RA) if RA else 0,
+            "PC_LR %": (PC / LR * 100) if LR else 0,
+            "LA_LR %": (LA / LR * 100) if LR else 0,
+            "RA_LR %": (RA / LR * 100) if LR else 0,
+        }
+        rows.append(row)
 
-    stats = ["LR", "PC", "LA","RA"]
-    for idx, row in df.iterrows():
-        country_list = [row["country"]]
-        language = [row["app_language"].lower()]
-
-        for stat in stats:
-
-            result = metrics.get_totals_by_metric(
-                countries_list=country_list,
-                language=language,
-                daterange=daterange,
-                stat=stat,
-                app=["CR"],
-            )
-            df.at[idx, stat] = result
-            df.at[idx, stat + "C"] = (
-                (df.at[idx, "cost"] / result).round(2) if result != 0 else 0
-            )
-            if stat == "LR":
-                LR = result
-            elif stat == "PC":
-                PC = result
-            elif stat == "LA":
-                LA = result
-            else:
-                RA = result
-        try:
-            LA_LR = round((LA / LR) * 100,2)
-            PC_LR = round((PC / LR) * 100, 2)
-            RA_LR = round((RA / LR) * 100,2)
-        except ZeroDivisionError:
-            LA_LR = 0
-            PC_LR = 0
-            RA_LR = 0
-        df.at[idx, "PC_LR %"] = PC_LR
-        df.at[idx, "LA_LR %"] = LA_LR
-        df.at[idx, "RA_LR %"] = RA_LR
-
+    df = pd.DataFrame(rows)
+    # Optional: round currency columns
+    for col in ["LRC", "PCC", "LAC", "RAC"]:
+        df[col] = df[col].round(2)
+    for col in ["PC_LR %", "LA_LR %", "RA_LR %"]:
+        df[col] = df[col].round(2)
+    df[["cost", "LR", "PC", "LA", "RA"]] = df[["cost", "LR", "PC", "LA", "RA"]].fillna(0)
     return df
+
