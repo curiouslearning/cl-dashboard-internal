@@ -540,7 +540,7 @@ def level_comparison_selector(placement="side"):
         )
     return upper_level, bottom_level
 
-@st.cache_data
+@st.cache_data(ttl="1d", show_spinner=False)
 def convert_for_download(df):
     return df.to_csv().encode("utf-8")
 

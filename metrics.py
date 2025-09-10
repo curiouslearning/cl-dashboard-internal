@@ -74,7 +74,8 @@ def get_totals_by_metric(
                 return level_completed_count
     else:
         return 0
-    
+
+@st.cache_data(ttl="1d", show_spinner=False)
 def get_cohort_totals_by_metric(
     cohort_df,
     stat="LR"
@@ -275,6 +276,7 @@ def get_GPP_avg(daterange, countries_list, app=["CR"], language="All", user_list
     
     return 0 if len(df_user_list) == 0 else np.average(df_user_list.gpc)
 
+@st.cache_data(ttl="1d", show_spinner=False)
 def get_cohort_GPP_avg(cohort_df):
     """
     Calculates average 'gpc' for the LA cohort only (furthest_event == 'level_completed').
@@ -301,6 +303,7 @@ def get_GC_avg(daterange, countries_list, app=["CR"], language="All", user_list=
 
     return 0 if cohort_count == 0 else gc_count / cohort_count * 100
 
+@st.cache_data(ttl="1d", show_spinner=False)
 def get_cohort_GC_avg(cohort_df):
     """
     Returns the percentage of LA users (furthest_event == 'level_completed') with gpc >= 90.
@@ -327,7 +330,7 @@ def weeks_since(daterange):
 
 
 # Returns a DataFrame list of counts by language or counts by country
-# Returns a DataFrame list of counts by language or counts by country
+
 @st.cache_data(ttl="1d", show_spinner=False)
 def get_counts(
     type="app_language",

@@ -297,7 +297,7 @@ def LR_LA_line_chart_over_time(
     return grouped_df
 
 
-@st.cache_data(ttl="1d", show_spinner=False)
+@st.cache_data(ttl="1d", show_spinner=True)
 def lrc_scatter_chart(option, display_category, df_campaigns, daterange, session_df, languages, countries_list):
     """
     option: "LRC" or "LAC"
@@ -376,6 +376,8 @@ def lrc_scatter_chart(option, display_category, df_campaigns, daterange, session
         st.plotly_chart(fig, use_container_width=True)
     else:
         st.write("No data for selected period")
+        
+    return scatter_df
 
 
 @st.cache_data(ttl="1d", show_spinner=False)
@@ -419,7 +421,7 @@ def spend_by_country_map(df_campaigns,source):
         geo=dict(bgcolor="rgba(0,0,0,0)"),
     )
     st.plotly_chart(country_fig)
-
+    return df_campaigns
 
 def campaign_funnel_chart():
     df_campaigns = st.session_state.df_campaigns
@@ -1110,6 +1112,7 @@ def create_funnels(
         )
         st.plotly_chart(fig, use_container_width=True, key=f"{key_prefix}-6")
 
+@st.cache_data(ttl="1d", show_spinner="Computing chart")    
 def lr_lrc_bar_chart(df_totals_per_month):
 
     # Create bar chart for Total Learners Reached

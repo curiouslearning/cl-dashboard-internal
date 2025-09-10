@@ -146,7 +146,6 @@ if len(daterange) == 2 and len(countries_list) > 0:
     col3.metric(label="Game Completion Avg", value=f"{GC_AVG:.2f}%")
 
     df_campaigns_all = st.session_state["df_campaigns_all"]
-
     df_campaigns = filter_campaigns(df_campaigns_all,daterange,language,countries_list)
 
     cost = df_campaigns["cost"].sum()
@@ -154,6 +153,16 @@ if len(daterange) == 2 and len(countries_list) > 0:
 
     col2.metric(label="LRC", value=f"${cost/LR:.2f}" if LR != 0 else "N/A")
     col3.metric(label="RAC", value=f"${cost/RA:.2f}" if RA != 0 else "N/A")
+    
+    csv = ui.convert_for_download(cohort_df) 
+    col3.download_button(
+            label="Download",
+            data=csv,
+            file_name="user_cohort.csv",
+            key="md1",
+            icon=":material/download:",
+            mime="text/csv",
+        )
     
     #**** LR vs LRC chart ****
     st.divider()
@@ -165,33 +174,53 @@ if len(daterange) == 2 and len(countries_list) > 0:
     df_total_LR_per_month = get_totals_per_month_from_cohort(cohort_df=session_df,stat="LR",daterange=daterange)
     if len(df_total_LR_per_month) > 0:
         uic.lr_lrc_bar_chart(df_total_LR_per_month)
+        
+    csv = ui.convert_for_download(df_total_LR_per_month) 
+    st.download_button(
+            label="Download",
+            data=csv,
+            file_name="user_cohort.csv",
+            key="md2",
+            icon=":material/download:",
+            mime="text/csv",
+        )
     st.divider()
 
     st.subheader("Total Spend per Country")
     st.markdown(header)
 
     source = ui.ads_platform_selector(placement="middle")     
-    if (len(df_campaigns) > 0):
-        uic.spend_by_country_map(df_campaigns,source)
-    
-        st.divider()
-        st.subheader("LRC / LAC: : All apps")
-        st.markdown(header)
 
-        c1, c2, c3,c4 = st.columns(4)
-        with c1:
-            option = st.radio("Select a statistic", ("LRC", "LAC"), index=0, horizontal=True)
-        with c2:
-            display_category = st.radio(
-                "Display by", ("Country", "Language"), index=0, horizontal=True, key="e-4"
-            )
+    df = uic.spend_by_country_map(df_campaigns,source)
+
+    csv = ui.convert_for_download(df) 
+    st.download_button(
+            label="Download",
+            data=csv,
+            file_name="user_cohort.csv",
+            key="md3",
+            icon=":material/download:",
+            mime="text/csv",
+        )
+    
+    st.divider()
+    st.subheader("LRC / LAC: : All apps")
+    st.markdown(header)
+
+    c1, c2, c3,c4 = st.columns(4)
+    with c1:
+        option = st.radio("Select a statistic", ("LRC", "LAC"), index=0, horizontal=True)
+    with c2:
+        display_category = st.radio(
+            "Display by", ("Country", "Language"), index=0, horizontal=True, key="e-4"
+        )
 
 
     session_df = get_all_apps_combined_session_and_cohort_df(
         stat="LR"
         )
 
-    uic.lrc_scatter_chart(
+    scatter_df = uic.lrc_scatter_chart(
         option=option,
         display_category=display_category,
         df_campaigns=df_campaigns,
@@ -201,6 +230,15 @@ if len(daterange) == 2 and len(countries_list) > 0:
         countries_list=countries_list,
     )
 
+    csv = ui.convert_for_download(scatter_df) 
+    st.download_button(
+            label="Download",
+            data=csv,
+            file_name="user_cohort.csv",
+            key="md4",
+            icon=":material/download:",
+            mime="text/csv",
+        )
         
     st.divider()   
     st.markdown(header)
