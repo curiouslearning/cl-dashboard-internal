@@ -5,27 +5,27 @@ icon = ":large_brown_circle:"
 is_section = true
 
 [[pages]]
-path = "app_pages/CR_Funnel.py"
+path = "app_pages/cr_funnel.py"
 name = "Curious Reader Funnel"
 icon = ":small_orange_diamond:"
 
 [[pages]]
-path = "app_pages/20_Compare_Funnels.py"
+path = "app_pages/compare_funnels.py"
 name = "Compare App Funnels"
 icon = ":small_orange_diamond:"
 
 [[pages]]
-path = "app_pages/Funnel_Change.py"
+path = "app_pages/funnel_change.py"
 name = "Funnel Change by Language"
 icon = ":small_orange_diamond:"
 
 [[pages]]
-path = "app_pages/Sideways_Funnel.py"
+path = "app_pages/sideways_funnel.py"
 name = "Sideways Funnel by Language"
 icon = ":small_orange_diamond:"
 
 [[pages]]
-path = "app_pages/Best_Languages.py"
+path = "app_pages/best_languages.py"
 name = "Best and Worst Performing Languages"
 icon = ":small_orange_diamond:"
 
@@ -50,12 +50,12 @@ name = "Engagement Over Time"
 icon = ":small_orange_diamond:"
 
 [[pages]]
-path = "app_pages/1_Acquisition.py"
+path = "app_pages/acquisition.py"
 name = "Acquisition"
 icon = ":small_orange_diamond:"
 
 [[pages]]
-path = "app_pages/Marketing_Data.py"
+path = "app_pages/marketing_data.py"
 name = "Marketing Data"
 icon = ":small_orange_diamond:"
 
