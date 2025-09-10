@@ -388,7 +388,7 @@ def stats_radio_selector():
     return option
 
 
-def calendar_selector(placement="side", key="", index=0, title="Date"):
+def calendar_selector(placement="side", key="", index=0, title="Date", preset_index=0):
     options = (
         "All time",
         "Select year",
@@ -415,7 +415,7 @@ def calendar_selector(placement="side", key="", index=0, title="Date"):
         key = key + "x"
         selected_date = month_selector(placement, key=key)
     elif option == "Presets":
-        selected_date = presets_selector(placement, key=key, index=3)
+        selected_date = presets_selector(placement, key=key, index=preset_index)
     else:
         selected_date = custom_date_selection(placement, key=key)
 
@@ -427,6 +427,7 @@ presets = [
     "Last 14 days",
     "Last 30 days",
     "Last 90 days",
+    "Since 09-08-2025",
 ]
 
 
@@ -474,6 +475,9 @@ def presets_selector(placement="side", key="", index=1):
 
 
 def calculate_preset_dates(preset):
+
+    if preset == "Since 09-08-2025":
+        return  [dt.datetime(2025, 9, 8).date(), dt.date.today()]
 
     pattern = r"\d+"
     numeric_part = re.findall(pattern, preset)

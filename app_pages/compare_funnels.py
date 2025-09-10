@@ -24,10 +24,9 @@ distinct_apps = ui.get_apps()
 col1, col2 = st.columns(2)
 
 with col1:
-    app_versionsA = ui.app_version_selector(placement="col", key="cf-1")
     languageA = ui.single_selector(languages, placement="col", title="Select a language", key="cf-2")
     countries_listA = ui.multi_select_all(countries_list, title="Country Selection", key="cf-3", placement="middle")
-    selected_date, option = ui.calendar_selector(placement="col", key="crf-4", title="Select date user cohort")
+    selected_date, option = ui.calendar_selector(placement="col", key="crf-4", title="Select date user cohort", index=4,preset_index=4)
     daterangeA = ui.convert_date_to_range(selected_date, option)
     appA = ui.single_selector(distinct_apps, placement="col", title="Select an App", key="cf-5",include_All=False,index=1)
 
@@ -37,10 +36,9 @@ with col1:
         user_idA = "cr_user_id"
 
 with col2:
-    app_versionsB = ui.app_version_selector(placement="col", key="cf-6")
     languageB = ui.single_selector(languages, placement="col", title="Select a language", key="cf-7")
     countries_listB = ui.multi_select_all(countries_list, title="Country Selection", key="cf-8", placement="middle")
-    selected_date, option = ui.calendar_selector(placement="col", key="crf-9", title="Select date user cohort")
+    selected_date, option = ui.calendar_selector(placement="col", key="crf-9", title="Select date user cohort", index=4,preset_index=4)
     daterangeB = ui.convert_date_to_range(selected_date, option)
     appB = ui.single_selector(distinct_apps, placement="col", title="Select an App", key="cf-10",include_All=False,index=0)
     if appB[0] == "Unity":
@@ -56,7 +54,6 @@ if len(countries_listA) and len(countries_listB) and len(daterangeA) == 2  and l
         languages=languageA,
         countries_list=countries_listA,
         app=appA,
-        cr_app_versions=app_versionsA,
         as_list=False,
         
     )
@@ -70,7 +67,6 @@ if len(countries_listA) and len(countries_listB) and len(daterangeA) == 2  and l
         languages=languageB,
         countries_list=countries_listB,
         app=appB,
-        cr_app_versions=app_versionsB,
         as_list=False,
 
     )
@@ -78,10 +74,11 @@ if len(countries_listA) and len(countries_listB) and len(daterangeA) == 2  and l
 
     metrics_home_B = get_metrics_for_cohort(user_listB,appB)
 
-    if "Unity" in appA or "Unity" in appB:
+    if (
+        any(app == "Unity" or "standalone" in app.lower() for app in appA if app)
+        or any(app == "Unity" or "standalone" in app.lower() for app in appB if app)
+    ):
         funnel_size = "compact"
-    elif "All" in app_versionsA and "All" in app_versionsB:
-        funnel_size = "large"
     else:
         funnel_size = "medium"
 
@@ -96,7 +93,7 @@ if len(countries_listA) and len(countries_listB) and len(daterangeA) == 2  and l
             app=appA,
             funnel_size=funnel_size,
             user_list=user_listA,
-            app_versions=app_versionsA,
+
         )
         csvA = ui.convert_for_download(user_cohort_listA)
         st.download_button(
@@ -118,7 +115,7 @@ if len(countries_listA) and len(countries_listB) and len(daterangeA) == 2  and l
             funnel_size=funnel_size,
             app=appB,
             user_list=user_listB,
-            app_versions=app_versionsB,
+
         )
         csvB = ui.convert_for_download(user_cohort_listB)
         
