@@ -21,10 +21,10 @@ countries_list = get_country_list()
 
 distinct_apps = ui.get_apps()
 
-col1, col2 = st.columns(2)
+col1, col2, col3 = st.columns(3)
 
 with col1:
-    languageA = ui.single_selector(languages, placement="col", title="Select a language", key="cf-2")
+    languageA = ui.single_selector(languages, placement="col", title="Select a language", key="cf-2",index=20)
     countries_listA = ui.multi_select_all(countries_list, title="Country Selection", key="cf-3", placement="middle")
     selected_date, option = ui.calendar_selector(placement="col", key="crf-4", title="Select date user cohort", index=4,preset_index=4)
     daterangeA = ui.convert_date_to_range(selected_date, option)
@@ -36,7 +36,7 @@ with col1:
         user_idA = "cr_user_id"
 
 with col2:
-    languageB = ui.single_selector(languages, placement="col", title="Select a language", key="cf-7")
+    languageB = ui.single_selector(languages, placement="col", title="Select a language", key="cf-7",index=20)
     countries_listB = ui.multi_select_all(countries_list, title="Country Selection", key="cf-8", placement="middle")
     selected_date, option = ui.calendar_selector(placement="col", key="crf-9", title="Select date user cohort", index=4,preset_index=4)
     daterangeB = ui.convert_date_to_range(selected_date, option)
@@ -45,8 +45,19 @@ with col2:
         user_idB = "user_pseudo_id"
     else:
         user_idB = "cr_user_id"
+        
+with col3:
+    languageC = ui.single_selector(languages, placement="col", title="Select a language", key="cf-20")
+    countries_listC = ui.multi_select_all(countries_list, title="Country Selection", key="cf-21", placement="middle")
+    selected_date, option = ui.calendar_selector(placement="col", key="cf-22", title="Select date user cohort", index=4,preset_index=4)
+    daterangeC = ui.convert_date_to_range(selected_date, option)
+    appC = ui.single_selector(distinct_apps, placement="col", title="Select an App", key="cf-23",include_All=False,index=5)
+    if appC[0] == "Unity":
+        user_idC = "user_pseudo_id"
+    else:
+        user_idC = "cr_user_id"
 
-if len(countries_listA) and len(countries_listB) and len(daterangeA) == 2  and len(daterangeB) == 2 :
+if len(countries_listA) and len(countries_listB)  and len(countries_listC) and len(daterangeA) == 2  and len(daterangeB) == 2 and  len(daterangeC) == 2:
 
     # Cohort A
     user_cohort_listA = get_user_cohort_list(
@@ -71,13 +82,23 @@ if len(countries_listA) and len(countries_listB) and len(daterangeA) == 2  and l
 
     )
     user_listB = user_cohort_listB[user_idB]
-
     metrics_home_B = get_metrics_for_cohort(user_listB,appB)
 
+    # Cohort C
+    user_cohort_listC = get_user_cohort_list(
+        daterange=daterangeC,
+        languages=languageC,
+        countries_list=countries_listC,
+        app=appC,
+        as_list=False,
+
+    )
+    user_listC = user_cohort_listC[user_idC]
+    metrics_home_C = get_metrics_for_cohort(user_listC,appC)
     if (
         any(app == "Unity" or "standalone" in app.lower() for app in appA if app)
         or any(app == "Unity" or "standalone" in app.lower() for app in appB if app)
-    ):
+        or any(app == "Unity" or "standalone" in app.lower() for app in appC if app)    ):
         funnel_size = "compact"
     else:
         funnel_size = "medium"
@@ -124,6 +145,29 @@ if len(countries_listA) and len(countries_listB) and len(daterangeA) == 2  and l
             data=csvB,
             file_name="user_cohort_listB.csv",
             key="cf-14",
+            icon=":material/download:",
+            mime="text/csv",
+        )
+        
+    with col3:
+        show_dual_metric_table("Cohort C", metrics_home_C)
+        create_funnels(
+            daterange=daterangeC,
+            countries_list=countries_listC,
+            languages=languageC,
+            key_prefix="cf-24",
+            funnel_size=funnel_size,
+            app=appC,
+            user_list=user_listC,
+
+        )
+        csvC = ui.convert_for_download(user_cohort_listC)
+        
+        st.download_button(
+            label="Download Cohort C CSV",
+            data=csvC,
+            file_name="user_cohort_listC.csv",
+            key="cf-25",
             icon=":material/download:",
             mime="text/csv",
         )

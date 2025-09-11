@@ -5,8 +5,7 @@ from millify import prettify
 import ui_components as uic
 import ui_widgets as ui
 import pandas as pd
-import users
-import metrics
+
 
 data_notes = pd.DataFrame(
     [

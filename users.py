@@ -78,6 +78,10 @@ def init_user_data():
 
             df_cr_app_launch, df_cr_users = clean_cr_users_to_single_language(df_cr_app_launch, df_cr_users)
             
+            #active_span can be negative when users start the game in offline mode and have a first_open date later 
+            # than last_event_date.  Set those to zero
+            df_cr_users["active_span"] = df_cr_users["active_span"].clip(lower=0)
+            
             # Assign to session state
             st.session_state["df_cr_users"] = df_cr_users
             st.session_state["df_unity_users"] = df_unity_users
