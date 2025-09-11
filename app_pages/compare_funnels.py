@@ -24,9 +24,9 @@ distinct_apps = ui.get_apps()
 col1, col2, col3 = st.columns(3)
 
 with col1:
-    languageA = ui.single_selector(languages, placement="col", title="Select a language", key="cf-2",index=20)
-    countries_listA = ui.multi_select_all(countries_list, title="Country Selection", key="cf-3", placement="middle")
-    selected_date, option = ui.calendar_selector(placement="col", key="crf-4", title="Select date user cohort", index=4,preset_index=4)
+    languageA = ui.single_selector_new(languages, title="Select a language", key="cf-2",index=20)
+    countries_listA = ui.multi_select_all_new(countries_list, title="Country Selection", key="cf-3")
+    selected_date, option = ui.calendar_selector_new( key="crf-4", title="Select date user cohort", index=4,preset_index=4)
     daterangeA = ui.convert_date_to_range(selected_date, option)
     appA = ui.single_selector(distinct_apps, placement="col", title="Select an App", key="cf-5",include_All=False,index=1)
 
@@ -36,9 +36,9 @@ with col1:
         user_idA = "cr_user_id"
 
 with col2:
-    languageB = ui.single_selector(languages, placement="col", title="Select a language", key="cf-7",index=20)
-    countries_listB = ui.multi_select_all(countries_list, title="Country Selection", key="cf-8", placement="middle")
-    selected_date, option = ui.calendar_selector(placement="col", key="crf-9", title="Select date user cohort", index=4,preset_index=4)
+    languageB = ui.single_selector_new(languages,  title="Select a language", key="cf-7",index=20)
+    countries_listB = ui.multi_select_all_new(countries_list, title="Country Selection", key="cf-8")
+    selected_date, option = ui.calendar_selector_new(key="crf-9", title="Select date user cohort", index=4,preset_index=4)
     daterangeB = ui.convert_date_to_range(selected_date, option)
     appB = ui.single_selector(distinct_apps, placement="col", title="Select an App", key="cf-10",include_All=False,index=0)
     if appB[0] == "Unity":
@@ -47,9 +47,9 @@ with col2:
         user_idB = "cr_user_id"
         
 with col3:
-    languageC = ui.single_selector(languages, placement="col", title="Select a language", key="cf-20")
-    countries_listC = ui.multi_select_all(countries_list, title="Country Selection", key="cf-21", placement="middle")
-    selected_date, option = ui.calendar_selector(placement="col", key="cf-22", title="Select date user cohort", index=4,preset_index=4)
+    languageC = ui.single_selector_new(languages, title="Select a language", key="cf-20")
+    countries_listC = ui.multi_select_all_new(countries_list, title="Country Selection", key="cf-21")
+    selected_date, option = ui.calendar_selector_new( key="cf-22", title="Select date user cohort", index=4,preset_index=4)
     daterangeC = ui.convert_date_to_range(selected_date, option)
     appC = ui.single_selector(distinct_apps, placement="col", title="Select an App", key="cf-23",include_All=False,index=5)
     if appC[0] == "Unity":
@@ -105,7 +105,6 @@ if len(countries_listA) and len(countries_listB)  and len(countries_listC) and l
 
     # --- Output Section ---
     with col1:
-        show_dual_metric_table("Cohort A", metrics_home_A)
         create_funnels(
             daterange=daterangeA,
             countries_list=countries_listA,
@@ -116,6 +115,7 @@ if len(countries_listA) and len(countries_listB)  and len(countries_listC) and l
             user_list=user_listA,
 
         )
+        show_dual_metric_table("Cohort A", metrics_home_A)
         csvA = ui.convert_for_download(user_cohort_listA)
         st.download_button(
             label="Download Cohort A CSV",
@@ -127,7 +127,6 @@ if len(countries_listA) and len(countries_listB)  and len(countries_listC) and l
         )
 
     with col2:
-        show_dual_metric_table("Cohort B", metrics_home_B)
         create_funnels(
             daterange=daterangeB,
             countries_list=countries_listB,
@@ -138,6 +137,7 @@ if len(countries_listA) and len(countries_listB)  and len(countries_listC) and l
             user_list=user_listB,
 
         )
+        show_dual_metric_table("Cohort B", metrics_home_B)        
         csvB = ui.convert_for_download(user_cohort_listB)
         
         st.download_button(
@@ -150,7 +150,6 @@ if len(countries_listA) and len(countries_listB)  and len(countries_listC) and l
         )
         
     with col3:
-        show_dual_metric_table("Cohort C", metrics_home_C)
         create_funnels(
             daterange=daterangeC,
             countries_list=countries_listC,
@@ -161,6 +160,7 @@ if len(countries_listA) and len(countries_listB)  and len(countries_listC) and l
             user_list=user_listC,
 
         )
+        show_dual_metric_table("Cohort C", metrics_home_C)        
         csvC = ui.convert_for_download(user_cohort_listC)
         
         st.download_button(

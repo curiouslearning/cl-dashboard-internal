@@ -145,6 +145,24 @@ def month_selector(placement="side", key=""):
     report_month = month_abbr.index(report_month_str) + 1
     return report_month, report_year
 
+def month_selector_new(key=""):
+    from calendar import month_abbr
+
+    this_year = dt.datetime.now().year
+    this_month = dt.datetime.now().month
+    month_abbr = month_abbr[1:]
+
+    report_year = st.selectbox("Year", range(this_year, this_year - 4, -1), key=key)
+
+    report_month_str = st.radio(
+        "Month",
+        month_abbr,
+        index=this_month - 1,
+        horizontal=True,
+        key=key + "x",
+    )
+    report_month = month_abbr.index(report_month_str) + 1
+    return report_month, report_year
 
 
 def custom_date_selection(placement="side", key=""):
@@ -159,6 +177,11 @@ def custom_date_selection(placement="side", key=""):
 
     return list(date_range)
 
+def custom_date_selection_new(key=""):
+    min_date = dt.datetime.now().date() - dt.timedelta(30)
+    date_range = st.date_input("Pick a date", [min_date, dt.date.today()], key=key)
+
+    return list(date_range)
 
 def convert_date_to_range(selected_date, option, end_date=None):
     today = dt.datetime.today().date()
@@ -203,26 +226,29 @@ def year_selector(placement="side", key=""):
     # Make sure to return None if report_year is not properly selected
     return report_year if report_year is not None else None
 
-def ads_platform_selector(placement="side"):
+def year_selector_new(key=""):
+    this_year = dt.datetime.now().year
+
+    report_year = st.radio(
+        "Year", range(this_year, 2020, -1), horizontal=True, key=key + "_year", index=0
+    )
+
+    # Make sure to return None if report_year is not properly selected
+    return report_year if report_year is not None else None
+
+
+def ads_platform_selector():
     label="Ads Platform"
     options=["Facebook", "Google", "Both"]
     horizontal=True
     index=2
     
-    if placement == 'side':
-        platform = st.sidebar.radio(
-            label=label,
-            options=options,
-            horizontal=horizontal,
-            index=index,
-        )
-    else:
-        platform = st.radio(
-            label=label,
-            options=options,
-            horizontal=horizontal,
-            index=index,
-    )
+    platform = st.radio(
+        label=label,
+        options=options,
+        horizontal=horizontal,
+        index=index,
+)
 
     return platform
 
@@ -281,10 +307,26 @@ def single_selector(selections, placement="side", title="", key="key", include_A
     return [selection]
 
 
+# Restricts selection to a single country
+def single_selector_new(selections,  title="", key="key", include_All=True,index=0):
+    options = list(selections)  # Defensive copy
 
+    if include_All:
+        if "All" not in options:
+            options = ["All"] + [s for s in options if s != "All"]
+    else:
+        options = [s for s in options if s != "All"]
+
+    selection = st.selectbox(
+        index=index,
+        label=title,
+        options=options,
+        key=key,
+    )
+
+    return [selection]
 
 # Pass a unique key into the function in order to use this on multiple pages safel
-
 def multi_select_all(available_options, placement="side", title="", key="key"):
     available_options.insert(0, "All")
 
@@ -322,6 +364,40 @@ def multi_select_all(available_options, placement="side", title="", key="key"):
             on_change=options_select,  
             format_func=lambda x: "All" if x == "All" else f"{x}",
         )
+
+    return (
+        available_options[1:]
+        if "All" in st.session_state[key]
+        else st.session_state[key]
+    )  # Return full list if "All" is selected
+
+# Pass a unique key into the function in order to use this on multiple pages safel
+def multi_select_all_new(available_options,  title="", key="key"):
+    available_options.insert(0, "All")
+
+    # Ensure each instance has its own session state keys
+    if key not in st.session_state:
+        st.session_state[key] = ["All"]
+    if f"{key}_max_selections" not in st.session_state:
+        st.session_state[f"{key}_max_selections"] = 1  # Unique max selection per widget
+        st.session_state[key] = ["All"]  # Set default to "All"
+
+    def options_select():  # Define options_select inside multi_select_all
+        if key in st.session_state:
+            if "All" in st.session_state[key]:
+                st.session_state[key] = ["All"]  # Reset to "All" if deselected
+                st.session_state[f"{key}_max_selections"] = 1  # Unique max selection
+            else:
+                st.session_state[f"{key}_max_selections"] = len(available_options)  # Allow multiple selections
+
+    st.multiselect(
+        label=title,
+        options=available_options,
+        key=key,
+        max_selections=st.session_state[f"{key}_max_selections"],  # Unique max selection key
+        on_change=options_select,  
+        format_func=lambda x: "All" if x == "All" else f"{x}",
+    )
 
     return (
         available_options[1:]
@@ -421,6 +497,33 @@ def calendar_selector(placement="side", key="", index=0, title="Date", preset_in
 
     return selected_date, option
 
+def calendar_selector_new(key="", index=0, title="Date", preset_index=0):
+    options = (
+        "All time",
+        "Select year",
+        "Select month",
+        "Select custom range",
+        "Presets",
+    )
+
+    option = st.radio(
+            label="Select a date range", options=options, index=index, key=key + "1"
+        )
+
+    if option == "Select year":
+        selected_date = year_selector_new(key=key)
+    elif option == "All time":
+        selected_date = [dt.datetime(2021, 1, 1).date(), dt.date.today()]
+    elif option == "Select month":
+        key = key + "x"
+        selected_date = month_selector_new(key=key)
+    elif option == "Presets":
+        selected_date = presets_selector_new(key=key, index=preset_index)
+    else:
+        selected_date = custom_date_selection_new(key=key)
+
+    return selected_date, option
+
 
 presets = [
     "Last 7 days",
@@ -430,6 +533,35 @@ presets = [
     "Since 09-08-2025",
 ]
 
+
+def presets_selector_new(key="", index=1):
+    dates = []
+    icons = ["peace", "yin-yang", "sun", "heart"]
+    styles = {
+        "container": {"padding": "0!important", "background-color": "#fafafa"},
+        "icon": {"color": "orange", "font-size": "15px"},
+        "nav-link": {
+            "font-size": "12px",
+            "text-align": "left",
+            "margin": "2px",
+            "--hover-color": "#eee",
+        },
+        "nav-link-selected": {"background-color": "#394a51"},
+    }
+
+    preset = option_menu(
+        menu_title="",
+        options=presets,
+        icons=["peace", "yin-yang", "sun", "heart"],
+        orientation="horizontal",
+        styles=styles,
+        key=key,
+        default_index=index,
+    )
+    if preset:
+        dates = calculate_preset_dates(preset)
+
+    return dates
 
 def presets_selector(placement="side", key="", index=1):
     dates = []

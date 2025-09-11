@@ -188,7 +188,7 @@ if len(daterange) == 2 and len(countries_list) > 0:
     st.subheader("Total Spend per Country")
     st.markdown(header)
 
-    source = ui.ads_platform_selector(placement="middle")     
+    source = ui.ads_platform_selector()     
 
     df = uic.spend_by_country_map(df_campaigns, source)
 
