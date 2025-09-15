@@ -9,7 +9,7 @@ import datetime as dt
 import campaigns
 import pandas as pd
 import metrics  
-
+from users import ensure_user_data_initialized
 data_notes = pd.DataFrame(
     [
         [
@@ -21,26 +21,29 @@ data_notes = pd.DataFrame(
     ],
     columns=["Note", "Description"],
 )
+
 ui.display_definitions_table("Data Notes", data_notes)
 settings.initialize()
-from users import ensure_user_data_initialized
+
 ensure_user_data_initialized()
 settings.init_campaign_data()
 
 ui.colorize_multiselect_options()
 
 languages = users.get_language_list()
-language = ui.single_selector(
-    languages, title="Select a language", placement="side", key="e-1"
-)
 
-countries_list = users.get_country_list()
-countries_list = ui.multi_select_all(
-    countries_list, title="Country Selection", key="e-2"
-)
+with st.sidebar:
+    language = ui.single_selector_new(
+        languages, title="Select a language", key="e-1"
+    )
 
-selected_date, option = ui.calendar_selector()
-daterange = ui.convert_date_to_range(selected_date, option)
+    countries_list = users.get_country_list()
+    countries_list = ui.multi_select_all_new(
+        countries_list, title="Country Selection", key="e-2"
+    )
+
+    selected_date, option = ui.calendar_selector_new()
+    daterange = ui.convert_date_to_range(selected_date, option)
 
 apps = ui.get_apps()
 

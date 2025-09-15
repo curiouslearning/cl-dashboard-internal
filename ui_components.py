@@ -1112,6 +1112,94 @@ def create_funnels(
         )
         st.plotly_chart(fig, use_container_width=True, key=f"{key_prefix}-6")
 
+def create_funnels_by_cohort(
+    cohort_df,
+    key_prefix="",
+    funnel_size="medium",
+    cohort_df_LR=None,
+    app=None,
+):
+
+    funnel_variants = {
+        "compact": {
+            "stats": ["LR", "PC", "LA", "RA", "GC"],
+            "titles": [
+                "Learner Reached", "Puzzle Completed", "Learners Acquired", "Readers Acquired", "Game Completed"
+            ]
+        },
+        "large": {
+            "stats": ["LR", "DC", "TS", "SL", "PC", "LA", "RA", "GC"],
+            "titles": [
+                "Learner Reached", "Download Completed", "Tapped Start",
+                "Selected Level", "Puzzle Completed", "Learners Acquired", "Readers Acquired", "Game Completed"
+            ]
+        },
+        "medium": {
+            "stats": ["DC", "TS", "SL", "PC", "LA", "RA", "GC"],
+            "titles": [
+                "Download Completed", "Tapped Start", "Selected Level",
+                "Puzzle Completed", "Learners Acquired", "Readers Acquired", "Game Completed"
+            ]
+        }
+    }
+
+    variant = funnel_variants.get(funnel_size, funnel_variants["medium"])
+    stats = variant["stats"]
+    titles = variant["titles"]
+
+    # Determine user key for LR (top)
+    if app == "Unity" or (isinstance(app, list) and "Unity" in app):
+        user_key = "user_pseudo_id"
+    else:
+        user_key = "cr_user_id"
+
+    funnel_step_counts = []
+    for stat in stats:
+        if stat == "LR":
+            count = (
+                cohort_df_LR[user_key].nunique()
+                if cohort_df_LR is not None and user_key in cohort_df_LR.columns
+                else cohort_df[user_key].nunique()
+            )
+        else:
+            count = metrics.get_cohort_totals_by_metric(cohort_df, stat=stat)
+        funnel_step_counts.append(count)
+
+    # --- Percentages ---
+    percent_of_previous = [None]
+    for i in range(1, len(funnel_step_counts)):
+        prev = funnel_step_counts[i-1]
+        curr = funnel_step_counts[i]
+        percent = round(100 * curr / prev, 1) if prev and prev > 0 else None
+        percent_of_previous.append(percent)
+
+    percent_of_second = [None, None]
+    if len(funnel_step_counts) >= 2 and funnel_step_counts[1]:
+        for i in range(2, len(funnel_step_counts)):
+            second = funnel_step_counts[1]
+            curr = funnel_step_counts[i]
+            percent = round(100 * curr / second, 1) if second and second > 0 else None
+            percent_of_second.append(percent)
+    else:
+        percent_of_second += [None] * (len(funnel_step_counts) - 2)
+
+    funnel_data = {
+        "Title": titles,
+        "Count": funnel_step_counts,
+        "PercentOfPrevious": percent_of_previous,
+        "PercentOfSecond": percent_of_second,
+    }
+
+    # Render with your existing function
+    fig = create_engagement_figure(
+        funnel_data,
+        key=f"{key_prefix}-5",
+        funnel_size=funnel_size,
+    )
+
+    st.plotly_chart(fig, use_container_width=True, key=f"{key_prefix}-6")
+
+
 @st.cache_data(ttl="1d", show_spinner="Computing chart")    
 def lr_lrc_bar_chart(df_totals_per_month):
 

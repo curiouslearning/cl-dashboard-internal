@@ -15,10 +15,8 @@ ui.display_definitions_table("Definitions",ui.level_percent_definitions)
 ui.display_definitions_table("Data Notes",ui.data_notes)
 col1, col2 = st.columns(2)
 
-
 languages = users.get_language_list()
 countries_list = users.get_country_list()
-
 
 with col2:
     language = ui.single_selector(
@@ -38,7 +36,7 @@ with col2:
 if len(countries_list) > 0  and (len(daterange) == 2):
     user_cohort_list = get_user_cohort_list(daterange=daterange,languages=language,countries_list=countries_list,app=["CR"])
     
-    metrics = get_metrics_for_cohort(user_cohort_list,app="CR")
+    metrics = get_metrics_for_cohort(user_cohort_list)
     with col1:
         show_dual_metric_table("CR", metrics)
 

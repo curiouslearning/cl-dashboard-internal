@@ -209,7 +209,7 @@ def filter_user_data(
 
 def select_user_dataframe(app, stat, session_state):
     """
-    Returns the correct dataframe and user_list_key based on app(s) and stat.
+    Returns the correct dataframe based on app(s) and stat.
     - app: str or list of str (single app or multiple apps)
     - stat: string ('LR', etc.)
     - session_state: Streamlit session_state
@@ -812,7 +812,6 @@ def get_user_cohort_df(
     session_df,
     daterange=None,
     languages=["All"],
-    cr_app_versions="All",
     countries_list=["All"],
     app=None,
 ):
@@ -848,45 +847,39 @@ def get_user_cohort_df(
 
 
 @st.cache_data(ttl="1d", show_spinner=False)
-def calculate_average_metric_per_user(user_cohort_list, app, column_name):
-    df_cr_users = st.session_state["df_cr_users"]
-    df_unity_users = st.session_state["df_unity_users"]
-      
-    if column_name == "days_to_ra":
-        df_cr_users = df_cr_users[df_cr_users["days_to_ra"].notnull()]
-        df_unity_users = df_unity_users[df_unity_users["days_to_ra"].notnull()]
-
-    if len(user_cohort_list) == 0:
+def calculate_average_metric_per_user(user_cohort_df, column_name):
+    """
+    Calculate average for column_name for users in the already-filtered cohort_df.
+    Applies max_user_level >= 1 as baseline.
+    Returns 0 if cohort is empty or column is missing.
+    """
+    if user_cohort_df.empty or column_name not in user_cohort_df.columns:
         return 0
 
-    # Filter rows where cr_user_id is in the cohort list
+    # Optionally, filter to max_user_level >= 1 if that's your baseline (as before)
+    df_filtered = user_cohort_df[user_cohort_df["max_user_level"] >= 1]
 
-    if app[0] == "Unity":  
-        df_filtered = df_unity_users[
-            (df_unity_users["user_pseudo_id"].isin(user_cohort_list)) &
-            (df_unity_users["max_user_level"] >= 1)]   
-    else:
-        df_filtered = df_cr_users[
-            (df_cr_users["cr_user_id"].isin(user_cohort_list)) &
-            (df_cr_users["max_user_level"] >= 1)
-        ]
-        
-    total = np.sum(df_filtered[column_name].values)
+    # For "days_to_ra", skip nulls
+    if column_name == "days_to_ra":
+        df_filtered = df_filtered[df_filtered["days_to_ra"].notnull()]
 
-    average = total / len(df_filtered) if len(df_filtered) > 0 else 0
+    if df_filtered.empty:
+        return 0
 
+    average = df_filtered[column_name].mean()
     return average
 
+
 @st.cache_data(ttl="1d", show_spinner="Calculating metrics")
-def get_metrics_for_cohort(user_cohort_list,app):
+def get_metrics_for_cohort(user_cohort_df):
 
     return {
-        "Avg Level Reached": calculate_average_metric_per_user(user_cohort_list=user_cohort_list,app=app,column_name="max_user_level"),
-        "Avg # Sessions / User": calculate_average_metric_per_user(user_cohort_list=user_cohort_list,app=app, column_name="engagement_event_count"),
-        "Avg Total Play Time / User": calculate_average_metric_per_user(user_cohort_list=user_cohort_list,app=app,column_name="total_time_minutes"),
-        "Avg Session Length / User": calculate_average_metric_per_user(user_cohort_list=user_cohort_list,app=app, column_name="avg_session_length_minutes"),
-        "Active Span / User": calculate_average_metric_per_user(user_cohort_list=user_cohort_list,app=app, column_name="active_span"),
-        "Avg Days to RA":     calculate_average_metric_per_user(user_cohort_list=user_cohort_list,app=app,column_name="days_to_ra")
+        "Avg Level Reached": calculate_average_metric_per_user(user_cohort_df=user_cohort_df,column_name="max_user_level"),
+        "Avg # Sessions / User": calculate_average_metric_per_user(user_cohort_df=user_cohort_df,column_name="engagement_event_count"),
+        "Avg Total Play Time / User": calculate_average_metric_per_user(user_cohort_df=user_cohort_df,column_name="total_time_minutes"),
+        "Avg Session Length / User": calculate_average_metric_per_user(user_cohort_df=user_cohort_df,column_name="avg_session_length_minutes"),
+        "Active Span / User": calculate_average_metric_per_user(user_cohort_df=user_cohort_df,column_name="active_span"),
+        "Avg Days to RA":     calculate_average_metric_per_user(user_cohort_df=user_cohort_df,column_name="days_to_ra")
     }
 
 
@@ -904,3 +897,30 @@ def get_all_apps_combined_session_and_cohort_df(stat=None):
     combined_session_df = pd.concat(session_dfs, ignore_index=True)
 
     return combined_session_df
+
+def get_cr_cohorts(app, daterange, language, countries_list):
+    """
+    Returns (user_cohort_df, user_cohort_df_LR) tuple for the selected app.
+    For CR, user_cohort_df_LR is from cr_app_launch; otherwise None.
+    """
+    is_cr = app == ["CR"] or app == "CR"
+    user_cohort_df_LR = None
+    session_df = select_user_dataframe_new(app=app)
+    user_cohort_df = get_user_cohort_df(
+        session_df=session_df,
+        daterange=daterange,
+        languages=language,
+        countries_list=countries_list,
+        app=app
+    )
+    if is_cr:
+        session_df_LR = select_user_dataframe_new(app=app, stat="LR")
+        user_cohort_df_LR = get_user_cohort_df(
+            session_df=session_df_LR,
+            daterange=daterange,
+            languages=language,
+            countries_list=countries_list,
+            app=app
+        )
+    return user_cohort_df, user_cohort_df_LR
+
