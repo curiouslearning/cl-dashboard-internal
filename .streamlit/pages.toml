@@ -5,8 +5,8 @@ icon = ":large_brown_circle:"
 is_section = true
 
 [[pages]]
-path = "app_pages/cr_funnel.py"
-name = "Curious Reader Funnel"
+path = "app_pages/single_funnel.py"
+name = "Single Funnel"
 icon = ":small_orange_diamond:"
 
 [[pages]]

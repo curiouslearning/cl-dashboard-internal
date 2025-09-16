@@ -28,21 +28,12 @@ with col1:
     daterangeA = ui.convert_date_to_range(selected_date, option)
     appA = ui.single_selector_new(distinct_apps,title="Select an App", key="cf-5",include_All=False,index=1)
 
-    if appA[0] == "Unity":
-        user_idA = "user_pseudo_id"
-    else:
-        user_idA = "cr_user_id"
-
 with col2:
     languageB = ui.single_selector_new(languages,  title="Select a language", key="cf-7",index=20)
     countries_listB = ui.multi_select_all_new(countries_list, title="Country Selection", key="cf-8")
     selected_date, option = ui.calendar_selector_new(key="crf-9", title="Select date user cohort", index=4,preset_index=4)
     daterangeB = ui.convert_date_to_range(selected_date, option)
     appB = ui.single_selector_new(distinct_apps, title="Select an App", key="cf-10",include_All=False,index=0)
-    if appB[0] == "Unity":
-        user_idB = "user_pseudo_id"
-    else:
-        user_idB = "cr_user_id"
         
 with col3:
     languageC = ui.single_selector_new(languages, title="Select a language", key="cf-20")
@@ -50,42 +41,15 @@ with col3:
     selected_date, option = ui.calendar_selector_new( key="cf-22", title="Select date user cohort", index=4,preset_index=4)
     daterangeC = ui.convert_date_to_range(selected_date, option)
     appC = ui.single_selector_new(distinct_apps, title="Select an App", key="cf-23",include_All=False,index=5)
-    if appC[0] == "Unity":
-        user_idC = "user_pseudo_id"
-    else:
-        user_idC = "cr_user_id"
-
-def get_cr_cohorts(app, daterange, language, countries_list):
-    """Returns (user_cohort_df, user_cohort_df_LR) for app selection."""
-    is_cr = (app == ["CR"] or app == "CR")
-    user_cohort_df_LR = None
-    session_df = metrics.select_user_dataframe_new(app=app)
-    user_cohort_df = metrics.get_user_cohort_df(
-        session_df=session_df,
-        daterange=daterange,
-        languages=language,
-        countries_list=countries_list,
-        app=app
-    )
-    if is_cr:
-        session_df_LR = metrics.select_user_dataframe_new(app=app, stat="LR")
-        user_cohort_df_LR = metrics.get_user_cohort_df(
-            session_df=session_df_LR,
-            daterange=daterange,
-            languages=language,
-            countries_list=countries_list,
-            app=app
-        )
-    return user_cohort_df, user_cohort_df_LR
 
 if (
     len(countries_listA) and len(countries_listB) and len(countries_listC)
     and len(daterangeA) == 2 and len(daterangeB) == 2 and len(daterangeC) == 2
 ):
     # --- Cohort Dataframes ---
-    user_cohort_dfA, user_cohort_dfA_LR = get_cr_cohorts(appA, daterangeA, languageA, countries_listA)
-    user_cohort_dfB, user_cohort_dfB_LR = get_cr_cohorts(appB, daterangeB, languageB, countries_listB)
-    user_cohort_dfC, user_cohort_dfC_LR = get_cr_cohorts(appC, daterangeC, languageC, countries_listC)
+    user_cohort_dfA, user_cohort_dfA_LR = metrics.get_cr_cohorts(appA, daterangeA, languageA, countries_listA)
+    user_cohort_dfB, user_cohort_dfB_LR =  metrics.get_cr_cohorts(appB, daterangeB, languageB, countries_listB)
+    user_cohort_dfC, user_cohort_dfC_LR =  metrics.get_cr_cohorts(appC, daterangeC, languageC, countries_listC)
 
     metrics_home_A = metrics.get_metrics_for_cohort(user_cohort_dfA)
     metrics_home_B = metrics.get_metrics_for_cohort(user_cohort_dfB)

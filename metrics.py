@@ -924,3 +924,25 @@ def get_cr_cohorts(app, daterange, language, countries_list):
         )
     return user_cohort_df, user_cohort_df_LR
 
+def get_cr_cohorts(app, daterange, language, countries_list):
+    """Returns (user_cohort_df, user_cohort_df_LR) for app selection."""
+    is_cr = (app == ["CR"] or app == "CR")
+    user_cohort_df_LR = None
+    session_df = select_user_dataframe_new(app=app)
+    user_cohort_df = get_user_cohort_df(
+        session_df=session_df,
+        daterange=daterange,
+        languages=language,
+        countries_list=countries_list,
+        app=app
+    )
+    if is_cr:
+        session_df_LR = select_user_dataframe_new(app=app, stat="LR")
+        user_cohort_df_LR = get_user_cohort_df(
+            session_df=session_df_LR,
+            daterange=daterange,
+            languages=language,
+            countries_list=countries_list,
+            app=app
+        )
+    return user_cohort_df, user_cohort_df_LR

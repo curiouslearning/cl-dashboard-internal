@@ -507,7 +507,7 @@ def calendar_selector_new(key="", index=0, title="Date", preset_index=0):
     )
 
     option = st.radio(
-            label="Select a date range", options=options, index=index, key=key + "1"
+            label=title, options=options, index=index, key=key + "1"
         )
 
     if option == "Select year":
