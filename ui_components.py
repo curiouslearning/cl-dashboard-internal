@@ -1432,9 +1432,8 @@ def avg_days_to_ra_by_dim_chart(df_ra,app=["CR"]):
     group_label = 'App Language' if group_dim == "Language" else 'Country'
 
     index_col = "cr_user_id"
-
-    if app == "Unity":
-       index_col = "user_pseudo_id"
+    if app[0] == "Unity":
+        index_col = "user_pseudo_id"
 
     stats = (
         df_ra.groupby(group_col)

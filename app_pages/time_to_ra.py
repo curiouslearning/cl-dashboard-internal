@@ -1,5 +1,6 @@
 import streamlit as st
 import ui_widgets as ui
+from metrics import get_cr_cohorts,calculate_average_metric_per_user
 
 from settings import initialize
 initialize()
@@ -11,20 +12,19 @@ col1, col2, col3 = st.columns(3)
 with col1:
     from users import get_country_list
     countries_list = get_country_list()
-    country = ui.single_selector(
+    country = ui.single_selector_new(
         countries_list,
-        placement="middle",
         title="Country Selection",
         key="la-2",
     )
     
     distinct_apps = ui.get_apps()
-    app = ui.single_selector(distinct_apps, placement="col", title="Select an App", key="a-10",include_All=False)
+    app = ui.single_selector_new(distinct_apps, title="Select an App", key="a-10",include_All=False)
 
     by_months = st.toggle("Show by Months", value=False)
     
 with col2:
-    selected_date, option = ui.calendar_selector(placement="middle", key="SF-1", index=0, title="Select user cohort by date")
+    selected_date, option = ui.calendar_selector_new(key="SF-1", index=0, title="Select user cohort by date")
     daterange = ui.convert_date_to_range(selected_date, option)
 
 with col3:
@@ -32,21 +32,16 @@ with col3:
 
     from users import get_language_list
     df = get_language_list()
-    selected_languages = ui.multi_select_all(
-        df, placement="middle", title="Select languages", key="fa-1"
+    selected_languages = ui.multi_select_all_new(
+        df,  title="Select languages", key="fa-1"
     )   
 
 if (len(selected_languages) > 0 and len(selected_languages) > 0):
-
     
-    from metrics import get_user_cohort_list     
-    user_cohort_list = get_user_cohort_list(daterange=daterange,languages=selected_languages,countries_list=countries_list,app=app)
+    user_cohort_df, user_cohort_df_LR = get_cr_cohorts(app, daterange, selected_languages, countries_list)
     
-    from metrics import calculate_average_metric_per_user
-    average_days_to_ra= calculate_average_metric_per_user(user_cohort_list,column_name="days_to_ra",app=app)
-
+    average_days_to_ra= calculate_average_metric_per_user(user_cohort_df,column_name="days_to_ra")
     col1.metric(label="Avg Days to RA", value=f"{average_days_to_ra:.2f}")
-
     
     start = daterange[0].strftime("%b %d, %Y")
     end = daterange[1].strftime("%b %d, %Y")
@@ -54,13 +49,10 @@ if (len(selected_languages) > 0 and len(selected_languages) > 0):
     
     from ui_components import days_to_ra_chart,ra_ecdf_curve,avg_days_to_ra_by_dim_chart,ra_histogram_curve
     
-    from metrics import filter_user_data
-    df = filter_user_data(countries_list=countries_list,stat="RA",app=app,language=selected_languages,user_list=user_cohort_list)
-    df_ra = df[df['days_to_ra'].notnull()].copy()
+    df_ra = user_cohort_df[user_cohort_df['days_to_ra'].notnull()].copy()
     df_ra['months_to_ra'] = df_ra['days_to_ra'] / 30.44
     csv = ui.convert_for_download(df_ra)
-    st.sidebar.download_button(label="Download CSV",data=csv,file_name="RAUsers.csv",key="a-12",icon=":material/download:",mime="text/csv")
-
+    st.sidebar.download_button(label="Download",data=csv,file_name="RAUsers.csv",key="a-12",icon=":material/download:",mime="text/csv")
     
     days_to_ra_chart(df_ra,by_months)
     st.divider()
