@@ -29,11 +29,9 @@ with col2:
     daterange = ui.convert_date_to_range(selected_date, option)
 
 
-if (
-len(countries_list) 
-and len(daterange) == 2 ):
+if (len(countries_list) and len(daterange) == 2 ):
 # --- Cohort Dataframes ---
-    user_cohort_df, user_cohort_df_LR = metrics.get_cr_cohorts(app, daterange, language, countries_list)
+    user_cohort_df, user_cohort_df_LR = metrics.get_filtered_cohort(app, daterange, language, countries_list)
 
     metrics_home = metrics.get_metrics_for_cohort(user_cohort_df)
 

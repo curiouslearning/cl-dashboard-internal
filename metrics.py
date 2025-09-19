@@ -266,16 +266,6 @@ def select_user_dataframe_new(app, stat=None):
         return df
 
 
-# Average Game Progress Percent
-def get_GPP_avg(daterange, countries_list, app=["CR"], language="All", user_list=[]):
-    # Use LA as the baseline
-    df_user_list = filter_user_data(
-        daterange, countries_list, stat="LA", app=app, language=language,user_list=user_list
-    )
-    df_user_list["gpc"] = df_user_list["gpc"].fillna(0)
-    
-    return 0 if len(df_user_list) == 0 else np.average(df_user_list.gpc)
-
 @st.cache_data(ttl="1d", show_spinner=False)
 def get_cohort_GPP_avg(cohort_df):
     """
@@ -289,19 +279,6 @@ def get_cohort_GPP_avg(cohort_df):
         return 0
     return np.average(la_df["gpc"].fillna(0))
 
-
-# Average Game Complete
-def get_GC_avg(daterange, countries_list, app=["CR"], language="All", user_list=[]):
-    # Use LA as the baseline
-    df_user_list = filter_user_data(
-        daterange, countries_list, stat="LA", app=app, language=language,user_list=user_list
-    )
-    df_user_list["gpc"] = df_user_list["gpc"].fillna(0)
-    
-    cohort_count = len(df_user_list)
-    gc_count = df_user_list[(df_user_list["gpc"] >= 90)].shape[0]
-
-    return 0 if cohort_count == 0 else gc_count / cohort_count * 100
 
 @st.cache_data(ttl="1d", show_spinner=False)
 def get_cohort_GC_avg(cohort_df):
@@ -317,7 +294,6 @@ def get_cohort_GC_avg(cohort_df):
     gc_count = (gpc >= 90).sum()
     la_count = len(la_df)
     return gc_count / la_count * 100
-
 
 
 def weeks_since(daterange):
@@ -416,8 +392,33 @@ def get_counts(
     counts = counts.merge(gca, on=type, how="left").round(2).fillna(0)
     return counts
 
-#Added new parameter user_list.  If passed, only return the funnel based on that set of users
+@st.cache_data(ttl="1d", show_spinner=False)
+def get_counts_new(
+    user_cohort_df,          # DataFrame with all the new columns
+    groupby_col="app_language",  # or "country", or any grouping column you want
+):
+    grouped = user_cohort_df.groupby(groupby_col)
 
+    summary = grouped.agg(
+        LR=("lr_flag", "sum"),
+        LA=("la_flag", "sum"),
+        RA=("ra_flag", "sum"),
+        GC=("gc_flag", "sum"),
+        GPP=("gpc", "mean"),
+        total_users=("user_pseudo_id", "count"),
+    ).reset_index()
+
+    # Calculate gpc >= 90 users separately
+    summary["gpc_gt_90_users"] = grouped.apply(lambda g: (g["gpc"] >= 90).sum()).values
+    
+    # Clean up columns (drop temp calculation columns)
+    summary = summary.drop(columns=["gpc_gt_90_users", "total_users"])
+    summary = summary.fillna(0).round(2)
+    return summary
+
+
+
+#Added new parameter user_list.  If passed, only return the funnel based on that set of user
 @st.cache_data(ttl="1d", show_spinner=False)
 def build_funnel_dataframe(
     index_col="language",
@@ -665,52 +666,6 @@ def get_month_ranges(start_date, end_date):
     
     return month_ranges
 
-#Returns a dataframe of the totals of a stat for each month
-def get_totals_per_month(daterange, stat, countries_list, language):
-    # First, get all campaign data
-    df_campaigns_all = st.session_state["df_campaigns_all"]
-
-    # Get the list of (start_date, end_date) tuples for each month
-    month_ranges = get_month_ranges(daterange[0], daterange[1])
-
-    # Initialize an empty list to store the results
-    totals_by_month = []
-
-    # Loop over each month and call the function
-    for start_date, end_date in month_ranges:
-        # Create a clipped date range for the current month
-        clipped_start_date = max(start_date, daterange[0])
-        clipped_end_date = min(end_date, daterange[1])
-
-        # Define a new range variable for the clipped range
-        clipped_range = [clipped_start_date, clipped_end_date]
-
-        # Get totals within the clipped date range
-        total = get_totals_by_metric(
-            daterange=clipped_range, countries_list=countries_list, stat=stat, language=language,app=["CR"]
-        )
-        
-        # Filter campaigns based on the clipped date range
-        df_campaigns = filter_campaigns(df_campaigns_all, clipped_range, language, countries_list)
-
-        # Calculate cost and LRC for the clipped range
-        cost = df_campaigns["cost"].sum()
-        lrc = (cost / total).round(2) if total != 0 else 0
-
-        # Store the total along with the month start
-        totals_by_month.append({
-            "month": clipped_start_date.strftime("%B-%Y"),  # Format as 'Month-Year' for clarity
-            "total": total,
-            "cost": cost,
-            "LRC": lrc
-        })
-
-    # Convert the results to a DataFrame
-    df_totals = pd.DataFrame(totals_by_month)
-
-    # Display the DataFrame
-    return df_totals
-
 def get_totals_per_month_from_cohort(cohort_df, stat, daterange, date_col="first_open"):
     """
     Calculates totals per month by slicing a pre-built cohort_df on date_col for each month.
@@ -746,31 +701,6 @@ def get_totals_per_month_from_cohort(cohort_df, stat, daterange, date_col="first
         })
 
     return pd.DataFrame(totals_by_month)
-
-
-@st.cache_data(ttl="1d", show_spinner=False)
-def get_date_cohort_dataframe(
-    daterange=default_daterange,
-    languages=["All"],
-    countries_list=["All"],
-    app=["CR"]):
-    
-    """
-    Returns a DataFrame of activity for all users who first opened the app in the selected cohort.
-    Useful for tracking how cohorts evolve over time.
-    """
-
-    # Get all of the users in the user selected window - this is the cohort
-    df_user_cohort = filter_user_data(daterange=daterange,countries_list=countries_list,app=["CR"],language=languages)
-
-    # All we need is their cr_user_id
-    user_cohort_list = df_user_cohort["cr_user_id"]
-
-    # Get superset of  the users up through today
-    daterange = [daterange[0],dt.date.today()]
-    df = filter_user_data(daterange=daterange,countries_list=countries_list,app=app,language=languages,user_list=user_cohort_list)
-    
-    return df
 
 #@st.cache_data(ttl="1d", show_spinner=False)
 def get_user_cohort_list(
@@ -898,33 +828,8 @@ def get_all_apps_combined_session_and_cohort_df(stat=None):
 
     return combined_session_df
 
-def get_cr_cohorts(app, daterange, language, countries_list):
-    """
-    Returns (user_cohort_df, user_cohort_df_LR) tuple for the selected app.
-    For CR, user_cohort_df_LR is from cr_app_launch; otherwise None.
-    """
-    is_cr = app == ["CR"] or app == "CR"
-    user_cohort_df_LR = None
-    session_df = select_user_dataframe_new(app=app)
-    user_cohort_df = get_user_cohort_df(
-        session_df=session_df,
-        daterange=daterange,
-        languages=language,
-        countries_list=countries_list,
-        app=app
-    )
-    if is_cr:
-        session_df_LR = select_user_dataframe_new(app=app, stat="LR")
-        user_cohort_df_LR = get_user_cohort_df(
-            session_df=session_df_LR,
-            daterange=daterange,
-            languages=language,
-            countries_list=countries_list,
-            app=app
-        )
-    return user_cohort_df, user_cohort_df_LR
 
-def get_cr_cohorts(app, daterange, language, countries_list):
+def get_filtered_cohort(app, daterange, language, countries_list):
     """Returns (user_cohort_df, user_cohort_df_LR) for app selection."""
     is_cr = (app == ["CR"] or app == "CR")
     user_cohort_df_LR = None
@@ -946,3 +851,74 @@ def get_cr_cohorts(app, daterange, language, countries_list):
             app=app
         )
     return user_cohort_df, user_cohort_df_LR
+
+
+def get_cumulative_funnel_counts(df, funnel_order):
+    """
+    For each stage, return the number of users whose furthest_event is this stage or any later stage.
+    Returns: dict {stage: count}
+    """
+    counts = {}
+    for i, stage in enumerate(funnel_order):
+        later_stages = funnel_order[i:]
+        counts[stage] = df[df["furthest_event"].isin(later_stages)].shape[0]
+    return counts
+
+
+def funnel_percent_by_group(
+    cohort_df,
+    cohort_df_LR=None,
+    groupby_col="app_language",
+    app=None,
+    min_funnel=False
+):
+    """
+    Returns a single DataFrame with raw counts and percent-normalized columns (suffix '_pct') by group.
+    Handles CR (two dfs for LR), all other apps (one df for all steps).
+    """
+    import pandas as pd
+
+    app_name = app[0] if isinstance(app, list) and len(app) > 0 else app
+    app_name = str(app_name) if app_name is not None else ""
+
+    user_key = "cr_user_id"
+    funnel_steps = ["LR", "PC", "LA", "RA", "GC"]
+    if app_name == "CR" and min_funnel == False:
+        funnel_steps = ["LR", "DC", "TS", "SL", "PC", "LA", "RA", "GC"]
+    elif app_name == "Unity":
+        user_key = "user_pseudo_id"
+
+
+    group_vals = set(cohort_df[groupby_col].dropna().unique())
+    if cohort_df_LR is not None:
+        group_vals = group_vals | set(cohort_df_LR[groupby_col].dropna().unique())
+
+    records = []
+    for group in sorted(group_vals):
+        if app_name == "CR" and cohort_df_LR is not None:
+            group_LR = cohort_df_LR[cohort_df_LR[groupby_col] == group]
+            count_LR = group_LR[user_key].nunique() if user_key in group_LR else len(group_LR)
+        else:
+            group_LR = cohort_df[cohort_df[groupby_col] == group]
+            count_LR = group_LR[user_key].nunique() if user_key in group_LR else len(group_LR)
+
+        row = {groupby_col: group, "LR": count_LR}
+        group_df = cohort_df[cohort_df[groupby_col] == group]
+        for step in funnel_steps[1:]:
+            row[step] = get_cohort_totals_by_metric(group_df, stat=step)
+        records.append(row)
+
+    df = pd.DataFrame(records)
+    # Add percent-normalized columns with _pct suffix
+    norm_steps = [s for s in funnel_steps if s != "LR"]
+    for step in funnel_steps:
+        if step == "LR":
+            df[f"{step}_pct"] = 100.0  # 100% at baseline
+        else:
+            df[f"{step}_pct"] = df[step] / df["LR"] * 100
+
+    # Drop rows where all post-LR steps are zero (optional)
+    all_zero = (df[norm_steps].fillna(0).astype(float) == 0).all(axis=1)
+    df = df[~all_zero].reset_index(drop=True)
+    return df, funnel_steps  # Or just return df if you don't need funnel_steps
+

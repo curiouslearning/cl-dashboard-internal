@@ -15,11 +15,6 @@ name = "Compare App Funnels"
 icon = ":small_orange_diamond:"
 
 [[pages]]
-path = "app_pages/funnel_change.py"
-name = "Funnel Change by Language"
-icon = ":small_orange_diamond:"
-
-[[pages]]
 path = "app_pages/sideways_funnel.py"
 name = "Sideways Funnel by Language"
 icon = ":small_orange_diamond:"

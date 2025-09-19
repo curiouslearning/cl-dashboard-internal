@@ -47,9 +47,9 @@ if (
     and len(daterangeA) == 2 and len(daterangeB) == 2 and len(daterangeC) == 2
 ):
     # --- Cohort Dataframes ---
-    user_cohort_dfA, user_cohort_dfA_LR = metrics.get_cr_cohorts(appA, daterangeA, languageA, countries_listA)
-    user_cohort_dfB, user_cohort_dfB_LR =  metrics.get_cr_cohorts(appB, daterangeB, languageB, countries_listB)
-    user_cohort_dfC, user_cohort_dfC_LR =  metrics.get_cr_cohorts(appC, daterangeC, languageC, countries_listC)
+    user_cohort_dfA, user_cohort_dfA_LR = metrics.get_filtered_cohort(appA, daterangeA, languageA, countries_listA)
+    user_cohort_dfB, user_cohort_dfB_LR =  metrics.get_filtered_cohort(appB, daterangeB, languageB, countries_listB)
+    user_cohort_dfC, user_cohort_dfC_LR =  metrics.get_filtered_cohort(appC, daterangeC, languageC, countries_listC)
 
     metrics_home_A = metrics.get_metrics_for_cohort(user_cohort_dfA)
     metrics_home_B = metrics.get_metrics_for_cohort(user_cohort_dfB)

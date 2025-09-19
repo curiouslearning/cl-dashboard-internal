@@ -488,9 +488,6 @@ def create_engagement_figure(funnel_data, key="", funnel_size="large"):
     )
     return fig
 
-import plotly.graph_objs as go
-import streamlit as st
-import pandas as pd
 
 def levels_reached_chart(
     app_names=None,
@@ -577,104 +574,6 @@ def levels_reached_chart(
     st.plotly_chart(fig, use_container_width=True)
     return fig
 
-@st.cache_data(ttl="1d", show_spinner=False)
-def funnel_change_line_chart(df, graph_type='sum'):
-    # Convert the column to date only (remove timestamp)
-    df['date'] = df['date'].dt.date
-
-    grouped = df.groupby('date').sum().reset_index()
-    fig = go.Figure()
-
-    # Define the columns for sum and percent
-    sum_columns = ['LR', 'DC', 'TS', 'SL', 'PC', 'LA', 'RA', 'GC']
-
-    # Calculate percent of previous level for the hover data
-    grouped['DC over LR'] = (grouped['DC'] / grouped['LR'] * 100).round(2)
-    grouped['TS over DC'] = (grouped['TS'] / grouped['DC'] * 100).round(2)
-    grouped['SL over TS'] = (grouped['SL'] / grouped['TS'] * 100).round(2)
-    grouped['PC over SL'] = (grouped['PC'] / grouped['SL'] * 100).round(2)
-    grouped['LA over PC'] = (grouped['LA'] / grouped['PC'] * 100).round(2)
-    grouped['RA over LA'] = (grouped['RA'] / grouped['LA'] * 100).round(2)
-    grouped['GC over RA'] = (grouped['GC'] / grouped['RA'] * 100).round(2)
-    
-    # Adding nominator and denominator for hover display
-    grouped['DC_LR_nom_den'] = grouped[['DC', 'LR']].values.tolist()
-    grouped['TS_DC_nom_den'] = grouped[['TS', 'DC']].values.tolist()
-    grouped['SL_TS_nom_den'] = grouped[['SL', 'TS']].values.tolist()
-    grouped['PC_SL_nom_den'] = grouped[['PC', 'SL']].values.tolist()
-    grouped['LA_PC_nom_den'] = grouped[['LA', 'PC']].values.tolist()
-    grouped['RA_LA_nom_den'] = grouped[['RA', 'LA']].values.tolist()
-    grouped['GC_RA_nom_den'] = grouped[['GC', 'RA']].values.tolist()
-
-    percent_columns = ['DC over LR', 'TS over DC', 'SL over TS', 'PC over SL', 'LA over PC', 'RA over LA', 'GC over RA']
-    nom_den_columns = ['DC_LR_nom_den', 'TS_DC_nom_den', 'SL_TS_nom_den', 'PC_SL_nom_den', 'LA_PC_nom_den', 'RA_LA_nom_den', 'GC_RA_nom_den']
-    
-    # Column names for the hover labels (nominator/denominator)
-    hover_labels = [('DC', 'LR'), ('TS', 'DC'), ('SL', 'TS'), ('PC', 'SL'), ('LA', 'PC'), ('RA', 'LA'), ('GC', 'RA')]
-
-    # Select the columns to plot based on the graph_type parameter
-    if graph_type == 'Percent remaining':
-        columns_to_plot = percent_columns
-        y_axis_title = 'Percent remaining'
-    else:
-        columns_to_plot = sum_columns
-        y_axis_title = 'Totals'
-
-    for i, col in enumerate(columns_to_plot):
-        if graph_type == 'Percent remaining':
-            # Only assign percent_col and nom_den_col if graph_type is 'Percent remaining'
-            nom_den_col = nom_den_columns[i] 
-            nom_label, den_label = hover_labels[i] 
-        else:
-            # If graph_type is not 'Percent remaining', don't reference percent_columns and related lists
-            nom_den_col = None
-            nom_label, den_label = None, None
-
-        # Select y values based on graph_type
-        y_values = grouped[columns_to_plot[i]]
-
-        # Conditional hovertemplate based on graph_type
-        if graph_type == 'Percent remaining': 
-            fig.add_trace(go.Scatter(
-                x=grouped['date'],
-                y=y_values,
-                mode='lines+markers',
-                name=col,
-                hovertemplate=(
-                    f'<b>Date:</b> %{{x}}<br><b>{col}:</b> %{{y:,}}%' +
-                    f'<br><b>{nom_label}:</b> %{{customdata[0]:,}}<br><b>{den_label}:</b> %{{customdata[1]:,}}<extra></extra>'
-                ),
-
-                customdata=grouped[nom_den_col]
-            ))
-        else:
-            # For sum or the first trace, use a simpler hovertemplate
-            fig.add_trace(go.Scatter(
-                x=grouped['date'],
-                y=y_values,
-                mode='lines+markers',
-                name=col,
-                hovertemplate=(
-                    f'<b>Date:</b> %{{x}}<br><b>{col}:</b> %{{y:,}}<extra></extra>'
-                )
-            ))
-
-    # Customize the layout to display only the date
-    fig.update_layout(
-        title=f'{y_axis_title} of Each Column for Each Date',
-        xaxis_title='Date',
-        yaxis_title=y_axis_title,
-        xaxis_tickangle=-45,
-        xaxis=dict(
-            type='category',  # Change the axis type to 'category' to remove intermediate time markers
-            tickformat='%m-%d-%Y'  # Specify the date format
-        ),
-        template='plotly',
-        legend_title_text='Columns'
-    )
-
-    # Plotly chart and data display
-    st.plotly_chart(fig, use_container_width=True)
 
 
 def top_campaigns_by_downloads_barchart(n):
@@ -699,242 +598,6 @@ def top_campaigns_by_downloads_barchart(n):
         legend="bottom",
     )
 
-def funnel_change_by_language_chart(
-    languages, countries_list, daterange, upper_level, bottom_level, user_list=[]
-):
-    start_date, end_date = daterange
-    total_days = (end_date - start_date).days
-    weeks = metrics.weeks_since(daterange)
-    
-    show_actual = st.checkbox("Show Actual Data Lines", value=True)
-    show_trend = st.checkbox("Show Trend Lines", value=True)
-
-    if weeks <= 4:
-        date_ranges = [
-            (start_date + timedelta(days=i), start_date + timedelta(days=i + 1))
-            for i in range(total_days)
-        ]
-        x_axis_label = "Day"
-    else:
-        date_ranges = [
-            (end_date - timedelta(weeks=i), end_date - timedelta(weeks=i - 1))
-            for i in range(1, weeks + 1)
-        ]
-        x_axis_label = "Week"
-
-    df = pd.DataFrame(columns=["start_date"] + languages)
-    customdata_map = {lang: [] for lang in languages}
-
-    for start_date, period_end in date_ranges:
-        row_data = {"start_date": start_date}
-        local_daterange = [start_date, period_end]
-
-        for language in languages:
-            language_list = [language]
-
-            bottom_val = metrics.get_totals_by_metric(
-                daterange=local_daterange,
-                stat=bottom_level,
-                language=language_list,
-                countries_list=countries_list,
-                app=["CR"],
-                user_list=user_list,
-            )
-
-            upper_val = metrics.get_totals_by_metric(
-                daterange=local_daterange,
-                stat=upper_level,
-                language=language_list,
-                countries_list=countries_list,
-                app=["CR"],
-                user_list=user_list,
-            )
-
-            if upper_val in [0, None] or bottom_val is None:
-                percentage = 0
-            else:
-                percentage = round((bottom_val / upper_val) * 100, 2)
-
-            row_data[language] = percentage
-            customdata_map[language].append((bottom_val, upper_val))
-
-        df.loc[len(df)] = row_data
-
-    df["start_date"] = pd.to_datetime(df["start_date"])
-    df["start_date_numeric"] = (df["start_date"] - df["start_date"].min()).dt.days
-
-    traces = []
-
-    for lang in languages:
-        x_vals = df["start_date_numeric"].values.reshape(-1, 1)
-        y_vals = df[lang].values
-        custom_vals = customdata_map[lang]
-
-        if show_actual:
-            traces.append(
-                go.Scatter(
-                    x=df["start_date"],
-                    y=y_vals,
-                    mode="lines+markers",
-                    name=lang,
-                    customdata=custom_vals,
-                    hovertemplate=(
-                        f"<b>{lang}</b><br>Date: %{{x}}<br>"
-                        "Percentage: %{y}%<br>"
-                        f"{bottom_level}: %{{customdata[0]:,}}<br>"
-                        f"{upper_level}: %{{customdata[1]:,}}<extra></extra>"
-                    ),
-                )
-            )
-
-        if show_trend and np.isfinite(y_vals).sum() > 1:
-            model = LinearRegression()
-            model.fit(x_vals, y_vals)
-            trendline_y = model.predict(x_vals)
-
-            traces.append(
-                go.Scatter(
-                    x=df["start_date"],
-                    y=trendline_y,
-                    mode="lines",
-                    name=f"{lang} Trend",
-                    line=dict(dash="dot"),
-                    showlegend=True,
-                )
-            )
-
-    fig = go.Figure(
-        data=traces,
-        layout=go.Layout(
-            xaxis=dict(title=x_axis_label),
-            yaxis=dict(title="Percent of upper level"),
-            legend={"traceorder": "normal"},
-            margin=dict(l=10, r=1, b=0, t=10, pad=4),
-            geo=dict(bgcolor="rgba(0,0,0,0)"),
-        ),
-    )
-    fig.update_layout(
-        xaxis=dict(
-            title=x_axis_label,
-            tickformat="%Y-%m-%d"
-        )
-    )
-
-    st.plotly_chart(fig, use_container_width=True)
-    return df
-
-
-@st.cache_data(ttl="1d", show_spinner=False)
-def funnel_bar_chart(languages, countries_list, daterange,user_cohort_list):
-
-    df = metrics.build_funnel_dataframe(
-        index_col="language",
-        daterange=daterange,
-        languages=languages,
-        countries_list=countries_list,
-        user_list=user_cohort_list,
-    )
-
-    # Bar chart
-    fig = go.Figure()
-    # Adding each metric as a bar
-    levels = ["LR", "DC", "TS" ,"SL","PC", "LA", "RA","GC"]
-    
-    # Adding each metric as a bar
-    for level in levels:
-        fig.add_trace(go.Bar(x=df["language"], y=df[level], name=level))
-
-    title = ""
-    fig.update_layout(
-        barmode="group",
-        title="Language Metrics",
-        xaxis_title="Language",
-        yaxis_title="Total",
-        legend_title="Levels",
-        template="plotly_white",
-        yaxis=dict(tickformat=",d"),  # Format Y-axis for better readability
-
-        title_text=title,
-        #    margin=dict(l=10, r=1, b=0, t=10, pad=4),
-        geo=dict(bgcolor="rgba(0,0,0,0)"),
-    )
-    
-    st.plotly_chart(fig, use_container_width=True)
-    return df
-    
-
-@st.cache_data(ttl="1d", show_spinner=False)
-def funnel_line_chart_percent(languages, countries_list, daterange, user_cohort_list, app=["CR"]):
-    # Determine levels first, BEFORE using in logic below
-      
-    if app[0] == "Unity":
-        levels = ["LR", "PC", "LA", "RA", "GC"]
-    else:
-        levels = ["LR", "DC", "TS", "SL", "PC", "LA", "RA", "GC"]
-        
-    # Build funnel dataframe
-    df = metrics.build_funnel_dataframe(
-        index_col="language",
-        daterange=daterange,
-        languages=languages,
-        app=app,
-        countries_list=countries_list,
-        user_list=user_cohort_list
-    )
-
-    df_percent = df.copy()
-
-    # Normalize only the specified levels against LR
-    columns_to_normalize = levels.copy()
-    columns_to_normalize.remove("LR")
-    df_percent[columns_to_normalize] = df_percent[columns_to_normalize].div(df["LR"], axis=0) * 100
-    df_percent["LR"] = 100  # Set LR as 100% baseline
-
-    cols_after_lr = ['DC', 'TS', 'SL', 'PC', 'LA', 'RA', 'GC']
-    # Keep only rows where at least one column after LR is nonzero and not blank/NaN
-    df_percent = df_percent[df_percent[cols_after_lr].fillna(0).astype(float).any(axis=1)].reset_index(drop=True)
-
-    # Plotting
-    fig = go.Figure()
-
-    for idx, row in df_percent.iterrows():
-        language = row["language"]
-        denominator_value = df.loc[idx, "LR"]
-
-        percent_values = row[levels]
-        numerator_values = df.loc[idx, levels]
-
-        # Prepare custom hover data
-        custom_data = [
-            [level, num, denominator_value, language]
-            for level, num in zip(levels, numerator_values)
-        ]
-
-        fig.add_trace(go.Scatter(
-            x=levels,
-            y=percent_values,
-            mode='lines+markers',
-            name=language,
-            customdata=custom_data,
-            hovertemplate=(
-                "Language: %{customdata[3]}<br>"
-                "Level: %{x}<br>"
-                "Percentage: %{y:.2f}%<br>"
-                "%{customdata[0]}: %{customdata[1]}<br>"
-                "LR: %{customdata[2]}<extra></extra>"
-            )
-        ))
-
-    fig.update_layout(
-        title="Percentage of LR by Language",
-        xaxis_title="Levels",
-        yaxis_title="Percentage of LR (%)",
-        yaxis=dict(tickformat=".2f"),
-        template="plotly_white"
-    )
-
-    st.plotly_chart(fig, use_container_width=True)
-    return df_percent
 
 @st.cache_data(ttl="1d", show_spinner=False)
 def top_and_bottom_languages_per_level(selection, min_LR):
@@ -1520,6 +1183,134 @@ def show_dual_metric_table(title, home_metrics):
         "App Calculated": [f"{v:.2f}" for v in home_metrics.values()],
 
     })
-
     st.markdown(f"### {title}")
     st.table(df)
+    
+def funnel_line_chart_percent(
+    cohort_df,
+    cohort_df_LR=None,
+    groupby_col="app_language",
+    app=None,
+    chart_title=None,
+    use_top_ten=True,
+    min_funnel=True
+):
+    """
+    Plots a funnel line chart using percent-normalized, cumulative dropoff logic for all apps.
+    Handles app-specific logic internally. You just pass in the right dfs (CR: both, others: just cohort_df).
+    """
+    df, funnel_steps = metrics.funnel_percent_by_group(
+        cohort_df=cohort_df,
+        cohort_df_LR=cohort_df_LR,
+        groupby_col=groupby_col,
+        app=app
+    )
+    df = df.sort_values(by="LR",ascending=False)
+    if use_top_ten:
+        df = df.head(10)
+
+    fig = go.Figure()
+
+    for idx, row in df.iterrows():
+        group_label = row[groupby_col]
+        # For y values (percent): use step+"_pct"
+        percent_values = [row[f"{step}_pct"] for step in funnel_steps]
+        # For numerator (raw): just use step
+        numerator_values = [row[step] for step in funnel_steps]
+        denominator_value = row["LR"]
+
+        # custom_data per funnel step for hover
+        custom_data = [
+            [step, int(num), int(denominator_value), group_label]
+            for step, num in zip(funnel_steps, numerator_values)
+        ]
+
+        fig.add_trace(go.Scatter(
+            x=funnel_steps,
+            y=percent_values,
+            mode='lines+markers',
+            name=str(group_label),
+            customdata=custom_data,
+            hovertemplate=(
+                f"{groupby_col.title()}: %{{customdata[3]}}<br>"
+                "Level: %{x}<br>"
+                "Percentage: %{y:.2f}%<br>"
+                "%{customdata[0]}: %{customdata[1]}<br>"
+                "LR: %{customdata[2]}<extra></extra>"
+            ),
+        ))
+
+    if not chart_title:
+        chart_title = f"Percentage of LR by {groupby_col.title()}"
+
+    fig.update_layout(
+        title=chart_title,
+        xaxis_title="Funnel Steps",
+        yaxis_title="Percentage of LR (%)",
+        yaxis=dict(tickformat=".2f"),
+        template="plotly_white"
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+    return df
+
+@st.cache_data(ttl="1d", show_spinner=False)
+def funnel_bar_chart(
+    cohort_df,
+    cohort_df_LR=None,
+    groupby_col="app_language",
+    app=None,
+    chart_title=None,
+    use_top_ten=True,
+    min_funnel=True
+):
+    """
+    Plots a grouped bar chart of funnel metrics per group (default: language).
+    - Calls metrics.funnel_percent_by_group internally to get counts & funnel order.
+    """
+    # 1. Compute summary df and funnel_steps in correct order
+    df, funnel_steps = metrics.funnel_percent_by_group(
+        cohort_df=cohort_df,
+        cohort_df_LR=cohort_df_LR,
+        groupby_col=groupby_col,
+        app=app,
+        min_funnel=min_funnel
+    )
+
+    # 2. Sort by LR (most users first) and optionally limit to top 10
+    df = df.sort_values(by="LR", ascending=False)
+    if use_top_ten:
+        df = df.head(10)
+
+    # 3. Default chart title
+    if not chart_title:
+        chart_title = f"{groupby_col.replace('_',' ').title()} Funnel Metrics"
+
+    # 4. Plot
+    fig = go.Figure()
+    for step in funnel_steps:
+        if step in df.columns:
+            fig.add_trace(go.Bar(
+                x=df[groupby_col],
+                y=df[step],
+                name=step,
+                text=df[step],
+                textposition="auto"
+            ))
+
+    fig.update_layout(
+        barmode="group",
+        title=chart_title,
+        xaxis_title=groupby_col.replace('_', ' ').title(),
+        yaxis_title="Users",
+        legend_title="Funnel Step",
+        template="plotly_white",
+        yaxis=dict(tickformat=",d"),
+        margin=dict(t=60, b=40, l=0, r=0)
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+    return df
+
+
+

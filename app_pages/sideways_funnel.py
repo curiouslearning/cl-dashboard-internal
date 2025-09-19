@@ -1,6 +1,7 @@
 import streamlit as st
-import ui_components as uic
+from ui_components import funnel_line_chart_percent,funnel_bar_chart
 import ui_widgets as ui
+from metrics import get_filtered_cohort
 
 
 from settings import initialize
@@ -12,99 +13,60 @@ ui.display_definitions_table("Definitions",ui.level_percent_definitions)
 
 col1, col2, col3 = st.columns(3)
 
-from users import get_country_list
+from users import get_country_list,get_language_list
 countries_list = get_country_list()
 with col1:
-    country = ui.single_selector(
+    country = ui.single_selector_new(
         countries_list,
-        placement="middle",
         title="Country Selection",
         key="la-2",
     )
     distinct_apps = ui.get_apps()
-    app = ui.single_selector(distinct_apps, placement="col", title="Select an App", key="sf-10",include_All=False)
-
-    from metrics import get_counts
-    df_languages = get_counts(
-        type="app_language",
-        app=app,
-        language=["All"],
-    )
-    
-
-df_top10 = (
-    df_languages[["app_language", "LR"]].sort_values(by="LR", ascending=False).head(10)
-)
+    app = ui.single_selector_new(distinct_apps, title="Select an App", key="sf-10",include_All=False)
 
     
 with col2:
-
-    selected_date, option = ui.calendar_selector(placement="middle", key="SF-1", index=0, title="Select user cohort by date")
+    selected_date, option = ui.calendar_selector_new(key="SF-1", index=0, title="Select user cohort by date")
     daterange = ui.convert_date_to_range(selected_date, option)
 
-
 with col3:
+    selected_languages = get_language_list()
     st.write("Language selection")
-    if st.toggle(label="Use Top 10 LR Languages", value=True):
-        selected_languages = df_top10["app_language"].to_list()
-    else:
+    top_ten_flag = st.toggle(label="Use Top 10 LR Languages", value=True)
+    if not top_ten_flag:
         from users import get_language_list
         df = get_language_list()
-        selected_languages = ui.multi_select_all(
-            df, placement="middle", title="Select languages", key="fa-1"
+        selected_languages = ui.multi_select_all_new(
+            df, title="Select languages", key="fa-1"
         )   
 
-    if (len(selected_languages) > 0):
-        from metrics import get_user_cohort_list     
-        user_cohort_list = get_user_cohort_list(daterange=daterange,languages=selected_languages,countries_list=countries_list,app=app)
+    if (len(selected_languages) > 0) and len(daterange) == 2:
+        user_cohort_df, user_cohort_df_LR = get_filtered_cohort(app, daterange, selected_languages, countries_list)
         
-    if (len(selected_languages) == 0 ):  # 40 is an arbitrary choice
-        st.markdown(
-            """
-        :red[Please select one or more languages.  ]
-        """
-        )
-    else:
         start = daterange[0].strftime("%b %d, %Y")
         end = daterange[1].strftime("%b %d, %Y")
         st.write("Timerange: " + start + " to " + end)  
         
-tab1, tab2, = st.tabs(["Funnel % by language", "Funnel bar chart totals"])
-with tab1:
-    if (len(selected_languages) > 0):   
-        with st.spinner("Calculating..."):
-            df_download = uic.funnel_line_chart_percent(
-                languages=selected_languages,
-                countries_list=country,
-                daterange=daterange,
-                app=app,
-                user_cohort_list=user_cohort_list
-            )
-            csv = ui.convert_for_download(df_download)
-            st.download_button(label="Download CSV",data=csv,file_name="funnel_line_chart_percent.csv",key="sf-12",icon=":material/download:",mime="text/csv")
 
-
-with tab2:
-    
-    if (
-        len(selected_languages) == 0 or len(selected_languages) > 40
-    ):  # 40 is an arbitrary choice
-        st.markdown(
-            """
-        :red[Please select one or more languages.  "All" is not an acceptable selection for this chart.]
-        """
+if (len(selected_languages) > 0):   
+    with st.spinner("Calculating..."):
+        df_values = funnel_line_chart_percent(
+            cohort_df=user_cohort_df,
+            cohort_df_LR=user_cohort_df_LR,   # For CR, otherwise just pass None or omit
+            groupby_col="app_language",
+            app=app,                          # e.g. ["CR"], ["Unity"], ["standalone-hi"], etc.
+            use_top_ten=top_ten_flag,
+            min_funnel=False
         )
-    else:
-        start = daterange[0].strftime("%b %d, %Y")
-        end = daterange[1].strftime("%b %d, %Y")
-        st.write("Timerange: " + start + " to " + end)
-        with st.spinner("Calculating..."):
-            df_download = uic.funnel_bar_chart(
-                languages=selected_languages,
-                countries_list=country,
-                daterange=daterange,
-                user_cohort_list=user_cohort_list
-            )
-            csv = ui.convert_for_download(df_download)
-            st.download_button(label="Download CSV",data=csv,file_name="funnel_bar_chart.csv",key="sf-11",icon=":material/download:",mime="text/csv")
+        csv = ui.convert_for_download(df_values)
+        st.download_button(label="Download",data=csv,file_name="funnel_line_chart_percent.csv",key="sf-12",icon=":material/download:",mime="text/csv")
+
+
+        df_download = funnel_bar_chart(cohort_df=user_cohort_df,cohort_df_LR=user_cohort_df_LR,   # For CR, otherwise just pass None or omit
+            groupby_col="app_language",
+            app=app,                          # e.g. ["CR"], ["Unity"], ["standalone-hi"], etc.
+            use_top_ten=top_ten_flag,
+            min_funnel=True)
+        csv = ui.convert_for_download(df_download)
+        st.download_button(label="Download",data=csv,file_name="funnel_line_chart_percent.csv",key="sf-13",icon=":material/download:",mime="text/csv")
 
