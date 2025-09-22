@@ -1,5 +1,5 @@
 import streamlit as st
-from ui_components import funnel_line_chart_percent,funnel_bar_chart
+from ui_components import funnel_chart
 import ui_widgets as ui
 from metrics import get_filtered_cohort
 
@@ -50,23 +50,26 @@ with col3:
 
 if (len(selected_languages) > 0):   
     with st.spinner("Calculating..."):
-        df_values = funnel_line_chart_percent(
+        df_values = funnel_chart(
             cohort_df=user_cohort_df,
             cohort_df_LR=user_cohort_df_LR,   # For CR, otherwise just pass None or omit
             groupby_col="app_language",
             app=app,                          # e.g. ["CR"], ["Unity"], ["standalone-hi"], etc.
             use_top_ten=top_ten_flag,
-            min_funnel=False
+            min_funnel=False,chart_type="line"
         )
         csv = ui.convert_for_download(df_values)
         st.download_button(label="Download",data=csv,file_name="funnel_line_chart_percent.csv",key="sf-12",icon=":material/download:",mime="text/csv")
 
-
-        df_download = funnel_bar_chart(cohort_df=user_cohort_df,cohort_df_LR=user_cohort_df_LR,   # For CR, otherwise just pass None or omit
+        df_download = funnel_chart(
+            cohort_df=user_cohort_df,
+            cohort_df_LR=user_cohort_df_LR,   # For CR, otherwise just pass None or omit
             groupby_col="app_language",
             app=app,                          # e.g. ["CR"], ["Unity"], ["standalone-hi"], etc.
             use_top_ten=top_ten_flag,
-            min_funnel=True)
+            min_funnel=False,chart_type="bar"
+        )
+
         csv = ui.convert_for_download(df_download)
         st.download_button(label="Download",data=csv,file_name="funnel_line_chart_percent.csv",key="sf-13",icon=":material/download:",mime="text/csv")
 

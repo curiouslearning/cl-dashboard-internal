@@ -6,247 +6,12 @@ import plotly.express as px
 import plotly.graph_objects as go
 import metrics
 from millify import prettify
-import plost
 import users
-import campaigns
-from datetime import timedelta
 import numpy as np
-from sklearn.linear_model import LinearRegression
+
 
 default_daterange = [dt.datetime(2021, 1, 1).date(), dt.date.today()]
 
-@st.cache_data(ttl="1d", show_spinner=False)
-def stats_by_country_map(daterange, countries_list, app=["CR"], language="All", option="LR"):
-
-    df = metrics.get_counts(type="country",
-    daterange=daterange, countries_list=countries_list, app=app, language=language
-    )
-    country_fig = px.choropleth(
-        df,
-        locations="country",
-        color=str(option),
-        color_continuous_scale=[
-            "#F9FAFA",
-            "#7ef7f7",
-            "#a9b6b5",
-            "#d0a272",
-            "#e48f35",
-            "#a18292",
-            "#85526c",
-            "#48636e",
-        ],
-        height=600,
-        projection="natural earth",
-        locationmode="country names",
-        hover_data={
-            "LR": ":,",
-            "PC": ":,",
-            "LA": ":,",
-            "GPP": ":,",
-            "GCA": ":,",
-        },
-    )
-
-    country_fig.update_layout(
-        height=500,
-        margin=dict(l=10, r=1, b=0, t=10, pad=4),
-        geo=dict(bgcolor="rgba(0,0,0,0)"),
-        #       paper_bgcolor="LightSteelBlue",
-    )
-
-    country_fig.update_geos(fitbounds="locations")
-    st.plotly_chart(country_fig)
-    
-    return df
-
-
-@st.cache_data(ttl="1d", show_spinner=False)
-def campaign_gantt_chart():
-    
-    df1 = campaigns.get_name_compliant_campaigns()
-
-    df1["campaign_start_date"] = pd.to_datetime(df1["campaign_start_date"]).dt.date
-
-    # Query the DataFrame
-    df1 = df1.query("campaign_start_date > @chart_start")
-
-    # Converting columns to datetime format
-    df1["start_date"] = pd.to_datetime(df1["campaign_start_date"])
-
-    # Remove rows where 'end_date' is greater than one year from today (likely invalid campaign)
-    today = dt.datetime.now()
-    one_year_from_today = today + dt.timedelta(days=365)
-    df1 = df1[df1["end_date"] <= one_year_from_today]
-
-    df1["campaign_name_short"] = df1["campaign_name"].str[
-        :30
-    ]  # cut the title to fit the chart
-
-    df1 = df1[
-        (df1["end_date"] - df1["start_date"]).dt.days > 1
-    ]  # eliminate campaigns that didn't run longer than a day
-    rows = len(df1.index)
-
-    fontsize = 8
-    if rows > 80:
-        height = rows * 10
-    elif rows > 40 and rows <= 80:
-        height = rows * 20
-    elif  rows > 10 and rows <= 40:
-        height = rows * 30
-        fontsize = 12
-    else:
-        height = 500
-        fontsize = 18
-
-
-    fig = px.timeline(
-        df1,
-        x_start="start_date",
-        x_end="end_date",
-        y="campaign_name_short",
-        height=height,
-        color_continuous_scale=[
-            [0, "rgb(166,206,227, 0.5)"],
-            [0.05, "rgb(31,120,180,0.5)"],
-            [0.1, "rgb(178,223,138,0.5)"],
-            [0.3, "rgb(51,160,44,0.5)"],
-            [0.6, "rgb(251,154,153,0.5)"],
-            [1, "rgb(227,26,28,0.5)"],
-        ],
-        color_discrete_sequence=px.colors.qualitative.Vivid,
-        color="cost",
-        custom_data=[df1["campaign_name"], df1["cost"], df1["start_date"], df1["end_date"]],
-    )
-    
-    fig.update_yaxes(autorange="reversed")
-
-    fig.update_layout(
-        title="",
-        hoverlabel_bgcolor="#DAEEED",
-        bargap=0.2,
-        xaxis_title="",
-        yaxis_title="",
-        yaxis=dict(tickfont_size=fontsize),
-        title_x=0.5,  # Make title centered
-        xaxis=dict(
-            tickfont_size=10,
-            tickangle=270,
-            rangeslider_visible=False,
-            side="top",  # Place the tick labels on the top of the chart
-            showgrid=True,
-            zeroline=True,
-            showline=True,
-            showticklabels=True,
-            tickformat="%x\n",
-        ),
-    )
-
-    hovertemp = "<b>Start Date: </b> %{customdata[2]|%m-%d-%Y } <br>"
-    hovertemp += "<b>End Date: </b> %{customdata[3]|%m-%d-%Y} <br>"
-    hovertemp += "<b>Campaign: </b> %{customdata[0]} <br>"
-    hovertemp += "<b>Cost: </b> %{customdata[1]:$,.2f}<br>"
-    fig.update_traces(hoverinfo="text", hovertemplate=hovertemp)
-    fig.update_xaxes(
-        tickangle=0, tickfont=dict(family="Rockwell", color="#A9A9A9", size=12)
-    )
-    
-    st.plotly_chart(
-        fig, use_container_width=True
-    )  # Display the plotly chart in Streamlit
-
-@st.cache_data(ttl="1d", show_spinner=False)
-def top_gpp_bar_chart(daterange, countries_list, app=["CR"], language="All",display_category="Country",user_list=None):
-
-    # Group by date and display_type, then count the users
-    if display_category == "Country":
-        display_group = "country"
-    elif display_category == "Language":
-        display_group = "app_language"     
-
-    df = metrics.get_counts(type=display_group,
-    daterange=daterange, countries_list=countries_list, app=app, language=language,user_list=user_list
-    )
-    
-    df = df[[display_group, "GPP"]].sort_values(by="GPP", ascending=False).head(10)
-
-    fig = px.bar(
-        df, x=display_group, y="GPP", color=display_group, title="Top 10 Countries by GPP %"
-    )
-    st.plotly_chart(fig, use_container_width=True)
-    return df
-
-@st.cache_data(ttl="1d", show_spinner=False)
-def top_gca_bar_chart(daterange, countries_list, app=["CR"], language="All",display_category="Country",user_list=None):
-
-    # Group by date and display_type, then count the users
-    if display_category == "Country":
-        display_group = "country"
-    elif display_category == "Language":
-        display_group = "app_language"     
-    
-    df = metrics.get_counts(type=display_group,
-        daterange=daterange, countries_list=countries_list, app=app, language=language,user_list=user_list
-    )
-
-    df = df[[display_group, "GCA"]].sort_values(by="GCA", ascending=False).head(10)
-
-    fig = px.bar(
-        df,
-        x=display_group,
-        y="GCA",
-        color=display_group,
-        title="Top 10  by GCA %",
-    )
-    st.plotly_chart(fig, use_container_width=True)
-    return df
-
-@st.cache_data(ttl="1d", show_spinner=False)
-def top_LR_LC_bar_chart(daterange, countries_list, option, app=["CR"], language="All",display_category="Country",user_list=None):
-    # Group by date and display_type, then count the users
-    if display_category == "Country":
-        display_group = "country"
-    elif display_category == "Language":
-        display_group = "app_language"      
-
-    df = metrics.get_counts(type=display_group,
-        daterange=daterange, countries_list=countries_list, app=app, language=language,user_list=user_list
-    )
-
-
-    df = (
-        df[[display_group, "LR", "LA" , "RA"]]
-        .sort_values(by=option, ascending=False)
-        .head(10)
-        .round(2)
-    )
-
-    title = "Top 10 by " + str(option)
-    fig = go.Figure(
-        data=[
-            go.Bar(
-                name="LR",
-                x=df[display_group],
-                y=df["LR"],
-                hovertemplate=" %{x}<br>LR: %{y:,.0f}<extra></extra>",
-            ),
-            go.Bar(
-                name="LA",
-                x=df[display_group],
-                y=df["LA"],
-                hovertemplate=" %{x}<br>LA: %{y:,.0f}<extra></extra>",
-            ),
-            go.Bar(
-                name="RA",
-                x=df[display_group],
-                y=df["RA"],
-                hovertemplate=" %{x}<br>RA: %{y:,.0f}<extra></extra>",
-            ),
-        ],
-    )
-    fig.update_layout(title_text=title)
-    st.plotly_chart(fig, use_container_width=True)
-    return df
 
 @st.cache_data(ttl="1d", show_spinner=False)
 def LR_LA_line_chart_over_time(
@@ -423,27 +188,6 @@ def spend_by_country_map(df_campaigns,source):
     st.plotly_chart(country_fig)
     return df_campaigns
 
-def campaign_funnel_chart():
-    df_campaigns = st.session_state.df_campaigns
-    impressions = df_campaigns["impressions"].sum()
-
-    clicks = df_campaigns["clicks"].sum()
-
-    funnel_data = {
-        "Title": [
-            "Impressions",
-            "Clicks",
-        ],
-        "Count": [impressions, clicks],
-    }
-
-    fig = create_engagement_figure(funnel_data=funnel_data)
-    fig.update_layout(
-        height=200,
-    )
-
-    st.plotly_chart(fig, use_container_width=True)
-
 
 def create_engagement_figure(funnel_data, key="", funnel_size="large"):
     percent_2nd = funnel_data.get("PercentOfSecond", [None] * len(funnel_data["Count"]))
@@ -575,205 +319,6 @@ def levels_reached_chart(
     return fig
 
 
-
-def top_campaigns_by_downloads_barchart(n):
-    df_campaigns = st.session_state.df_campaigns
-    df = df_campaigns.filter(["campaign_name", "mobile_app_install"], axis=1)
-    pivot_df = pd.pivot_table(
-        df, index=["campaign_name"], aggfunc={"mobile_app_install": "sum"}
-    )
-
-    df = pivot_df.sort_values(by=["mobile_app_install"], ascending=False)
-    df.reset_index(inplace=True)
-    df = df.rename(
-        columns={"campaign_name": "Campaign", "mobile_app_install": "Installs"}
-    )
-    df = df.head(n)
-    plost.bar_chart(
-        data=df,
-        bar="Installs",
-        value="Campaign",
-        direction="vertical",
-        use_container_width=True,
-        legend="bottom",
-    )
-
-
-@st.cache_data(ttl="1d", show_spinner=False)
-def top_and_bottom_languages_per_level(selection, min_LR):
-    if selection == "Top performing":
-        ascending = False
-    else:
-        ascending = True
-    
-    languages = users.get_language_list()
-    user_cohort_list_cr = metrics.get_user_cohort_list(
-        languages=languages,
-        app=["CR"]
-    )
-    
-    df = metrics.build_funnel_dataframe(index_col="language", languages=languages,app=["CR"],user_list=user_cohort_list_cr)
-
-    # Remove anything where Learners Reached is less than 5000 (arbitrary to have a decent sample size)
-    df = df[df["LR"] > min_LR]
-
-    df = metrics.add_level_percents(df)
-
-    dfDCLR = (
-        df.sort_values(by="DC over LR", ascending=ascending)
-        .head(10)
-        .loc[:, ["DC over LR", "language"]]
-    ).reset_index(drop=True)
-
-    dfTSDC = (
-        df.sort_values(by="TS over DC", ascending=ascending)
-        .head(10)
-        .loc[:, ["TS over DC", "language"]]
-    ).reset_index(drop=True)
-    dfSLTS = (
-        df.sort_values(by="SL over TS", ascending=ascending)
-        .head(10)
-        .loc[:, ["SL over TS", "language"]]
-    ).reset_index(drop=True)
-    dfPCSL = (
-        df.sort_values(by="PC over SL", ascending=ascending)
-        .head(10)
-        .loc[:, ["PC over SL", "language"]]
-    ).reset_index(drop=True)
-    dfLAPC = (
-        df.sort_values(by="LA over PC", ascending=ascending)
-        .head(10)
-        .loc[:, ["LA over PC", "language"]]
-    ).reset_index(drop=True)
-    dfRALA = (
-        df.sort_values(by="RA over LA", ascending=ascending)
-        .head(10)
-        .loc[:, ["RA over LA", "language"]]
-    ).reset_index(drop=True)
-    dfGCRA = (
-        df.sort_values(by="GC over RA", ascending=ascending)
-        .head(10)
-        .loc[:, ["GC over RA", "language"]]
-    ).reset_index(drop=True)
-
-    
-    df_table = pd.DataFrame(columns=["Event", "First", "Second", "Third", "Fourth", "Fifth"])
-
-    # List of dataframes and corresponding row labels
-    dataframes = [
-        ("Download Completed", dfDCLR, "DC over LR"),
-        ("Tapped Start", dfTSDC, "TS over DC"),
-        ("Selected Level", dfSLTS, "SL over TS"),
-        ("Puzzle Completed", dfPCSL, "PC over SL"),
-        ("Learner Acquired", dfLAPC, "LA over PC"),
-        ("Reader Acquired", dfRALA, "RA over LA"),
-        ("Game Completed", dfGCRA, "GC over RA"),
-    ]
-
-    # Generate rows dynamically
-    for label, df, column in dataframes:
-        row = [label] + [
-            f"{df['language'].loc[i]}, {df[column].loc[i]:.2f}%" for i in range(5)
-        ]
-        df_row = pd.DataFrame([row], columns=df_table.columns)  # Ensure columns match
-        df_table = pd.concat([df_table, df_row], ignore_index=True)  # Ignore index to prevent conflicts
-
-    # Display the dataframe in Streamlit without index
-    st.dataframe(df_table)
-
-
-#Added user_list which is a list of cr_user_id to filter with
-
-def create_funnels(
-    countries_list=["All"],
-    daterange=None,
-    languages=["All"],
-    app_versions="All",
-    key_prefix="abc",
-    app=["CR"],
-    funnel_size="large",  # "compact", "medium", or "large"
-    user_list=[]
-):
-    funnel_variants = {
-        "compact": {
-            "stats": ["LR", "PC", "LA", "RA", "GC"],
-            "titles": [
-                "Learner Reached", "Puzzle Completed", "Learners Acquired", "Readers Acquired", "Game Completed"
-            ]
-        },
-        "large": {
-            "stats": ["LR", "DC", "TS", "SL", "PC", "LA", "RA", "GC"],
-            "titles": [
-                "Learner Reached", "Download Completed", "Tapped Start",
-                "Selected Level", "Puzzle Completed", "Learners Acquired", "Readers Acquired", "Game Completed"
-            ]
-        },
-        "medium": {
-            "stats": ["DC", "TS", "SL", "PC", "LA", "RA", "GC"],
-            "titles": [
-                "Download Completed", "Tapped Start", "Selected Level",
-                "Puzzle Completed", "Learners Acquired", "Readers Acquired", "Game Completed"
-            ]
-        }
-    }
-
-    # Default fallback
-    if funnel_size not in funnel_variants:
-        funnel_size = "large"
-
-    stats = funnel_variants[funnel_size]["stats"]
-    titles = funnel_variants[funnel_size]["titles"]
-
-    # Override stats/titles for Unity app — always use "compact"
-    if  "Unity" in app:
-        stats = funnel_variants["compact"]["stats"]
-        titles = funnel_variants["compact"]["titles"]
-        funnel_size = "compact"
-
-    if daterange is None:
-        from datetime import datetime, timedelta
-        daterange = [datetime.today() - timedelta(days=30), datetime.today()]
-
-    if len(daterange) == 2:
-        start = daterange[0].strftime("%b %d, %Y")
-        end = daterange[1].strftime("%b %d, %Y")
-        st.caption(f"{start} to {end}")
-
-        metrics_data = {
-            stat: metrics.get_totals_by_metric(
-                daterange,
-                stat=stat,
-                cr_app_versions=app_versions,
-                language=languages,
-                countries_list=countries_list,
-                app=app,
-                user_list=user_list
-            )
-            for stat in stats
-        }
-
-        # Convert counts to a list for consistent indexing
-        counts = [metrics_data[stat] for stat in stats]
-
-        # Only calculate percent_of_second if funnel_size == "large"
-        percent_of_second = None
-        if funnel_size == "large" and len(counts) > 1 and counts[1]:
-            second_val = counts[1]
-            percent_of_second = [
-                (100 * c / second_val) if second_val != 0 else None for c in counts
-            ]
-
-        funnel_data = {
-            "Title": titles,
-            "Count": counts,
-        }
-        if percent_of_second is not None:
-            funnel_data["PercentOfSecond"] = percent_of_second
-
-        fig = create_engagement_figure(
-            funnel_data, key=f"{key_prefix}-5", funnel_size=funnel_size
-        )
-        st.plotly_chart(fig, use_container_width=True, key=f"{key_prefix}-6")
 
 def create_funnels_by_cohort(
     cohort_df,
@@ -1186,89 +731,39 @@ def show_dual_metric_table(title, home_metrics):
     st.markdown(f"### {title}")
     st.table(df)
     
-def funnel_line_chart_percent(
-    cohort_df,
-    cohort_df_LR=None,
-    groupby_col="app_language",
-    app=None,
-    chart_title=None,
-    use_top_ten=True,
-    min_funnel=True
-):
-    """
-    Plots a funnel line chart using percent-normalized, cumulative dropoff logic for all apps.
-    Handles app-specific logic internally. You just pass in the right dfs (CR: both, others: just cohort_df).
-    """
-    df, funnel_steps = metrics.funnel_percent_by_group(
-        cohort_df=cohort_df,
-        cohort_df_LR=cohort_df_LR,
-        groupby_col=groupby_col,
-        app=app
-    )
-    df = df.sort_values(by="LR",ascending=False)
-    if use_top_ten:
-        df = df.head(10)
-
-    fig = go.Figure()
-
-    for idx, row in df.iterrows():
-        group_label = row[groupby_col]
-        # For y values (percent): use step+"_pct"
-        percent_values = [row[f"{step}_pct"] for step in funnel_steps]
-        # For numerator (raw): just use step
-        numerator_values = [row[step] for step in funnel_steps]
-        denominator_value = row["LR"]
-
-        # custom_data per funnel step for hover
-        custom_data = [
-            [step, int(num), int(denominator_value), group_label]
-            for step, num in zip(funnel_steps, numerator_values)
-        ]
-
-        fig.add_trace(go.Scatter(
-            x=funnel_steps,
-            y=percent_values,
-            mode='lines+markers',
-            name=str(group_label),
-            customdata=custom_data,
-            hovertemplate=(
-                f"{groupby_col.title()}: %{{customdata[3]}}<br>"
-                "Level: %{x}<br>"
-                "Percentage: %{y:.2f}%<br>"
-                "%{customdata[0]}: %{customdata[1]}<br>"
-                "LR: %{customdata[2]}<extra></extra>"
-            ),
-        ))
-
-    if not chart_title:
-        chart_title = f"Percentage of LR by {groupby_col.title()}"
-
-    fig.update_layout(
-        title=chart_title,
-        xaxis_title="Funnel Steps",
-        yaxis_title="Percentage of LR (%)",
-        yaxis=dict(tickformat=".2f"),
-        template="plotly_white"
-    )
-
-    st.plotly_chart(fig, use_container_width=True)
-    return df
+import streamlit as st
+import plotly.graph_objs as go
 
 @st.cache_data(ttl="1d", show_spinner=False)
-def funnel_bar_chart(
+def funnel_chart(
     cohort_df,
     cohort_df_LR=None,
     groupby_col="app_language",
     app=None,
     chart_title=None,
     use_top_ten=True,
-    min_funnel=True
+    min_funnel=True,
+    chart_type="line",  # "line" or "bar"
 ):
     """
-    Plots a grouped bar chart of funnel metrics per group (default: language).
-    - Calls metrics.funnel_percent_by_group internally to get counts & funnel order.
+    Plots either a funnel line chart (percent dropoff) or grouped bar chart (raw counts)
+    by group (default: app_language). Uses `metrics.funnel_percent_by_group` to compute the summary.
+
+    Args:
+        cohort_df (pd.DataFrame): User-level or group-level dataframe.
+        cohort_df_LR (pd.DataFrame, optional): DataFrame with LR users only (CR-specific).
+        groupby_col (str): Column to group by (default: "app_language").
+        app (str or list): App name(s) for funnel logic.
+        chart_title (str, optional): Custom chart title.
+        use_top_ten (bool): Limit to top 10 by LR.
+        min_funnel (bool): Use minimal funnel if True.
+        chart_type (str): "line" for dropoff percent, "bar" for grouped raw values.
+        st_plot (bool): Show chart in Streamlit if True.
+
+    Returns:
+        df (pd.DataFrame): Funnel summary table used for plotting.
     """
-    # 1. Compute summary df and funnel_steps in correct order
+    # 1. Compute funnel summary and step order
     df, funnel_steps = metrics.funnel_percent_by_group(
         cohort_df=cohort_df,
         cohort_df_LR=cohort_df_LR,
@@ -1276,41 +771,82 @@ def funnel_bar_chart(
         app=app,
         min_funnel=min_funnel
     )
-
-    # 2. Sort by LR (most users first) and optionally limit to top 10
     df = df.sort_values(by="LR", ascending=False)
     if use_top_ten:
         df = df.head(10)
-
-    # 3. Default chart title
-    if not chart_title:
-        chart_title = f"{groupby_col.replace('_',' ').title()} Funnel Metrics"
-
-    # 4. Plot
     fig = go.Figure()
-    for step in funnel_steps:
-        if step in df.columns:
-            fig.add_trace(go.Bar(
-                x=df[groupby_col],
-                y=df[step],
-                name=step,
-                text=df[step],
-                textposition="auto"
-            ))
 
+    if chart_type == "line":
+        # Plot line chart: percent dropoff by group
+        for idx, row in df.iterrows():
+            group_label = row[groupby_col]
+            percent_values = [row.get(f"{step}_pct", 0) for step in funnel_steps]
+            numerator_values = [row.get(step, 0) for step in funnel_steps]
+            denominator_value = row.get("LR", 0)
+            custom_data = [
+                [step, int(num), int(denominator_value), group_label]
+                for step, num in zip(funnel_steps, numerator_values)
+            ]
+            fig.add_trace(go.Scatter(
+                x=funnel_steps,
+                y=percent_values,
+                mode='lines+markers',
+                name=str(group_label),
+                customdata=custom_data,
+                hovertemplate=(
+                    f"{groupby_col.title()}: %{{customdata[3]}}<br>"
+                    "Level: %{x}<br>"
+                    "Percentage: %{y:.2f}%<br>"
+                    "%{customdata[0]}: %{customdata[1]}<br>"
+                    "LR: %{customdata[2]}<extra></extra>"
+                ),
+            ))
+        yaxis_title = "Percentage of LR (%)"
+        yaxis = dict(tickformat=".2f")
+        if not chart_title:
+            chart_title = f"Percentage of LR by {groupby_col.title()}"
+
+        fig.update_layout(
+            xaxis_title="Funnel Steps",
+            legend_title=groupby_col.title(),
+        )
+
+    elif chart_type == "bar":
+        # Plot grouped bar chart: raw counts by step
+        for step in funnel_steps:
+            if step in df.columns:
+                fig.add_trace(go.Bar(
+                    x=df[groupby_col],
+                    y=df[step],
+                    name=step,
+                    text=df[step],
+                    textposition="auto"
+                ))
+        yaxis_title = "Users"
+        yaxis = dict(tickformat=",d")
+        if not chart_title:
+            chart_title = f"{groupby_col.replace('_',' ').title()} Funnel Metrics"
+
+        fig.update_layout(
+            barmode="group",
+            xaxis_title=groupby_col.replace('_', ' ').title(),
+            legend_title="Funnel Step",
+        )
+
+    else:
+        raise ValueError(f"Unknown chart_type: {chart_type}. Must be 'line' or 'bar'.")
+
+    # Shared chart settings
     fig.update_layout(
-        barmode="group",
         title=chart_title,
-        xaxis_title=groupby_col.replace('_', ' ').title(),
-        yaxis_title="Users",
-        legend_title="Funnel Step",
+        yaxis_title=yaxis_title,
         template="plotly_white",
-        yaxis=dict(tickformat=",d"),
-        margin=dict(t=60, b=40, l=0, r=0)
+        yaxis=yaxis,
+        margin=dict(t=60, b=40, l=0, r=0),
+        font=dict(size=14),
     )
 
     st.plotly_chart(fig, use_container_width=True)
     return df
-
 
 
