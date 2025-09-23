@@ -21,7 +21,7 @@ icon = ":small_orange_diamond:"
 
 [[pages]]
 path = "app_pages/best_languages.py"
-name = "Best and Worst Performing Languages"
+name = "Top/Bottom Performing Languages"
 icon = ":small_orange_diamond:"
 
 [[pages]]

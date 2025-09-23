@@ -236,7 +236,6 @@ def create_engagement_figure(funnel_data, key="", funnel_size="large"):
 def levels_reached_chart(
     app_names=None,
     stat="LA",
-    max_plot_level=35,
     title="Levels Reached by App"
 ):
     """
@@ -731,10 +730,8 @@ def show_dual_metric_table(title, home_metrics):
     st.markdown(f"### {title}")
     st.table(df)
     
-import streamlit as st
-import plotly.graph_objs as go
 
-@st.cache_data(ttl="1d", show_spinner=False)
+@st.cache_data(ttl="1d", show_spinner="Calculating")
 def funnel_chart(
     cohort_df,
     cohort_df_LR=None,
@@ -743,25 +740,14 @@ def funnel_chart(
     chart_title=None,
     use_top_ten=True,
     min_funnel=True,
-    chart_type="line",  # "line" or "bar"
+    ascending=False,
+    stat="LA",
+    chart_type="line",
+    sort_by="Total",
 ):
     """
-    Plots either a funnel line chart (percent dropoff) or grouped bar chart (raw counts)
-    by group (default: app_language). Uses `metrics.funnel_percent_by_group` to compute the summary.
-
-    Args:
-        cohort_df (pd.DataFrame): User-level or group-level dataframe.
-        cohort_df_LR (pd.DataFrame, optional): DataFrame with LR users only (CR-specific).
-        groupby_col (str): Column to group by (default: "app_language").
-        app (str or list): App name(s) for funnel logic.
-        chart_title (str, optional): Custom chart title.
-        use_top_ten (bool): Limit to top 10 by LR.
-        min_funnel (bool): Use minimal funnel if True.
-        chart_type (str): "line" for dropoff percent, "bar" for grouped raw values.
-        st_plot (bool): Show chart in Streamlit if True.
-
-    Returns:
-        df (pd.DataFrame): Funnel summary table used for plotting.
+    Plots a funnel line chart (percent dropoff) or grouped bar chart (raw count or percent-of-LR)
+    by group (default: app_language). Sorts and visualizes according to selected stat and method.
     """
     # 1. Compute funnel summary and step order
     df, funnel_steps = metrics.funnel_percent_by_group(
@@ -771,9 +757,18 @@ def funnel_chart(
         app=app,
         min_funnel=min_funnel
     )
-    df = df.sort_values(by="LR", ascending=False)
+
+    # 2. Determine sort column, handling LR edge case for percent
+    if sort_by == "Percent":
+        # LR_pct is always 100%, so sort by total in this case
+        sort_col = stat if stat == "LR" else f"{stat}_pct"
+    else:
+        sort_col = stat
+
+    df = df.sort_values(by=sort_col, ascending=ascending)
     if use_top_ten:
         df = df.head(10)
+
     fig = go.Figure()
 
     if chart_type == "line":
@@ -784,7 +779,7 @@ def funnel_chart(
             numerator_values = [row.get(step, 0) for step in funnel_steps]
             denominator_value = row.get("LR", 0)
             custom_data = [
-                [step, int(num), int(denominator_value), group_label]
+                [step, int(num), row.get(f"{step}_pct", 0), int(denominator_value), group_label]
                 for step, num in zip(funnel_steps, numerator_values)
             ]
             fig.add_trace(go.Scatter(
@@ -794,36 +789,74 @@ def funnel_chart(
                 name=str(group_label),
                 customdata=custom_data,
                 hovertemplate=(
-                    f"{groupby_col.title()}: %{{customdata[3]}}<br>"
-                    "Level: %{x}<br>"
-                    "Percentage: %{y:.2f}%<br>"
-                    "%{customdata[0]}: %{customdata[1]}<br>"
-                    "LR: %{customdata[2]}<extra></extra>"
+                    f"{groupby_col.title()}: %{{customdata[4]}}<br>"
+                    "Step: %{customdata[0]}<br>"
+                    "Count: %{customdata[1]:,}<br>"
+                    "Percent: %{customdata[2]:.2f}%<br>"
+                    "LR: %{customdata[3]:,}<extra></extra>"
                 ),
             ))
         yaxis_title = "Percentage of LR (%)"
         yaxis = dict(tickformat=".2f")
         if not chart_title:
             chart_title = f"Percentage of LR by {groupby_col.title()}"
-
         fig.update_layout(
             xaxis_title="Funnel Steps",
             legend_title=groupby_col.title(),
         )
 
     elif chart_type == "bar":
-        # Plot grouped bar chart: raw counts by step
-        for step in funnel_steps:
-            if step in df.columns:
-                fig.add_trace(go.Bar(
-                    x=df[groupby_col],
-                    y=df[step],
-                    name=step,
-                    text=df[step],
-                    textposition="auto"
-                ))
-        yaxis_title = "Users"
-        yaxis = dict(tickformat=",d")
+        if sort_by == "Percent":
+            # REMOVE LR step, only show funnel steps after LR
+            funnel_steps_no_lr = [step for step in funnel_steps if step != "LR"]
+            for step in funnel_steps_no_lr:
+                pct_col = f"{step}_pct"
+                if step in df.columns and pct_col in df.columns:
+                    bar_customdata = [
+                        [row[step], row[pct_col], step, row[groupby_col]]
+                        for _, row in df.iterrows()
+                    ]
+                    fig.add_trace(go.Bar(
+                        x=df[groupby_col],
+                        y=df[pct_col],  # Bar height = percent
+                        name=step,
+                        text=[f"{row[pct_col]:.2f}%" for _, row in df.iterrows()],
+                        customdata=bar_customdata,
+                        textposition="auto",
+                        hovertemplate=(
+                            f"{groupby_col.title()}: %{{customdata[3]}}<br>"
+                            "Step: %{customdata[2]}<br>"
+                            "Count: %{customdata[0]:,}<br>"
+                            "Percent: %{customdata[1]:.2f}%<extra></extra>"
+                        ),
+                    ))
+            yaxis_title = "Percent of LR (%)"
+            yaxis = dict(tickformat=".2f", range=[0, 100])  # lock axis to 100
+        else:
+            # Bar heights are raw counts (including LR)
+            for step in funnel_steps:
+                pct_col = f"{step}_pct"
+                if step in df.columns and pct_col in df.columns:
+                    bar_customdata = [
+                        [row[step], row[pct_col], step, row[groupby_col]]
+                        for _, row in df.iterrows()
+                    ]
+                    fig.add_trace(go.Bar(
+                        x=df[groupby_col],
+                        y=df[step],
+                        name=step,
+                        text=df[step],
+                        customdata=bar_customdata,
+                        textposition="auto",
+                        hovertemplate=(
+                            f"{groupby_col.title()}: %{{customdata[3]}}<br>"
+                            "Step: %{customdata[2]}<br>"
+                            "Count: %{customdata[0]:,}<br>"
+                            "Percent: %{customdata[1]:.2f}%<extra></extra>"
+                        ),
+                    ))
+            yaxis_title = "Users"
+            yaxis = dict(tickformat=",d")
         if not chart_title:
             chart_title = f"{groupby_col.replace('_',' ').title()} Funnel Metrics"
 
@@ -848,5 +881,3 @@ def funnel_chart(
 
     st.plotly_chart(fig, use_container_width=True)
     return df
-
-
