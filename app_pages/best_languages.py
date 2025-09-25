@@ -2,18 +2,15 @@ import streamlit as st
 from ui_components import funnel_chart
 import ui_widgets as ui
 from metrics import get_filtered_cohort
-from settings import default_daterange
+from settings import default_daterange,initialize
+from users import ensure_user_data_initialized, get_country_list,get_language_list
 
 
-from settings import initialize
 initialize()
-from users import ensure_user_data_initialized
 ensure_user_data_initialized()
 
 ui.display_definitions_table("Definitions",ui.level_percent_definitions)
 
-
-from users import get_country_list,get_language_list
 countries_list = get_country_list()
 selected_languages = get_language_list()
 

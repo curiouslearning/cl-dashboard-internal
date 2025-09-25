@@ -2,10 +2,9 @@ import streamlit as st
 from rich import print as rprint
 from  ui_components import create_funnels_by_cohort,show_dual_metric_table
 import ui_widgets as ui
-import metrics
-
-
+from metrics import get_filtered_cohort,get_metrics_for_cohort
 from settings import initialize,init_cr_app_version_list
+
 initialize()
 init_cr_app_version_list()
 
@@ -47,13 +46,13 @@ if (
     and len(daterangeA) == 2 and len(daterangeB) == 2 and len(daterangeC) == 2
 ):
     # --- Cohort Dataframes ---
-    user_cohort_dfA, user_cohort_dfA_LR = metrics.get_filtered_cohort(appA, daterangeA, languageA, countries_listA)
-    user_cohort_dfB, user_cohort_dfB_LR =  metrics.get_filtered_cohort(appB, daterangeB, languageB, countries_listB)
-    user_cohort_dfC, user_cohort_dfC_LR =  metrics.get_filtered_cohort(appC, daterangeC, languageC, countries_listC)
+    user_cohort_dfA, user_cohort_dfA_LR = get_filtered_cohort(appA, daterangeA, languageA, countries_listA)
+    user_cohort_dfB, user_cohort_dfB_LR =  get_filtered_cohort(appB, daterangeB, languageB, countries_listB)
+    user_cohort_dfC, user_cohort_dfC_LR =  get_filtered_cohort(appC, daterangeC, languageC, countries_listC)
 
-    metrics_home_A = metrics.get_metrics_for_cohort(user_cohort_dfA)
-    metrics_home_B = metrics.get_metrics_for_cohort(user_cohort_dfB)
-    metrics_home_C = metrics.get_metrics_for_cohort(user_cohort_dfC)
+    metrics_home_A = get_metrics_for_cohort(user_cohort_dfA)
+    metrics_home_B = get_metrics_for_cohort(user_cohort_dfB)
+    metrics_home_C = get_metrics_for_cohort(user_cohort_dfC)
 
     def is_compact(apps):
         # Handles string or list

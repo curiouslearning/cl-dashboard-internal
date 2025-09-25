@@ -1,16 +1,18 @@
 import streamlit as st
-import settings
 from rich import print as rprint
 from millify import prettify
 import ui_components as uic
 import ui_widgets as ui
 import users
 import pandas as pd
-import datetime as dt
-
-settings.initialize()
-settings.init_campaign_data()
+from metrics import get_all_apps_combined_session_and_cohort_df,get_user_cohort_df
+from settings import initialize,init_campaign_data
 from users import ensure_user_data_initialized
+
+initialize()
+ensure_user_data_initialized()
+init_campaign_data()
+
 ensure_user_data_initialized()
 
 ui.display_definitions_table("Definitions",ui.level_definitions)
@@ -32,8 +34,6 @@ data_notes = pd.DataFrame(
 
 ui.display_definitions_table("Data Notes",data_notes)
 
-
-
 st.divider()
 st.subheader("Learners Over Time")
 
@@ -41,26 +41,23 @@ col1, col2 = st.columns(2, gap="large")
 
 with col1:
     countries_list = users.get_country_list()
-    countries_list = ui.multi_select_all(
+    countries_list = ui.multi_select_all_new(
         countries_list,
         title="Country Selection",
         key="LA_LR_Time",
-        placement="middle",
     )
+    
     languages = users.get_language_list()
-    language = ui.single_selector(
-        languages, placement="middle", title="Select a language", key="a-2"
+    language = ui.single_selector_new(
+        languages, title="Select a language", key="a-2"
     )
-    selected_date, option = ui.calendar_selector(placement="middle", key="fa-3", index=1)
+    selected_date, option = ui.calendar_selector_new(key="fa-3", index=1)
     daterange = ui.convert_date_to_range(selected_date, option)
 
 with col2:
     distinct_apps = ui.get_apps()
-    app = ui.single_selector(distinct_apps, placement="col", title="Select an App", key="a-10",include_All=False)
+    app = ui.single_selector_new(distinct_apps, title="Select an App", key="a-10",include_All=False)
 
-    option = st.radio(
-        "Select a statistic", ("LR", "LA"), index=0, horizontal=True, key="a-1"
-    )
     display_category = st.radio(
         "Display by", ("Country", "Language"), index=0, horizontal=True, key="a-3"
     )
@@ -70,16 +67,28 @@ if (len(countries_list)) > 0 and (len(daterange) == 2):
     start = daterange[0].strftime("%b %d, %Y")
     end = daterange[1].strftime("%b %d, %Y")
     st.write("Timerange: " + start + " to " + end)
-    df_download = uic.LR_LA_line_chart_over_time(
-        daterange, countries_list, app=app, language=language, option=option,display_category=display_category,aggregate=False
+    
+    #******* LR *******
+    session_df = get_all_apps_combined_session_and_cohort_df(
+        stat="LR"
     )
-    csv = ui.convert_for_download(df_download)
-    st.download_button(label="Download CSV",data=csv,file_name="LR_LA_line_chart_over_time.csv",key="a-12",icon=":material/download:",mime="text/csv")
 
-    df_download = uic.LR_LA_line_chart_over_time(
-        daterange, countries_list, app=app, language=language, option=option,display_category=display_category,aggregate=True
+    user_cohort_df = get_user_cohort_df(
+        session_df=session_df,
+        daterange=daterange,
+        languages=language,
+        countries_list=countries_list,
+        )
+    
+    uic.LR_LA_line_chart_over_time(
+        user_cohort_df=user_cohort_df,display_category=display_category,aggregate=False
     )
-    csv = ui.convert_for_download(df_download)
+
+    uic.LR_LA_line_chart_over_time(
+        user_cohort_df=user_cohort_df,display_category=display_category,aggregate=True
+    )
+
+    csv = ui.convert_for_download(user_cohort_df)
     st.download_button(label="Download CSV",data=csv,file_name="LR_LA_line_chart_over_time_aggregate.csv",key="a-13",icon=":material/download:",mime="text/csv")
 
 

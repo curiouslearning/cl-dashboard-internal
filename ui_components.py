@@ -12,23 +12,14 @@ import numpy as np
 
 default_daterange = [dt.datetime(2021, 1, 1).date(), dt.date.today()]
 
-
 @st.cache_data(ttl="1d", show_spinner=False)
 def LR_LA_line_chart_over_time(
-    daterange, countries_list, option, app=["CR"], language="All", display_category="Country", aggregate=True
+    user_cohort_df,option="LR",  display_category="Country", aggregate=True
 ):
-    df_user_list = metrics.filter_user_data(
-        daterange=daterange, countries_list=countries_list, stat=option, app=app, language=language
-    )
-
-    if option == "LA":
-        groupby = "LA Date"
-        title = "Daily Learners Acquired"
-        df_user_list.rename({"la_date": "LA Date"}, axis=1, inplace=True)
-    else:
-        groupby = "LR Date"
-        title = "Daily Learners Reached"
-        df_user_list.rename({"first_open": "LR Date"}, axis=1, inplace=True)
+    option = "LR"
+    groupby = "LR Date"
+    title = "Daily Learners Reached"
+    user_cohort_df.rename({"first_open": "LR Date"}, axis=1, inplace=True)
 
     # Group by date and display_type, then count the users
     if display_category == "Country":
@@ -39,12 +30,12 @@ def LR_LA_line_chart_over_time(
     color = display_group
 
     if aggregate:
-        grouped_df = df_user_list.groupby(groupby).size().reset_index(name=option)
+        grouped_df = user_cohort_df.groupby(groupby).size().reset_index(name=option)
         grouped_df[option] = grouped_df[option].cumsum()
         grouped_df["7 Day Rolling Mean"] = grouped_df[option].rolling(14).mean()
         color = None
     else:
-        grouped_df = df_user_list.groupby([groupby, display_group]).size().reset_index(name=option)
+        grouped_df = user_cohort_df.groupby([groupby, display_group]).size().reset_index(name=option)
         grouped_df["7 Day Rolling Mean"] = grouped_df[option].rolling(14).mean()
 
     # Plotly line graph
@@ -235,7 +226,7 @@ def create_engagement_figure(funnel_data, key="", funnel_size="large"):
 
 def levels_reached_chart(
     app_names=None,
-    stat="LA",
+    max_plot_level=35,
     title="Levels Reached by App"
 ):
     """
@@ -246,8 +237,7 @@ def levels_reached_chart(
     app_names : list[str]
         List of app names, e.g. ["CR", "Unity", "StandAloneHindi"].
         Defaults to ["CR", "Unity"] if not provided.
-    stat : str
-        Stat to pass into metrics.filter_user_data (default "LA").
+
     max_plot_level : int
         Maximum level to include on the x-axis (default 35).
     title : str
@@ -259,24 +249,24 @@ def levels_reached_chart(
     traces = []
 
     for app_name in app_names:
-        # Fetch user list for this app (note: app must be passed as a list)
-        df_user_list = metrics.filter_user_data(
-            stat=stat,
-            app=[app_name]
-        )
+        user_cohort_df, _ = metrics.get_filtered_cohort(app=app_name, language=["All"], countries_list=["All"],daterange=default_daterange)
 
-        if df_user_list is None or df_user_list.empty:
+        if user_cohort_df is None or user_cohort_df.empty:
             continue
+
+        # Keep only rows with max_user_level >= 1 and not null
+        filtered = user_cohort_df.loc[
+            user_cohort_df["max_user_level"].notnull() 
+            & (user_cohort_df["max_user_level"] >= 1)
+        ]
 
         # Count users by max_user_level up to the chosen max
         df = (
-            df_user_list[df_user_list["max_user_level"].notnull()]
-            .query("max_user_level <= @max_plot_level")
+            filtered.query("max_user_level <= @max_plot_level")
             .groupby("max_user_level", as_index=False)
             .size()
             .rename(columns={"size": "count"})
-            .sort_values("max_user_level", ascending=True)
-            .reset_index(drop=True)
+            .sort_values("max_user_level", ascending=True, ignore_index=True)
         )
 
         if df.empty:
@@ -300,7 +290,7 @@ def levels_reached_chart(
                 "App: %{text}<br>"
                 "Max Level: %{x}<br>"
                 "Percent reached: %{y:.2f}%<br>"
-                "Change from previous: %{customdata:.2f}%%<extra></extra>"
+                "Change from previous: %{customdata:.2f}%%<extra></extra><br>"
             ),
         )
         traces.append(trace)
@@ -475,7 +465,7 @@ def engagement_over_time_chart(df_list_with_labels, metric="Avg Total Time (minu
         df["cohort_week"] = df["first_open"].dt.to_period("W").apply(lambda r: r.start_time)
 
         agg = {
-            "user_count": ("cr_user_id", "nunique")
+            "user_count": ("user_pseudo_id", "nunique")
         }
 
         if metric == "Avg Session Count":
@@ -521,7 +511,7 @@ def engagement_over_time_chart(df_list_with_labels, metric="Avg Total Time (minu
         xaxis_title="Cohort Week",
         yaxis_title=y_label,
         yaxis_tickformat=",",
-        xaxis=dict(rangeslider=dict(visible=True))
+ 
     )
 
     st.plotly_chart(fig, use_container_width=True)

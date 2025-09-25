@@ -5,13 +5,13 @@ icon = ":large_brown_circle:"
 is_section = true
 
 [[pages]]
-path = "app_pages/single_funnel.py"
-name = "Single Funnel"
+path = "app_pages/compare_funnels.py"
+name = "Compare App Funnels"
 icon = ":small_orange_diamond:"
 
 [[pages]]
-path = "app_pages/compare_funnels.py"
-name = "Compare App Funnels"
+path = "app_pages/single_funnel.py"
+name = "Single Funnel"
 icon = ":small_orange_diamond:"
 
 [[pages]]
@@ -39,10 +39,6 @@ path = "app_pages/levels_reached.py"
 name = "Levels Reached"
 icon = ":small_orange_diamond:"
 
-[[pages]]
-path = "app_pages/engagement_over_time.py"
-name = "Engagement Over Time"
-icon = ":small_orange_diamond:"
 
 [[pages]]
 path = "app_pages/acquisition.py"

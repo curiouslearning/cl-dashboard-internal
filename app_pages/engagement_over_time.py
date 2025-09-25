@@ -1,14 +1,14 @@
 import streamlit as st
 import users
-import settings
-import metrics
 import ui_widgets as ui
 import ui_components as uic
-
-settings.initialize()
 from users import ensure_user_data_initialized
+from settings import initialize,init_cr_app_version_list,default_daterange
+from metrics import get_filtered_cohort
+
+initialize()
+init_cr_app_version_list()
 ensure_user_data_initialized()
-settings.init_cr_app_version_list()
 
 # Get options
 languages = users.get_language_list()
@@ -16,10 +16,11 @@ countries_list = users.get_country_list()
 
 # Choose number of cohorts to compare
 num_cohorts = st.number_input(
-    "How many cohorts to compare?", min_value=1, max_value=10, value=1, step=1
+    "How many cohorts to compare?", min_value=1, max_value=10, value=2, step=1
 )
 
 cohort_inputs = []
+apps = ui.get_apps()
 
 # Loop over each cohort configuration
 for i in range(num_cohorts):
@@ -27,31 +28,27 @@ for i in range(num_cohorts):
     col1, col2 = st.columns(2)
 
     with col1:
-        language = ui.single_selector(
-            languages, placement="col", title="Language", key=f"lang_{i}"
+        language = ui.single_selector_new(
+            languages, title="Language", key=f"lang_{i}"
         )
-        cr_app_versions = ui.app_version_selector(placement="col", key=f"ver_{i}")
+        app = ui.single_selector_new(apps,title="Select an App", key=f"app{i}",include_All=False,index=1)
 
     with col2:
-        countries = ui.single_selector(
-            countries_list, placement="col", title="Country", key=f"country_{i}"
+        countries = ui.single_selector_new(
+            countries_list,  title="Country", key=f"country_{i}"
         )
+        
 
-    cohort_label = f"{language} / {countries[0]} / {cr_app_versions}"
+    cohort_label = f"{language} / {countries[0]} / {app}"
 
-    df_user_list = metrics.filter_user_data(
-        countries_list=countries,
-        stat="LR",
-        app=["CR"],
-        cr_app_versions=cr_app_versions,
-        language=language,
-    )
+    user_cohort_df, _ = get_filtered_cohort(app=app, language=language, countries_list=countries_list,daterange=default_daterange)
 
-    if df_user_list.empty:
+
+    if user_cohort_df.empty:
         st.warning(f"⚠️ Cohort '{cohort_label}' has no users and will be skipped.")
         continue
 
-    cohort_inputs.append((cohort_label, df_user_list))
+    cohort_inputs.append((cohort_label, user_cohort_df))
 
 # Metric selector
 metric_choice = st.radio(

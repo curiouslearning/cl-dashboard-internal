@@ -3,12 +3,11 @@ from rich import print as rprint
 from  ui_components import create_funnels_by_cohort,show_dual_metric_table
 import ui_widgets as ui
 import metrics
-
+from users import ensure_user_data_initialized,get_language_list,get_country_list
 from settings import initialize,init_cr_app_version_list
+
 initialize()
 init_cr_app_version_list()
-
-from users import ensure_user_data_initialized,get_language_list,get_country_list
 ensure_user_data_initialized()
 
 ui.display_definitions_table("Data Notes",ui.data_notes)

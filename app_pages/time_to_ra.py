@@ -1,10 +1,10 @@
 import streamlit as st
 import ui_widgets as ui
-from metrics import select_and_filter_user_cohort_df,calculate_average_metric_per_user
-
-from settings import initialize
-initialize()
+from metrics import get_filtered_cohort,calculate_average_metric_per_user
 from users import ensure_user_data_initialized
+from settings import initialize,default_daterange
+
+initialize()
 ensure_user_data_initialized()
 
 col1, col2, col3 = st.columns(3)
@@ -38,7 +38,7 @@ with col3:
 
 if (len(selected_languages) > 0 and len(selected_languages) > 0):
     
-    user_cohort_df, user_cohort_df_LR = select_and_filter_user_cohort_df(app, daterange, selected_languages, countries_list)
+    user_cohort_df, user_cohort_df_LR = get_filtered_cohort(app=app, language=selected_languages, countries_list=countries_list,daterange=default_daterange)
     
     average_days_to_ra= calculate_average_metric_per_user(user_cohort_df,column_name="days_to_ra")
     col1.metric(label="Avg Days to RA", value=f"{average_days_to_ra:.2f}")

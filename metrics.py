@@ -605,7 +605,6 @@ def funnel_percent_by_group(
     Returns a single DataFrame with raw counts and percent-normalized columns (suffix '_pct') by group.
     Handles CR (two dfs for LR), all other apps (one df for all steps).
     """
-    import pandas as pd
 
     app_name = app[0] if isinstance(app, list) and len(app) > 0 else app
     app_name = str(app_name) if app_name is not None else ""

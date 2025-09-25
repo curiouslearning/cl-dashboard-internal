@@ -2,9 +2,11 @@ import streamlit as st
 import settings
 from millify import prettify
 import campaigns
-import metrics
 import ui_widgets as ui
 import pandas as pd
+settings.initialize()
+settings.init_campaign_data()
+from users import ensure_user_data_initialized
 
 data_notes = pd.DataFrame(
     [
@@ -18,9 +20,7 @@ data_notes = pd.DataFrame(
     columns=["Note", "Description"],
 )
 ## UI ##
-settings.initialize()
-settings.init_campaign_data()
-from users import ensure_user_data_initialized
+
 ensure_user_data_initialized()
 
 ui.display_definitions_table("Campaign Data Notes",data_notes)
