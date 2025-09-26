@@ -28,13 +28,13 @@ for i in range(num_cohorts):
     col1, col2 = st.columns(2)
 
     with col1:
-        language = ui.single_selector_new(
+        language = ui.single_selector(
             languages, title="Language", key=f"lang_{i}"
         )
-        app = ui.single_selector_new(apps,title="Select an App", key=f"app{i}",include_All=False,index=1)
+        app = ui.single_selector(apps,title="Select an App", key=f"app{i}",include_All=False,index=1)
 
     with col2:
-        countries = ui.single_selector_new(
+        countries = ui.single_selector(
             countries_list,  title="Country", key=f"country_{i}"
         )
         

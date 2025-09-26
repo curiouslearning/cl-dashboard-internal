@@ -41,22 +41,22 @@ col1, col2 = st.columns(2, gap="large")
 
 with col1:
     countries_list = users.get_country_list()
-    countries_list = ui.multi_select_all_new(
+    countries_list = ui.multi_select_all(
         countries_list,
         title="Country Selection",
         key="LA_LR_Time",
     )
     
     languages = users.get_language_list()
-    language = ui.single_selector_new(
+    language = ui.single_selector(
         languages, title="Select a language", key="a-2"
     )
-    selected_date, option = ui.calendar_selector_new(key="fa-3", index=1)
+    selected_date, option = ui.calendar_selector(key="fa-3", index=1)
     daterange = ui.convert_date_to_range(selected_date, option)
 
 with col2:
     distinct_apps = ui.get_apps()
-    app = ui.single_selector_new(distinct_apps, title="Select an App", key="a-10",include_All=False)
+    app = ui.single_selector(distinct_apps, title="Select an App", key="a-10",include_All=False)
 
     display_category = st.radio(
         "Display by", ("Country", "Language"), index=0, horizontal=True, key="a-3"

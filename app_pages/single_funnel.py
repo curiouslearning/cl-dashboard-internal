@@ -20,11 +20,11 @@ distinct_apps = ui.get_apps()
 col1, col2 = st.columns(2)
 
 with col1:
-    language = ui.single_selector_new(languages, title="Select a language", key="s1",index=0)
-    countries_list = ui.multi_select_all_new(countries_list, title="Country Selection", key="s2")
-    app = ui.single_selector_new(distinct_apps,title="Select an App", key="s4",include_All=False,index=0)
+    language = ui.single_selector(languages, title="Select a language", key="s1",index=0)
+    countries_list = ui.multi_select_all(countries_list, title="Country Selection", key="s2")
+    app = ui.single_selector(distinct_apps,title="Select an App", key="s4",include_All=False,index=0)
 with col2:    
-    selected_date, option = ui.calendar_selector_new( key="s3", title="Select a date range", index=0)
+    selected_date, option = ui.calendar_selector( key="s3", title="Select a date range", index=0)
     daterange = ui.convert_date_to_range(selected_date, option)
 
 

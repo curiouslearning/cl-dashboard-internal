@@ -35,16 +35,16 @@ ui.colorize_multiselect_options()
 languages = get_language_list()
 
 with st.sidebar:
-    language = ui.single_selector_new(
+    language = ui.single_selector(
         languages, title="Select a language", key="e-1"
     )
 
     countries_list = get_country_list()
-    countries_list = ui.multi_select_all_new(
+    countries_list = ui.multi_select_all(
         countries_list, title="Country Selection", key="e-2"
     )
 
-    selected_date, option = ui.calendar_selector_new()
+    selected_date, option = ui.calendar_selector()
     daterange = ui.convert_date_to_range(selected_date, option)
 
 apps = ui.get_apps()

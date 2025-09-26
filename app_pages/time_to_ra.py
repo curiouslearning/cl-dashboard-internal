@@ -12,19 +12,19 @@ col1, col2, col3 = st.columns(3)
 with col1:
     from users import get_country_list
     countries_list = get_country_list()
-    country = ui.single_selector_new(
+    country = ui.single_selector(
         countries_list,
         title="Country Selection",
         key="la-2",
     )
     
     distinct_apps = ui.get_apps()
-    app = ui.single_selector_new(distinct_apps, title="Select an App", key="a-10",include_All=False)
+    app = ui.single_selector(distinct_apps, title="Select an App", key="a-10",include_All=False)
 
     by_months = st.toggle("Show by Months", value=False)
     
 with col2:
-    selected_date, option = ui.calendar_selector_new(key="SF-1", index=0, title="Select user cohort by date")
+    selected_date, option = ui.calendar_selector(key="SF-1", index=0, title="Select user cohort by date")
     daterange = ui.convert_date_to_range(selected_date, option)
 
 with col3:
@@ -32,7 +32,7 @@ with col3:
 
     from users import get_language_list
     df = get_language_list()
-    selected_languages = ui.multi_select_all_new(
+    selected_languages = ui.multi_select_all(
         df,  title="Select languages", key="fa-1"
     )   
 

@@ -18,7 +18,7 @@ col1,col2 = st.columns(2)
 
 distinct_apps = ui.get_apps()
 with col1:
-    app = ui.single_selector_new(distinct_apps, title="Select an App", key="sf-10",include_All=False)
+    app = ui.single_selector(distinct_apps, title="Select an App", key="sf-10",include_All=False)
     sort_by = st.radio(label="Sort By: ", options=["Percent","Total"])      
 
 user_cohort_df, user_cohort_df_LR = get_filtered_cohort(app=app, language=selected_languages, countries_list=countries_list,daterange=default_daterange)

@@ -21,25 +21,25 @@ distinct_apps = ui.get_apps()
 col1, col2, col3 = st.columns(3)
 
 with col1:
-    languageA = ui.single_selector_new(languages, title="Select a language", key="cf-2",index=20)
-    countries_listA = ui.multi_select_all_new(countries_list, title="Country Selection", key="cf-3")
-    selected_date, option = ui.calendar_selector_new( key="crf-4", title="Select date user cohort", index=4,preset_index=4)
+    languageA = ui.single_selector(languages, title="Select a language", key="cf-2",index=20)
+    countries_listA = ui.multi_select_all(countries_list, title="Country Selection", key="cf-3")
+    selected_date, option = ui.calendar_selector( key="crf-4", title="Select date user cohort", index=4,preset_index=4)
     daterangeA = ui.convert_date_to_range(selected_date, option)
-    appA = ui.single_selector_new(distinct_apps,title="Select an App", key="cf-5",include_All=False,index=1)
+    appA = ui.single_selector(distinct_apps,title="Select an App", key="cf-5",include_All=False,index=1)
 
 with col2:
-    languageB = ui.single_selector_new(languages,  title="Select a language", key="cf-7",index=20)
-    countries_listB = ui.multi_select_all_new(countries_list, title="Country Selection", key="cf-8")
-    selected_date, option = ui.calendar_selector_new(key="crf-9", title="Select date user cohort", index=4,preset_index=4)
+    languageB = ui.single_selector(languages,  title="Select a language", key="cf-7",index=20)
+    countries_listB = ui.multi_select_all(countries_list, title="Country Selection", key="cf-8")
+    selected_date, option = ui.calendar_selector(key="crf-9", title="Select date user cohort", index=4,preset_index=4)
     daterangeB = ui.convert_date_to_range(selected_date, option)
-    appB = ui.single_selector_new(distinct_apps, title="Select an App", key="cf-10",include_All=False,index=0)
+    appB = ui.single_selector(distinct_apps, title="Select an App", key="cf-10",include_All=False,index=0)
         
 with col3:
-    languageC = ui.single_selector_new(languages, title="Select a language", key="cf-20")
-    countries_listC = ui.multi_select_all_new(countries_list, title="Country Selection", key="cf-21")
-    selected_date, option = ui.calendar_selector_new( key="cf-22", title="Select date user cohort", index=4,preset_index=4)
+    languageC = ui.single_selector(languages, title="Select a language", key="cf-20")
+    countries_listC = ui.multi_select_all(countries_list, title="Country Selection", key="cf-21")
+    selected_date, option = ui.calendar_selector( key="cf-22", title="Select date user cohort", index=4,preset_index=4)
     daterangeC = ui.convert_date_to_range(selected_date, option)
-    appC = ui.single_selector_new(distinct_apps, title="Select an App", key="cf-23",include_All=False,index=5)
+    appC = ui.single_selector(distinct_apps, title="Select an App", key="cf-23",include_All=False,index=5)
 
 if (
     len(countries_listA) and len(countries_listB) and len(countries_listC)

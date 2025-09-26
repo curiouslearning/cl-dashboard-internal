@@ -2,11 +2,12 @@ import streamlit as st
 from rich import print as rprint
 from millify import prettify
 import pandas as pd
-
-import settings
-
-settings.initialize()
 from users import ensure_user_data_initialized
+from settings import initialize,get_gcp_credentials
+
+initialize()
+ensure_user_data_initialized()
+
 ensure_user_data_initialized()
 
 def info_row(label, value, color="green"):
@@ -67,7 +68,7 @@ if (len(cr_user_id) > 0):
 
     if st.button("Run Full Event Query for this User"):
         with st.spinner("Running BigQuery..."):
-            gcp_credentials, bq_client = settings.get_gcp_credentials()
+            gcp_credentials, bq_client = get_gcp_credentials()
 
             sql = f"""
                     SELECT

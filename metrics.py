@@ -177,7 +177,7 @@ def select_user_dataframe(app, stat, session_state):
         user_list_key = "cr_user_id"
         return df, user_list_key
 
-def select_user_dataframe_new(app, stat=None):
+def select_user_dataframe(app, stat=None):
     apps = [app] if isinstance(app, str) else app
 
     if "Unity" in apps:
@@ -326,7 +326,7 @@ def get_counts(
     return counts
 
 @st.cache_data(ttl="1d", show_spinner=False)
-def get_counts_new(
+def get_counts(
     user_cohort_df,          # DataFrame with all the new columns
     groupby_col="app_language",  # or "country", or any grouping column you want
 ):
@@ -549,7 +549,7 @@ def get_all_apps_combined_session_and_cohort_df(stat=None):
     all_apps = get_apps()
     
     for app in all_apps:
-        session_df = select_user_dataframe_new(app=app, stat=stat)
+        session_df = select_user_dataframe(app=app, stat=stat)
         session_dfs.append(session_df)
 
     # Combine all the session dataframes
@@ -562,7 +562,7 @@ def get_filtered_cohort(app, daterange, language, countries_list):
     """Returns (user_cohort_df, user_cohort_df_LR) for app selection."""
     is_cr = (app == ["CR"] or app == "CR")
     user_cohort_df_LR = None
-    session_df = select_user_dataframe_new(app=app)
+    session_df = select_user_dataframe(app=app)
     user_cohort_df = get_user_cohort_df(
         session_df=session_df,
         daterange=daterange,
@@ -571,7 +571,7 @@ def get_filtered_cohort(app, daterange, language, countries_list):
         app=app
     )
     if is_cr:
-        session_df_LR = select_user_dataframe_new(app=app, stat="LR")
+        session_df_LR = select_user_dataframe(app=app, stat="LR")
         user_cohort_df_LR = get_user_cohort_df(
             session_df=session_df_LR,
             daterange=daterange,
