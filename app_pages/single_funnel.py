@@ -32,7 +32,7 @@ if (len(countries_list) and len(daterange) == 2 ):
 # --- Cohort Dataframes ---
     user_cohort_df, user_cohort_df_LR = metrics.get_filtered_cohort(app, daterange, language, countries_list)
 
-    metrics_home = metrics.get_metrics_for_cohort(user_cohort_df)
+    metrics_home = metrics.get_engagement_metrics_for_cohort(user_cohort_df)
 
     def is_compact(apps):
         # Handles string or list

@@ -5,7 +5,7 @@ import ui_components as uic
 import ui_widgets as ui
 import users
 import pandas as pd
-from metrics import get_all_apps_combined_session_and_cohort_df,get_user_cohort_df
+from metrics import get_filtered_cohort,get_cohort_totals_by_metric
 from settings import initialize,init_campaign_data
 from users import ensure_user_data_initialized
 
@@ -15,26 +15,8 @@ init_campaign_data()
 
 ensure_user_data_initialized()
 
-ui.display_definitions_table("Definitions",ui.level_definitions)
 ui.colorize_multiselect_options()
 
-data_notes = pd.DataFrame(
-    [
-        [
-            "Minimum LR",
-            "Scatter chart currently set to LR and LA groups > 200",
-        ],
-        [
-            "Date selection",
-            "Cost based charts only include data for campaigns that match our naming conventions that were running before and or after the date the names were changed",
-        ],
-    ],
-    columns=["Note", "Description"],
-)
-
-ui.display_definitions_table("Data Notes",data_notes)
-
-st.divider()
 st.subheader("Learners Over Time")
 
 col1, col2 = st.columns(2, gap="large")
@@ -68,18 +50,16 @@ if (len(countries_list)) > 0 and (len(daterange) == 2):
     end = daterange[1].strftime("%b %d, %Y")
     st.write("Timerange: " + start + " to " + end)
     
-    #******* LR *******
-    session_df = get_all_apps_combined_session_and_cohort_df(
-        stat="LR"
-    )
-
-    user_cohort_df = get_user_cohort_df(
-        session_df=session_df,
-        daterange=daterange,
-        languages=language,
-        countries_list=countries_list,
-        )
+    user_cohort_df, user_cohort_df_LR = get_filtered_cohort(app, daterange, language, countries_list)
     
+    is_cr = (app == ["CR"] or app == "CR")
+    if is_cr:
+        user_cohort_df = user_cohort_df_LR
+    
+    LR = get_cohort_totals_by_metric(user_cohort_df,stat="LR")
+
+    st.metric(label="Total Learners Reached", value=prettify(int(LR)))
+      
     uic.LR_LA_line_chart_over_time(
         user_cohort_df=user_cohort_df,display_category=display_category,aggregate=False
     )
@@ -89,7 +69,7 @@ if (len(countries_list)) > 0 and (len(daterange) == 2):
     )
 
     csv = ui.convert_for_download(user_cohort_df)
-    st.download_button(label="Download CSV",data=csv,file_name="LR_LA_line_chart_over_time_aggregate.csv",key="a-13",icon=":material/download:",mime="text/csv")
+    st.download_button(label="Download CSV",data=csv,file_name="LR_LA_line_chart_over_time.csv",key="a-13",icon=":material/download:",mime="text/csv")
 
 
 

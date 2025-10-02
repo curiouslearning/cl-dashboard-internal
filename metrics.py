@@ -7,7 +7,6 @@ import datetime as dt
 
 default_daterange = [dt.datetime(2021, 1, 1).date(), dt.date.today()]
 
-
 @st.cache_data(ttl="1d", show_spinner=False)
 def get_cohort_totals_by_metric(
     cohort_df,
@@ -18,9 +17,6 @@ def get_cohort_totals_by_metric(
     - cohort_df: DataFrame, filtered to your user cohort (one row per user)
     - stat: string, which funnel metric to count ("LR", "DC", "TS", "SL", "PC", "LA", "RA", "GC")
     """
-
-    if cohort_df.empty:
-        return 0
 
     # Stat-specific filters (formerly in filter_user_data)
     if stat == "LA":
@@ -140,42 +136,6 @@ def filter_user_data(
 
     return df
 
-def select_user_dataframe(app, stat, session_state):
-    """
-    Returns the correct dataframe based on app(s) and stat.
-    - app: str or list of str (single app or multiple apps)
-    - stat: string ('LR', etc.)
-    - session_state: Streamlit session_state
-    """
-    # Always treat app as a list for logic
-    apps = [app] if isinstance(app, str) else app
-
-    # Unity (if selected among apps)
-    if "Unity" in apps:
-        df = session_state.df_unity_users
-        user_list_key = "user_pseudo_id"
-        return df, user_list_key
-
-    # Any -standalone
-    elif any(a.endswith("-standalone") for a in apps if isinstance(a, str)):
-        df = session_state.df_cr_users
-        # Only filter if not "All" (defensive)
-        if "All" not in apps:
-            df = df[df["app"].isin(apps)]
-        user_list_key = "cr_user_id"
-        return df, user_list_key
-
-    # CR special case (only CR selected and stat == "LR")
-    elif apps == ["CR"] and stat == "LR":
-        df = session_state.df_cr_app_launch
-        user_list_key = "cr_user_id"
-        return df, user_list_key
-
-    # All other cases: general CR users table
-    else:
-        df = session_state.df_cr_users
-        user_list_key = "cr_user_id"
-        return df, user_list_key
 
 def select_user_dataframe(app, stat=None):
     apps = [app] if isinstance(app, str) else app
@@ -240,92 +200,6 @@ def weeks_since(daterange):
 
 # Returns a DataFrame list of counts by language or counts by country
 
-@st.cache_data(ttl="1d", show_spinner=False)
-def get_counts(
-    type="app_language",
-    daterange=default_daterange,
-    countries_list=["All"],
-    app=["CR"],
-    language=["All"],
-    user_list=None
-):
-    dfLR = (
-        filter_user_data(
-            daterange=daterange, countries_list=countries_list, stat="LR", app=app, language=language,user_list=user_list
-        )
-        .groupby(type)
-        .size()
-        .to_frame(name="LR")
-        .reset_index()
-    )
-    dfLA = (
-        filter_user_data(daterange=daterange, countries_list=countries_list, stat="LA", app=app, language=language,user_list=user_list)
-        .groupby(type)
-        .size()
-        .to_frame(name="LA")
-        .reset_index()
-    )    
-    dfRA = (
-        filter_user_data(daterange=daterange, countries_list=countries_list,  stat="RA", app=app, language=language,user_list=user_list)
-        .groupby(type)
-        .size()
-        .to_frame(name="RA")
-        .reset_index()
-    )
-    
-    counts = (
-        dfLR
-        .merge(dfLA, on=type, how="left")
-        .merge(dfRA, on=type, how="left")
-        .fillna(0)
-    )
-
-    #### GPP ###
-    df = filter_user_data(
-       daterange=daterange, countries_list=countries_list, stat="LA", app=app, language=language,user_list=user_list
-       )
-    avg_gpc_per_type = df.groupby(type)["gpc"].mean().round(2)
-    dfGPP = pd.DataFrame(
-          {
-              type: avg_gpc_per_type.index,
-             "GPP": avg_gpc_per_type.values,
-            }
-    ).fillna(0)
-
-    counts = counts.merge(dfGPP, on=type, how="left").fillna(0)
-
-    dfPC = (
-        filter_user_data(daterange=daterange, countries_list=countries_list, stat="PC", app=app, language=language,user_list=user_list)
-        .groupby(type)
-        .size()
-        .to_frame(name="PC")
-        .reset_index()
-    )
-
-    counts = counts.merge(dfPC, on=type, how="left").fillna(0)
-    df = filter_user_data(
-        daterange=daterange, countries_list=countries_list, stat="LA", app=app, language=language,user_list=user_list
-    )
-    gpc_gt_90_counts = df[df["gpc"] >= 90].groupby(type)["user_pseudo_id"].count()
-    total_user_counts = df.groupby(type)["user_pseudo_id"].count()
-
-    # Reset index to bring "country" back as a column
-    gpc_gt_90_counts = gpc_gt_90_counts.reset_index()
-    total_user_counts = total_user_counts.reset_index()
-
-    # Merge the counts into a single DataFrame
-    gca = pd.merge(
-        gpc_gt_90_counts.rename(columns={"user_pseudo_id": "gpc_gt_90_users"}),
-        total_user_counts.rename(columns={"user_pseudo_id": "total_users"}),
-        on=type,
-    )
-
-    # Calculate the percentage and add it as a new column
-    gca["GCA"] = gca["gpc_gt_90_users"] / gca["total_users"] * 100
-    counts = counts.merge(gca, on=type, how="left").round(2).fillna(0)
-    return counts
-
-@st.cache_data(ttl="1d", show_spinner=False)
 def get_counts(
     user_cohort_df,          # DataFrame with all the new columns
     groupby_col="app_language",  # or "country", or any grouping column you want
@@ -431,41 +305,7 @@ def get_totals_per_month_from_cohort(cohort_df, stat, daterange, date_col="first
 
     return pd.DataFrame(totals_by_month)
 
-#@st.cache_data(ttl="1d", show_spinner=False)
-def get_user_cohort_list(
-    daterange=default_daterange,
-    languages=["All"],
-    cr_app_versions="All",
-    countries_list=["All"],
-    app=["CR"],
-    as_list=True,
-    offline_filter=None
-):
-    """
-    Returns a list of user identifiers (default) or a DataFrame of cohort info based on first_open date,
-    country, language, and app type. Use as_list=False to return full DataFrame.
-    """
-    df_user_cohort = filter_user_data(
-        daterange=daterange,
-        countries_list=countries_list,
-        app=app,
-        language=languages,
-        user_list=None
-    )
 
-    apps = [app] if isinstance(app, str) else app
-    # If any selected app is CR or endswith -standalone, use cr_user_id; else user_pseudo_id
-    if "CR" in apps or any(a.endswith("-standalone") for a in apps if isinstance(a, str)):
-        user_cohort_df = df_user_cohort[["cr_user_id", "first_open", "country", "app_language", "app_version"]]
-        user_id_col = "cr_user_id"
-    else:
-        user_cohort_df = df_user_cohort[["user_pseudo_id"]]
-        user_id_col = "user_pseudo_id"
-
-    if as_list:
-        return user_cohort_df[user_id_col].dropna().tolist()
-    else:
-        return user_cohort_df
 
 def get_user_cohort_df(
     session_df,
@@ -530,7 +370,7 @@ def calculate_average_metric_per_user(user_cohort_df, column_name):
 
 
 @st.cache_data(ttl="1d", show_spinner="Calculating metrics")
-def get_metrics_for_cohort(user_cohort_df):
+def get_engagement_metrics_for_cohort(user_cohort_df):
 
     return {
         "Avg Level Reached": calculate_average_metric_per_user(user_cohort_df=user_cohort_df,column_name="max_user_level"),
@@ -580,18 +420,6 @@ def get_filtered_cohort(app, daterange, language, countries_list):
             app=app
         )
     return user_cohort_df, user_cohort_df_LR
-
-
-def get_cumulative_funnel_counts(df, funnel_order):
-    """
-    For each stage, return the number of users whose furthest_event is this stage or any later stage.
-    Returns: dict {stage: count}
-    """
-    counts = {}
-    for i, stage in enumerate(funnel_order):
-        later_stages = funnel_order[i:]
-        counts[stage] = df[df["furthest_event"].isin(later_stages)].shape[0]
-    return counts
 
 
 def funnel_percent_by_group(
