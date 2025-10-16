@@ -70,72 +70,6 @@ def get_cohort_totals_by_metric(
 
     return 0  # default fallback
 
-# Takes the complete user lists (cr_user_id) and filters based on input data, and returns
-# a new filtered dataset
-def filter_user_data(
-    daterange=default_daterange,
-    countries_list=["All"],
-    cr_app_versions=["All"],
-    stat="LR",
-    app=["CR"],
-    language=["All"],
-    user_list=None,
-    offline_filter=None
-):
-    # Check if necessary dataframes are available
-    if not all(key in st.session_state for key in ["df_cr_users", "df_unity_users",  "df_cr_app_launch"]):
-        print("PROBLEM!")
-        return pd.DataFrame()
-
-    # Select the appropriate dataframe and user_list_key
-    df, user_list_key = select_user_dataframe(app, stat, st.session_state)
-
-    # Initialize a boolean mask
-    mask = (
-        df["first_open"] >= pd.to_datetime(daterange[0])
-    ) & (
-        df["first_open"] <= pd.to_datetime(daterange[1])
-    )
-
-    if "All" not in cr_app_versions and app == "CR":
-        mask &= df["app_version"].isin(cr_app_versions)
-    
-    # Apply country filter if not "All"
-    if countries_list[0] != "All":
-        mask &= df['country'].isin(set(countries_list))
-
-    # Apply language filter if not "All" 
-    if language[0] != "All":
-        mask &= df['app_language'].isin(set(language))
-  
-    # Apply started_in_offline_mode filter if not None
-    if offline_filter is not None:
-        if offline_filter is True:
-            mask &= df["started_in_offline_mode"] == True
-        else:  # offline_filter is False
-            mask &= df["started_in_offline_mode"] != True
-
-    # Apply stat-specific filters
-    if stat == "LA":
-        mask &= (df['max_user_level'] >= 1)
-    elif stat == "RA":
-        mask &= (df['max_user_level'] >= 25)
-    elif stat == "GC":  # Game completed
-        mask &= (df['max_user_level'] >= 1) & (df['gpc'] >= 90)
-    elif stat == "LR":
-        pass  # No additional filters for these stats beyond daterange and optional countries/language
-
-    # Filter the dataframe with the combined mask 
-    df = df.loc[mask]
-
-    # If user list subset was passed in, filter on that as well
-    if user_list is not None:
-        if len(user_list) == 0:
-            return pd.DataFrame()  # No matches — return empty
-        df = df[df[user_list_key].isin(user_list)]
-
-    return df
-
 
 def select_user_dataframe(app, stat=None):
     apps = [app] if isinstance(app, str) else app
@@ -477,4 +411,139 @@ def funnel_percent_by_group(
     all_zero = (df[norm_steps].fillna(0).astype(float) == 0).all(axis=1)
     df = df[~all_zero].reset_index(drop=True)
     return df, funnel_steps  # Or just return df if you don't need funnel_steps
+
+@st.cache_data(ttl="1d", show_spinner=False)
+def get_sorted_funnel_df(
+    cohort_df,
+    cohort_df_LR=None,
+    groupby_col="app_language",
+    app=None,
+    min_funnel=True,
+    stat="LA",
+    sort_by="Total",
+    ascending=False,
+    use_top_ten=True
+):
+    """
+    Returns a funnel dataframe (with counts and percentages) sorted by the chosen stat.
+    Decoupled from Streamlit chart UI so it can be reused for tables, CSVs, or other charts.
+
+    Parameters
+    ----------
+    cohort_df : pd.DataFrame
+        Main cohort dataframe (includes all funnel users)
+    cohort_df_LR : pd.DataFrame, optional
+        Learners Reached dataframe (for CR app only)
+    groupby_col : str, default "app_language"
+        Column to group by ("app_language", "country", etc.)
+    app : str or list, optional
+        App name (e.g., "CR", "Unity", etc.)
+    min_funnel : bool, default True
+        If True, uses minimal funnel steps for CR
+    stat : str, default "LA"
+        Funnel metric to sort by ("LR", "LA", "RA", "GC", etc.)
+    sort_by : str, default "Total"
+        Whether to sort by "Total" (raw counts) or "Percent"
+    ascending : bool, default False
+        Sort ascending (lowest first) or descending (highest first)
+    use_top_ten : bool, default True
+        If True, return top 10 rows
+
+    Returns
+    -------
+    df : pd.DataFrame
+        Sorted funnel dataframe
+    funnel_steps : list
+        List of funnel step names in order
+    """
+
+    # Compute funnel summary and funnel step order
+    df, funnel_steps = funnel_percent_by_group(
+        cohort_df=cohort_df,
+        cohort_df_LR=cohort_df_LR,
+        groupby_col=groupby_col,
+        app=app,
+        min_funnel=min_funnel
+    )
+
+    # Determine sort column
+    if sort_by.lower() == "percent":
+        sort_col = stat if stat == "LR" else f"{stat}_pct"
+    else:
+        sort_col = stat
+
+    # Sort the dataframe
+    df = df.sort_values(by=sort_col, ascending=ascending)
+
+    # Limit to top 10 if requested
+    if use_top_ten:
+        df = df.head(10)
+
+    return df, funnel_steps
+
+@st.cache_data(ttl="1d", show_spinner=False)
+def get_top_and_bottom_funnel_groups(
+    cohort_df,
+    cohort_df_LR=None,
+    groupby_col="app_language",
+    app=None,
+    stat="RA",
+    sort_by="Percent",
+    min_funnel=True,
+):
+    """
+    Returns two sorted DataFrames: top 10 and bottom 10 groups by the given stat.
+
+    Parameters
+    ----------
+    cohort_df : pd.DataFrame
+        Main cohort dataframe
+    cohort_df_LR : pd.DataFrame, optional
+        Learners Reached dataframe (for CR app only)
+    groupby_col : str, default "app_language"
+        Column to group by ("app_language", "country", etc.)
+    app : str or list, optional
+        App name (e.g., "CR", "Unity", etc.)
+    stat : str, default "RA"
+        Funnel metric to sort by ("LR", "LA", "RA", "GC", etc.)
+    sort_by : str, default "Percent"
+        Sort criterion ("Total" or "Percent")
+    min_funnel : bool, default True
+        Use minimal funnel for CR app
+
+    Returns
+    -------
+    top10 : pd.DataFrame
+        Top 10 groups sorted by descending stat value
+    bottom10 : pd.DataFrame
+        Bottom 10 groups sorted by ascending stat value
+    funnel_steps : list
+        Funnel steps returned by funnel_percent_by_group
+    """
+
+    top10, funnel_steps = get_sorted_funnel_df(
+        cohort_df=cohort_df,
+        cohort_df_LR=cohort_df_LR,
+        groupby_col=groupby_col,
+        app=app,
+        min_funnel=min_funnel,
+        stat=stat,
+        sort_by=sort_by,
+        ascending=False,
+        use_top_ten=True
+    )
+
+    bottom10, _ = get_sorted_funnel_df(
+        cohort_df=cohort_df,
+        cohort_df_LR=cohort_df_LR,
+        groupby_col=groupby_col,
+        app=app,
+        min_funnel=min_funnel,
+        stat=stat,
+        sort_by=sort_by,
+        ascending=True,
+        use_top_ten=True
+    )
+
+    return top10, bottom10, funnel_steps
 

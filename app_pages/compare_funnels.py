@@ -3,10 +3,9 @@ from rich import print as rprint
 from  ui_components import create_funnels_by_cohort,show_dual_metric_table
 import ui_widgets as ui
 from metrics import get_filtered_cohort,get_engagement_metrics_for_cohort
-from settings import initialize,init_cr_app_version_list
+from settings import initialize
 
 initialize()
-init_cr_app_version_list()
 
 from users import ensure_user_data_initialized,get_language_list,get_country_list
 ensure_user_data_initialized()
