@@ -46,12 +46,8 @@ if (len(cr_user_id) > 0):
         info_row("Country:", safe_value(user["country"].iloc[0]))
         info_row("Language:", safe_value(user["app_language"].iloc[0]))
         info_row("CR First Open:", safe_value(user["first_open"].iloc[0]))
-        info_row("CR Last Event Date:", safe_value(user["last_event_date"].iloc[0]))
-        info_row("Calculated Engagement events:", safe_value(user["engagement_event_count"].iloc[0]))
-        info_row("Calculated Engagement time:", safe_value(user["total_time_minutes"].iloc[0]))
-        info_row("App version:", safe_value(user["app_version"].iloc[0]))
     else:
-        st.warning("No CR data found for this cr_user_id.")
+        st.warning("No CR App Launch data found for this cr_user_id.")
 
     # CR Users / FTM
     user = df_cr_users.loc[df_cr_users['cr_user_id'] == cr_user_id]
@@ -60,6 +56,10 @@ if (len(cr_user_id) > 0):
         info_row("FTM Furthest Event:", safe_value(user["furthest_event"].iloc[0]))
         info_row("FTM Level:", safe_value(user["max_user_level"].iloc[0]))    
         info_row("Learner Acquired Date :", safe_value(user["la_date"].iloc[0]))
+        info_row("CR Last Event Date:", safe_value(user["last_event_date"].iloc[0]))
+        info_row("Calculated Engagement events:", safe_value(user["engagement_event_count"].iloc[0]))
+        info_row("Calculated Engagement time:", safe_value(user["total_time_minutes"].iloc[0]))
+
     else:
         st.warning("No FTM data found for this cr_user_id.")
 

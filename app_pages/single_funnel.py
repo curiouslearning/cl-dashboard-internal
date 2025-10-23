@@ -15,6 +15,7 @@ languages = get_language_list()
 countries_list = get_country_list()
 
 distinct_apps = ui.get_apps()
+distinct_cohorts = ui.get_predefined_cohorts()
 
 col1, col2 = st.columns(2)
 
@@ -25,11 +26,12 @@ with col1:
 with col2:    
     selected_date, option = ui.calendar_selector( key="s3", title="Select a date range", index=0)
     daterange = ui.convert_date_to_range(selected_date, option)
+    cohort =ui.single_selector(distinct_cohorts,title="Select a cohort", key="s7",include_All=True,index=0)
 
 
 if (len(countries_list) and len(daterange) == 2 ):
 # --- Cohort Dataframes ---
-    user_cohort_df, user_cohort_df_LR = metrics.get_filtered_cohort(app, daterange, language, countries_list)
+    user_cohort_df, user_cohort_df_LR = metrics.get_filtered_cohort(app=app, daterange=daterange, language=language, countries_list=countries_list,cohort=cohort)
 
     metrics_home = metrics.get_engagement_metrics_for_cohort(user_cohort_df)
 

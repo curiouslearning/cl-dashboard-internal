@@ -38,7 +38,7 @@ with col3:
     countries_listC = ui.multi_select_all(countries_list, title="Country Selection", key="cf-21")
     selected_date, option = ui.calendar_selector( key="cf-22", title="Select date user cohort", index=4,preset_index=4)
     daterangeC = ui.convert_date_to_range(selected_date, option)
-    appC = ui.single_selector(distinct_apps, title="Select an App", key="cf-23",include_All=False,index=5)
+    appC = ui.single_selector(distinct_apps, title="Select an App", key="cf-23",include_All=False,index=6)
 
 if (
     len(countries_listA) and len(countries_listB) and len(countries_listC)

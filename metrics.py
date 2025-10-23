@@ -240,42 +240,68 @@ def get_totals_per_month_from_cohort(cohort_df, stat, daterange, date_col="first
     return pd.DataFrame(totals_by_month)
 
 
-
 def get_user_cohort_df(
     session_df,
     daterange=None,
     languages=["All"],
     countries_list=["All"],
     app=None,
+    cohort=None,
 ):
     """
-    Returns a DataFrame (all columns) for the cohort matching filters.
-    - df: DataFrame to filter (already chosen by select_user_dataframe)
-    - user_list_key: which column uniquely identifies users
+    Returns a filtered DataFrame for the cohort matching selected filters.
+
+    Parameters
+    ----------
+    session_df : pd.DataFrame
+        The user-level dataset (from cr_user_progress or cr_app_launch).
+    daterange : list-like of 2 dates
+        Filters by first_open date range.
+    languages : list[str]
+        Filters by app_language (default: ["All"]).
+    countries_list : list[str]
+        Filters by country (default: ["All"]).
+    app : str or list[str]
+        Filters by app name (e.g. "CR", "Unity", "WBS-standalone").
+    cohort : str or list[str]
+        Filters by cohort_group (only applied when app == "CR").
     """
     cohort_df = session_df.copy()
 
-    # Apply filters
+    # --- Date range filter ---
     if daterange is not None and len(daterange) == 2:
         start = pd.to_datetime(daterange[0])
         end = pd.to_datetime(daterange[1])
         cohort_df = cohort_df[
-        (cohort_df["first_open"] >= start) & (cohort_df["first_open"] <= end)
+            (cohort_df["first_open"] >= start) & (cohort_df["first_open"] <= end)
         ]
 
+    # --- Country filter ---
     if countries_list and countries_list != ["All"]:
         cohort_df = cohort_df[cohort_df["country"].isin(countries_list)]
-        
+
+    # --- Language filter ---
     if languages and languages != ["All"]:
         lang_col = "app_language" if "app_language" in cohort_df.columns else "language"
         cohort_df = cohort_df[cohort_df[lang_col].isin(languages)]
-        
+
+    # --- App filter ---
     if app and app != ["All"] and "app" in cohort_df.columns:
         apps = [app] if isinstance(app, str) else app
         cohort_df = cohort_df[cohort_df["app"].isin(apps)]
-        
+
+    # --- Cohort filter (applies only for CR app) ---
+    if (
+        cohort
+        and cohort != ["All"]
+        and "cohort_group" in cohort_df.columns
+        and app[0] == "CR"
+    ):
+        cohorts = [cohort] if isinstance(cohort, str) else cohort
+        cohort_df = cohort_df[cohort_df["cohort_group"].isin(cohorts)]
 
     return cohort_df
+
 
 
 
@@ -332,7 +358,7 @@ def get_all_apps_combined_session_and_cohort_df(stat=None):
     return combined_session_df
 
 
-def get_filtered_cohort(app, daterange, language, countries_list):
+def get_filtered_cohort(app, daterange, language, countries_list, cohort=None):
     """Returns (user_cohort_df, user_cohort_df_LR) for app selection."""
     is_cr = (app == ["CR"] or app == "CR")
     user_cohort_df_LR = None
@@ -342,7 +368,8 @@ def get_filtered_cohort(app, daterange, language, countries_list):
         daterange=daterange,
         languages=language,
         countries_list=countries_list,
-        app=app
+        app=app,
+        cohort=cohort
     )
     if is_cr:
         session_df_LR = select_user_dataframe(app=app, stat="LR")
@@ -351,7 +378,8 @@ def get_filtered_cohort(app, daterange, language, countries_list):
             daterange=daterange,
             languages=language,
             countries_list=countries_list,
-            app=app
+            app=app,
+            cohort=cohort
         )
     return user_cohort_df, user_cohort_df_LR
 

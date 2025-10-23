@@ -419,3 +419,8 @@ def get_apps():
     distinct_apps.append("Unity")
     distinct_apps.sort()
     return distinct_apps
+
+def get_predefined_cohorts():
+    distinct_cohorts = sorted(st.session_state["df_cr_users"]["cohort_group"].dropna().unique())
+    distinct_cohorts.sort()
+    return distinct_cohorts
