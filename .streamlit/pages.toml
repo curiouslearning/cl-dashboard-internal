@@ -60,6 +60,11 @@ path = "app_pages/user_details.py"
 name = "User Lookup"
 icon = ":small_orange_diamond:"
 
+[[pages]]
+path = "app_pages/cl_test_site1.py"
+name = "Durban study group"
+icon = ":small_orange_diamond:"
+
 
 
 
