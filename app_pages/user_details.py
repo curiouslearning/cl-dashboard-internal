@@ -22,26 +22,24 @@ col1, col2 = st.columns([2,4])
 if "cr_user_id" not in st.session_state:
     st.session_state.cr_user_id = ""
 
-# Priority: query param > session state (but must update BEFORE text_input)
+# Priority: query param > session state
 if "cr_user_id" in st.query_params and st.query_params["cr_user_id"]:
     if st.session_state.cr_user_id != st.query_params["cr_user_id"]:
         st.session_state.cr_user_id = st.query_params["cr_user_id"]
 
+# --- Text input ---
 with col1:
     cr_user_id = st.text_input(
         "Enter cr_user_id",
         value=st.session_state.cr_user_id,
-        type="default",
-        key="cr_user_id"
+        key="cr_user_id_input"
     )
 
-# DO NOT set st.session_state.cr_user_id after this point!
-# Always use the value of st.session_state.cr_user_id (or cr_user_id, they're in sync)
-
-# Optionally, update the query param for shareability:
-if st.session_state.cr_user_id:
-    st.query_params["cr_user_id"] = st.session_state.cr_user_id
-elif "cr_user_id" in st.query_params:
+# --- Persist to session + query params ---
+if cr_user_id and cr_user_id != st.session_state.cr_user_id:
+    st.session_state.cr_user_id = cr_user_id
+    st.query_params["cr_user_id"] = cr_user_id
+elif not cr_user_id and "cr_user_id" in st.query_params:
     del st.query_params["cr_user_id"]
 
 if (len(cr_user_id) > 0):
@@ -89,7 +87,6 @@ if (len(cr_user_id) > 0):
     ftm_timeline_plot(user_ftm_df)
 
     st.markdown("---")  # Optional: visual separator
-
 
     df_user_events = get_ftm_user_events(cr_user_id)
     st.markdown("#### FTM Session & Game Event Timeline")

@@ -11,7 +11,7 @@ cohort_ids = get_cohort_user_ids()
 
 # 2. Load the event data for just those users
 df = get_users_ftm_event_timeline(cohort_ids)
-df.info()
+
 # 3. Usual filters/plot
 if not pd.api.types.is_datetime64_any_dtype(df["event_timestamp"]):
     df["event_timestamp"] = pd.to_datetime(df["event_timestamp"], errors="coerce")
