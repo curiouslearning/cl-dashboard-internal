@@ -3,11 +3,12 @@ from rich import print as rprint
 from millify import prettify
 import pandas as pd
 from users import ensure_user_data_initialized
-from settings import initialize,get_gcp_credentials
+from settings import initialize
+from ui_components import ftm_timeline_plot
+from users import get_ftm_user_events,get_users_ftm_event_timeline
+from ui_widgets import highlight_success
 
 initialize()
-ensure_user_data_initialized()
-
 ensure_user_data_initialized()
 
 def info_row(label, value, color="green"):
@@ -17,15 +18,31 @@ def safe_value(val, fallback="N/A"):
     return fallback if pd.isna(val) else val
 col1, col2 = st.columns([2,4])
 
-#if the cr_user_id is passed in, retrieve from the query params
-value = ""
-if "cr_user_id" in st.query_params:
-    value = st.query_params["cr_user_id"]
-    
-#use the default initial setting of "value" which will either be blank or passed in     
-with col1:
-    cr_user_id = st.text_input(label="Enter cr_user_id",type="default",value=value)
+# --- Sync at the very top: ---
+if "cr_user_id" not in st.session_state:
+    st.session_state.cr_user_id = ""
 
+# Priority: query param > session state (but must update BEFORE text_input)
+if "cr_user_id" in st.query_params and st.query_params["cr_user_id"]:
+    if st.session_state.cr_user_id != st.query_params["cr_user_id"]:
+        st.session_state.cr_user_id = st.query_params["cr_user_id"]
+
+with col1:
+    cr_user_id = st.text_input(
+        "Enter cr_user_id",
+        value=st.session_state.cr_user_id,
+        type="default",
+        key="cr_user_id"
+    )
+
+# DO NOT set st.session_state.cr_user_id after this point!
+# Always use the value of st.session_state.cr_user_id (or cr_user_id, they're in sync)
+
+# Optionally, update the query param for shareability:
+if st.session_state.cr_user_id:
+    st.query_params["cr_user_id"] = st.session_state.cr_user_id
+elif "cr_user_id" in st.query_params:
+    del st.query_params["cr_user_id"]
 
 if (len(cr_user_id) > 0):
     df_cr_users = st.session_state.df_cr_users
@@ -63,63 +80,20 @@ if (len(cr_user_id) > 0):
     else:
         st.warning("No FTM data found for this cr_user_id.")
 
+    st.markdown("---")  # Optional: visual separator
+    
+    # Timeline section (assumes get_gcp_credentials returns a BQ client)
+    cr_user_id_list = [cr_user_id]
+    user_ftm_df = get_users_ftm_event_timeline(cr_user_id_list)
+    st.markdown("#### FTM Progress Timeline")
+    ftm_timeline_plot(user_ftm_df)
 
     st.markdown("---")  # Optional: visual separator
 
-    if st.button("Run Full Event Query for this User"):
-        with st.spinner("Running BigQuery..."):
-            gcp_credentials, bq_client = get_gcp_credentials()
 
-            sql = f"""
-                    SELECT
-                    a.event_name,
-                    a.event_date,
-                    CAST(TIMESTAMP_MICROS(a.event_timestamp) AS DATETIME) AS event_timestamp,
-                    a.user_pseudo_id,
-                    a.device.language AS device_language,
+    df_user_events = get_ftm_user_events(cr_user_id)
+    st.markdown("#### FTM Session & Game Event Timeline")
+    # Only works in st.dataframe (not st.table)
 
-                    -- Only include web_app_title if the event_name is app_launch
-                    IF(a.event_name = 'app_launch', 
-                        (SELECT p.value.string_value 
-                        FROM UNNEST(a.event_params) AS p 
-                        WHERE p.key = 'web_app_title'), 
-                        NULL) AS web_app_title
-
-                    FROM
-                    `ftm-b9d99.analytics_159643920.events_*` AS a
-                    WHERE
-                    _TABLE_SUFFIX BETWEEN '20240101' AND FORMAT_DATE('%Y%m%d', CURRENT_DATE())
-                    AND EXISTS (
-                        SELECT 1
-                        FROM UNNEST(a.event_params) AS p
-                        WHERE p.key = 'cr_user_id' AND p.value.string_value = '{cr_user_id}'
-                    )
-                    ORDER BY
-                    event_timestamp ASC
-            """
-
-            try:
-                df_events = bq_client.query(sql).to_dataframe()
-                if df_events.empty:
-                    st.info("No events found for this user.")
-                else:
-                    st.success(f"Found {len(df_events)} events.")
-                    st.dataframe(df_events)
-
-                    # Optional: Add CSV download
-                    csv = df_events.to_csv(index=False).encode('utf-8')
-                    st.download_button(
-                        label="Download as CSV",
-                        data=csv,
-                        file_name=f"events_{cr_user_id}.csv",
-                        mime="text/csv",
-                    )
-
-            except Exception as e:
-                st.error(f"Error running query: {e}")
-
-    
-
-
-
-    
+    styled_df = df_user_events.style.apply(highlight_success, axis=1)
+    st.dataframe(styled_df, use_container_width=True)

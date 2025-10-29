@@ -6,8 +6,8 @@ import plotly.express as px
 import plotly.graph_objects as go
 import metrics
 from millify import prettify
-import users
 import numpy as np
+from ui_widgets import derive_ftm_outcome
 
 
 default_daterange = [dt.datetime(2021, 1, 1).date(), dt.date.today()]
@@ -1059,3 +1059,128 @@ def funnel_chart(
 
     st.plotly_chart(fig, use_container_width=True)
     return df
+
+
+def ftm_timeline_plot(df, title="FTM Gameplay Timeline (Success / Failure by Event)"):
+    """
+    Timeline plot for one or many FTM users, with x-axis toggle and robust outcome logic.
+    Expects columns: cr_user_id, event_name, event_timestamp, level_number, puzzle_number,
+      success_or_failure, number_of_successful_puzzles, app_language
+    """
+    if df.empty:
+        st.info("No data to plot.")
+        return
+
+    df["outcome"] = df.apply(derive_ftm_outcome, axis=1)
+    df["event_type"] = np.where(df["event_name"].str.contains("puzzle"), "Puzzle", "Level")
+    df["marker_key"] = df["outcome"]
+
+    # ───────────────────────────────────────────────
+    # Numeric y-axis for compact layout
+    # ───────────────────────────────────────────────
+    user_order = {uid: i + 1 for i, uid in enumerate(sorted(df["cr_user_id"].unique()))}
+    df["user_number"] = df["cr_user_id"].map(user_order)
+
+    # ───────────────────────────────────────────────
+    # X-axis toggle
+    # ───────────────────────────────────────────────
+    x_axis_mode = st.radio(
+        "X-axis Mode",
+        ["Timestamp", "Level Progression"],
+        index=0, horizontal=True,
+        key="ftm_timeline_x_mode"
+    )
+
+    if x_axis_mode == "Timestamp":
+        # Jitter for overlapping timestamps
+        np.random.seed(42)
+        df["user_event_count"] = df.groupby("cr_user_id")["event_timestamp"].transform("count")
+        max_jitter, min_jitter = 10, 2
+        scale_factor = np.clip(min_jitter + (df["user_event_count"] / 25), min_jitter, max_jitter)
+        df["x_axis_value"] = df["event_timestamp"] + pd.to_timedelta(
+            np.random.uniform(-1, 1, len(df)) * scale_factor, unit="s"
+        )
+        x_label = "Timestamp"
+    else:
+        lvl = df[df["level_number"].notna()].copy()
+        lvl["level_number"] = lvl["level_number"].astype(float)
+        puzzle_offset = lvl["puzzle_number"].fillna(0).astype(float) * 0.12
+        lvl["x_axis_value"] = np.where(
+            lvl["event_type"] == "Puzzle",
+            lvl["level_number"] + puzzle_offset,
+            lvl["level_number"] + 0.5
+        )
+        if lvl.empty:
+            st.warning("No level data for Level Progression mode.")
+            return
+        df = lvl
+        x_label = "Level (with small offsets)"
+
+    # ───────────────────────────────────────────────
+    # Colors, symbols, hover
+    # ───────────────────────────────────────────────
+    color_map = {
+        "Success – Puzzle": "green",
+        "Failure – Puzzle": "red",
+        "Success – Level": "limegreen",
+        "Failure – Level": "darkred",
+        "Unknown – Puzzle": "gray",
+        "Unknown – Level": "lightgray",
+    }
+    symbol_map = {"Puzzle": "circle", "Level": "diamond"}
+
+    def make_hover(r):
+        outcome = r.get("outcome")
+        if isinstance(outcome, str):
+            display_outcome = outcome.capitalize()
+        else:
+            display_outcome = "Unknown"
+
+        parts = [f"<b>{display_outcome}</b>"]
+        parts.append(f"User ID: {r.get('cr_user_id', '')}")
+
+        if pd.notna(r.get("level_number")):
+            parts.append(f"Level {int(r['level_number'])}")
+        if r.get("event_name", "").startswith("puzzle") and pd.notna(r.get("puzzle_number")):
+            parts.append(f"Puzzle {int(r['puzzle_number'])}")
+        if r.get("event_name", "").startswith("level") and pd.notna(r.get("number_of_successful_puzzles")):
+            parts.append(f"Puzzles succeeded: {int(r['number_of_successful_puzzles'])}")
+        if pd.notna(r.get("app_language")):
+            parts.append(f"Lang: {r['app_language']}")
+        return "<br>".join(parts)
+
+    
+    
+    df["hover_text"] = df.apply(make_hover, axis=1).fillna("")
+
+    fig = px.scatter(
+        df,
+        x="x_axis_value",
+        y="user_number",
+        color="marker_key",
+        color_discrete_map=color_map,
+        symbol="event_type",
+        symbol_map=symbol_map,
+        hover_data={"hover_text": True},
+        title=title,
+        labels={"x_axis_value": x_label, "user_number": "User #"},
+    )
+    fig.update_traces(
+        hovertemplate="%{customdata[0]}<extra></extra>",
+        marker=dict(size=10, line=dict(width=0.5, color="black")),
+    )
+    fig.for_each_trace(lambda t: t.update(name=t.name.split(",")[0]))
+
+    tickvals = list(user_order.values())
+    ticktext = [str(i) for i in tickvals]
+    chart_height = max(400, 40 * len(user_order))
+
+    fig.update_layout(
+        height=chart_height,
+        yaxis=dict(tickmode="array", tickvals=tickvals, ticktext=ticktext, title="User #"),
+        legend_title_text="Outcome / Event Type",
+        margin=dict(l=60, r=20, t=60, b=60),
+        plot_bgcolor="rgba(240,255,240,0.3)",
+    )
+
+    st.plotly_chart(fig, use_container_width=True)

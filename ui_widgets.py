@@ -5,6 +5,7 @@ from rich import print
 import calendar
 import re
 from streamlit_option_menu import option_menu
+import numpy as np
 
 level_definitions = pd.DataFrame(
     [
@@ -424,3 +425,50 @@ def get_predefined_cohorts():
     distinct_cohorts = sorted(st.session_state["df_cr_users"]["cohort_group"].dropna().unique())
     distinct_cohorts.sort()
     return distinct_cohorts
+
+def highlight_success(row):
+    color = ""
+    if row.get("success_or_failure") == "success":
+        color = "background-color: #c6efce;"  # light green
+    elif row.get("success_or_failure") == "failure":
+        color = "background-color: #ffc7ce;"  # light red
+    return [color] * len(row)
+
+def derive_ftm_outcome(row):
+    """
+    Derive the gameplay outcome for FTM events, robust to pd.NA / None.
+    Returns one of: 'Success – Puzzle', 'Failure – Puzzle', 'Success – Level',
+    'Failure – Level', 'Unknown – Puzzle', or 'Unknown – Level'.
+    """
+    success = row.get("success_or_failure")
+    event = row.get("event_name")
+    n_success = row.get("number_of_successful_puzzles", np.nan)
+
+    # Guard against pd.NA ambiguity
+    if pd.notna(success):
+        if success == "success":
+            if event == "puzzle_completed":
+                return "Success – Puzzle"
+            elif event == "level_completed":
+                return "Success – Level"
+        elif success == "failure":
+            if event == "puzzle_completed":
+                return "Failure – Puzzle"
+            elif event == "level_completed":
+                return "Failure – Level"
+
+    # Fallback: infer from number_of_successful_puzzles
+    if event == "level_completed" and pd.notna(n_success):
+        return "Success – Level" if n_success >= 3 else "Failure – Level"
+
+    # For puzzles missing success_or_failure, assume success
+    if event == "puzzle_completed" and pd.isna(success):
+        return "Success – Puzzle"
+
+    # Default
+    if event == "puzzle_completed":
+        return "Unknown – Puzzle"
+    if event == "level_completed":
+        return "Unknown – Level"
+
+    return None

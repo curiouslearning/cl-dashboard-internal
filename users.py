@@ -3,12 +3,13 @@ import pandas as pd
 from rich import print as print
 import numpy as np
 import gcsfs
-import settings
+from settings import get_gcp_credentials
+from ui_widgets import derive_ftm_outcome
 
 
 @st.cache_data(ttl="1d", show_spinner=False)
 def load_parquet_from_gcs(file_pattern: str) -> pd.DataFrame:
-    credentials, _ = settings.get_gcp_credentials()
+    credentials, _ = get_gcp_credentials()
     fs = gcsfs.GCSFileSystem(project="dataexploration-193817", token=credentials)
     files = fs.glob(file_pattern)
 
@@ -105,7 +106,7 @@ def clean_language_column(df):
 @st.cache_data(ttl="1d", show_spinner=False)
 def get_language_list():
 
-    _, bq_client = settings.get_gcp_credentials()
+    _, bq_client = get_gcp_credentials()
 
     sql_query = f"""
                 SELECT display_language
@@ -127,7 +128,7 @@ def get_language_list():
 @st.cache_data(ttl="1d", show_spinner=False)
 def get_country_list():
     countries_list = []
-    _, bq_client = settings.get_gcp_credentials()
+    _, bq_client = get_gcp_credentials()
 
     sql_query = f"""
                 SELECT country
@@ -233,7 +234,6 @@ def clean_cr_users_to_single_language(df_app_launch, df_cr_users):
         df_app_launch.set_index("cr_user_id")["first_open"]
     )
     
-
     return df_app_launch, df_cr_users
 
 
@@ -241,4 +241,101 @@ def fix_date_columns(df, columns):
     for col in columns:
         if col in df.columns:
             df[col] = pd.to_datetime(df[col], errors="coerce")
+    return df
+
+
+@st.cache_data(ttl="1d", show_spinner="Getting timeline")
+def get_users_ftm_event_timeline(cr_user_id_list):
+    """
+    Fetch FTM events for a list of user IDs.
+    Default includes gameplay events (puzzle_completed, level_completed),
+    but also returns session/app events for optional filtering in UI.
+    """
+    if isinstance(cr_user_id_list, str):
+        cr_user_id_list = [cr_user_id_list]
+    if not cr_user_id_list:
+        raise ValueError("cr_user_id_list must be a non-empty list of user IDs.")
+
+    _, bq_client = get_gcp_credentials()
+
+    user_in_list = ', '.join([f"'{u}'" for u in cr_user_id_list])
+
+    sql = f"""
+        SELECT
+            a.event_name,
+            a.event_date,
+            CAST(TIMESTAMP_MICROS(a.event_timestamp) AS DATETIME) AS event_timestamp,
+            a.user_pseudo_id,
+            a.device.language AS device_language,
+
+            -- Extract gameplay params safely
+            (SELECT p.value.int_value FROM UNNEST(a.event_params) AS p WHERE p.key = 'level_number') AS level_number,
+            (SELECT p.value.int_value FROM UNNEST(a.event_params) AS p WHERE p.key = 'puzzle_number') AS puzzle_number,
+            (SELECT p.value.string_value FROM UNNEST(a.event_params) AS p WHERE p.key = 'success_or_failure') AS success_or_failure,
+            (SELECT p.value.string_value FROM UNNEST(a.event_params) AS p WHERE p.key = 'cr_user_id') AS cr_user_id,
+
+            -- Optional non-gameplay params
+            (SELECT p.value.string_value FROM UNNEST(a.event_params) AS p WHERE p.key = 'web_app_title') AS web_app_title
+
+        FROM
+            `ftm-b9d99.analytics_159643920.events_*` AS a
+        WHERE
+            _TABLE_SUFFIX BETWEEN '20240101' AND FORMAT_DATE('%Y%m%d', CURRENT_DATE())
+            AND EXISTS (
+                SELECT 1
+                FROM UNNEST(a.event_params) AS p
+                WHERE p.key = 'cr_user_id' AND p.value.string_value IN ({user_in_list})
+            )
+            AND a.event_name IN (
+                'puzzle_completed', 'level_completed',
+                'app_launch', 'app_exit',
+                'session_start', 'session_end'
+            )
+        ORDER BY event_timestamp
+    """
+
+    df = bq_client.query(sql).to_dataframe()
+
+    # Normalize column types
+    df["event_name"] = df["event_name"].astype("string")
+    df["success_or_failure"] = df["success_or_failure"].astype("string")
+
+    # Fill missing success/failure only for non-gameplay events
+    # (so they won't appear as "Unknown – Level" in the plot)
+    df.loc[~df["event_name"].isin(["puzzle_completed", "level_completed"]), "success_or_failure"] = None
+
+    return df
+
+@st.cache_data(ttl="1d")
+def get_cohort_user_ids():
+    """
+    Returns a list of cr_user_id from your cohort table.
+    """
+    _, bq_client = get_gcp_credentials()
+    sql = """
+        SELECT cr_user_id
+        FROM `dataexploration-193817.user_data.cohort_groups`
+    """
+    df = bq_client.query(sql).to_dataframe()
+    return df["cr_user_id"].dropna().unique().tolist()
+
+@st.cache_data(ttl="1d", show_spinner="Getting user events")
+def get_ftm_user_events(cr_user_id):
+    _, bq_client = get_gcp_credentials()
+    sql = f"""
+        SELECT
+          cr_user_id, event_name, event_ts, level_number, puzzle_number,
+          success_or_failure, number_of_successful_puzzles, app_language
+        FROM `dataexploration-193817.user_data.ftm_event_timeline_cohort`
+        WHERE cr_user_id = '{cr_user_id}'
+        ORDER BY event_ts
+    """
+    df = bq_client.query(sql).to_dataframe()
+    if df.empty:
+        return df
+
+
+    df["outcome"] = df.apply(derive_ftm_outcome, axis=1)
+    df["event_type"] = np.where(df["event_name"].str.contains("puzzle"), "Puzzle", "Level")
+    df["marker_key"] = df["outcome"]
     return df
