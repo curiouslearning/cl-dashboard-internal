@@ -46,6 +46,11 @@ name = "Acquisition"
 icon = ":small_orange_diamond:"
 
 [[pages]]
+path = "app_pages/difficulty_by_language.py"
+name = "Difficulty by language"
+icon = ":small_orange_diamond:"
+
+[[pages]]
 path = "app_pages/marketing_data.py"
 name = "Marketing Data"
 icon = ":small_orange_diamond:"
@@ -64,7 +69,4 @@ icon = ":small_orange_diamond:"
 path = "app_pages/cl_test_site1.py"
 name = "Durban study group"
 icon = ":small_orange_diamond:"
-
-
-
 

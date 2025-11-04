@@ -436,15 +436,18 @@ def highlight_success(row):
 
 def derive_ftm_outcome(row):
     """
-    Derive the gameplay outcome for FTM events, robust to pd.NA / None.
-    Returns one of: 'Success – Puzzle', 'Failure – Puzzle', 'Success – Level',
-    'Failure – Level', 'Unknown – Puzzle', or 'Unknown – Level'.
+    Prioritize FTM rule: if level_completed AND number_of_successful_puzzles >= 3, always Success.
+    Otherwise, use the logged value, else fallback.
     """
-    success = row.get("success_or_failure")
     event = row.get("event_name")
     n_success = row.get("number_of_successful_puzzles", np.nan)
+    success = row.get("success_or_failure")
 
-    # Guard against pd.NA ambiguity
+    # 1️⃣ FTM rule: number_of_successful_puzzles >= 3 always wins for level_completed
+    if event == "level_completed" and pd.notna(n_success) and n_success >= 3:
+        return "Success – Level"
+
+    # 2️⃣ Otherwise, use logged value if present
     if pd.notna(success):
         if success == "success":
             if event == "puzzle_completed":
@@ -457,18 +460,13 @@ def derive_ftm_outcome(row):
             elif event == "level_completed":
                 return "Failure – Level"
 
-    # Fallback: infer from number_of_successful_puzzles
-    if event == "level_completed" and pd.notna(n_success):
-        return "Success – Level" if n_success >= 3 else "Failure – Level"
-
-    # For puzzles missing success_or_failure, assume success
+    # 3️⃣ For puzzles missing success_or_failure, assume success
     if event == "puzzle_completed" and pd.isna(success):
         return "Success – Puzzle"
 
-    # Default
+    # 4️⃣ Default fallback
     if event == "puzzle_completed":
         return "Unknown – Puzzle"
     if event == "level_completed":
         return "Unknown – Level"
-
     return None
