@@ -416,9 +416,22 @@ def convert_for_download(df):
     return df.to_csv().encode("utf-8")
 
 def get_apps():
-    distinct_apps = sorted(st.session_state["df_cr_users"]["app"].dropna().unique())
-    distinct_apps.append("Unity")
-    distinct_apps.sort()
+    # If df_cr_users doesn't exist or is empty, return Unity only
+    if "df_cr_users" not in st.session_state or st.session_state["df_cr_users"] is None:
+        return ["Unity"]
+
+    df = st.session_state["df_cr_users"]
+
+    # If df exists but has no app column or no rows
+    if df.empty or "app" not in df.columns:
+        return ["Unity"]
+
+    # Get distinct apps safely
+    distinct_apps = sorted(df["app"].dropna().unique().tolist())
+    
+    # Always include Unity (dedupe via set)
+    distinct_apps = sorted(set(distinct_apps + ["Unity"]))
+
     return distinct_apps
 
 def get_predefined_cohorts():

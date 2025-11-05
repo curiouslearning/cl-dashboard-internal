@@ -107,8 +107,8 @@ def assign_hover(fig, df, group_col, custom_cols, title):
         trace.customdata = sub[custom_cols].to_numpy().tolist()
         trace.hovertemplate = (
             f"<b>{title}:</b> %{{customdata[0]}}<br>"
-            "<b>Level:</b> %{x}<br>"
-            "<b>Difficulty:</b> %{y:.2f}<br>"
+            "<b>Level:</b> %{y}<br>"
+            "<b>Difficulty:</b> %{x:.2f}<br>"
             "Success Rate: %{customdata[1]:.2f}<br>"
             "Puzzle Failure Rate: %{customdata[2]:.2f}<br>"
             "Avg Puzzles Solved: %{customdata[3]:.2f}<br>"
@@ -144,13 +144,50 @@ def load_data():
 # =========================================================
 st.markdown("## 📊 Level Difficulty Analysis")
 
-data_metrics = pd.DataFrame([
-    ("Adjusted Relative Difficulty Score", "Measures level challenge via completion difficulty + puzzle struggle."),
-    ("Success Rate", "Share of successful level attempts."),
-    ("Puzzle Failure Rate", "Percent of puzzles failed within the level."),
-    ("Total Puzzle Failures", "Total puzzle failures across all plays."),
-    ("Average Puzzles Solved", "Avg puzzles solved per attempt.")
-], columns=["Metric", "Definition"])
+data_metrics = pd.DataFrame(
+    [
+        [
+            "Adjusted Relative Difficulty Score",
+            (
+                "Measures how challenging each level is, combining level completion difficulty "
+                "and puzzle-level struggle. It multiplies the level failure rate by the log of total attempts "
+                "and boosts the result based on the proportion of puzzle failures. "
+                "Formula: (1 − success_rate) × log(1 + total_attempts) × (1 + puzzle_failure_rate). "
+                "Higher scores indicate levels where learners fail more often or struggle with puzzles."
+            ),
+        ],
+        [
+            "Success Rate",
+            (
+                "The share of level_completed events that were successful. "
+                "A high success rate indicates learners complete the level easily."
+            ),
+        ],
+        [
+            "Puzzle Failure Rate",
+            (
+                "The percentage of all puzzle attempts within this level that ended in failure. "
+                "High puzzle failure rates indicate internal level difficulty even if the level is eventually completed."
+            ),
+        ],
+        [
+            "Total Puzzle Failures",
+            (
+                "The total number of failed puzzles attempted within this level across all users. "
+                "Helps identify specific levels where learners consistently struggle."
+            ),
+        ],
+        [
+            "Average Puzzles Solved",
+            (
+                "Average number of puzzles successfully completed within a level attempt. "
+                "Provides insight into within-level progression and learner persistence."
+            ),
+        ],
+    ],
+    columns=["Metric", "Definition"],
+)
+
 
 display_definitions_table("Data & Metric Notes", data_metrics)
 
