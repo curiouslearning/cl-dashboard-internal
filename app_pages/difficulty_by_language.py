@@ -1,291 +1,283 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
+import numpy as np
 import itertools
-from settings import get_gcp_credentials
-from ui_widgets import display_definitions_table
 
-# --------------------------------------
-# 🎨 Global Style Tweaks (center + tighten captions)
-# --------------------------------------
+from settings import get_gcp_credentials
+from ui_widgets import display_definitions_table, get_apps
+
+# =========================================================
+# 🎨 Page Setup + Global Styles
+# =========================================================
+st.set_page_config(page_title="Level Difficulty Analysis", layout="wide")
+
+# Center & soften captions
 st.markdown("""
-    <style>
-    div[data-testid="stCaptionContainer"] {
-        margin-top: -0.8rem;
-        margin-bottom: 0.2rem;
-        text-align: center;
-        color: #555;
-        font-style: italic;
-    }
-    </style>
+<style>
+div[data-testid="stCaptionContainer"] {
+    margin-top: -0.8rem;
+    margin-bottom: 0.2rem;
+    text-align: center;
+    color: #555;
+    font-style: italic;
+}
+</style>
 """, unsafe_allow_html=True)
 
-autumn_palette = [
-    "#B35C1E",  # copper rust
-    "#C1440E",  # deep orange-red
-    "#E17E26",  # warm pumpkin
-    "#EBA937",  # golden amber
-    "#F3D250",  # sunflower
-    "#8CB369",  # muted olive green
-    "#3B7A57",  # deep forest teal
-    "#9C3F0E",  # rustic brown
-    "#8E6C88",  # mauve plum (neutral anchor)
-    "#5B2333",  # dark burgundy
+# Global color palette (autumn tones)
+AUTUMN_PALETTE = [
+    "#B35C1E", "#C1440E", "#E17E26", "#EBA937", "#F3D250",
+    "#8CB369", "#3B7A57", "#9C3F0E", "#8E6C88", "#5B2333"
 ]
-color_cycle = itertools.cycle(autumn_palette)
 
-# --------------------------------------
-# 1️⃣ Data Definitions
-# --------------------------------------
-data_metrics = pd.DataFrame(
-    [
-        [
-            "Adjusted Relative Difficulty Score",
-            (
-                "Measures how challenging each level is, combining level completion difficulty "
-                "and puzzle-level struggle. It multiplies the level failure rate by the log of total attempts "
-                "and boosts the result based on the proportion of puzzle failures. "
-                "Formula: (1 − success_rate) × log(1 + total_attempts) × (1 + puzzle_failure_rate). "
-                "Higher scores indicate levels where learners fail more often or struggle with puzzles."
-            ),
-        ],
-        [
-            "Success Rate",
-            (
-                "The share of level_completed events that were successful. "
-                "A high success rate indicates learners complete the level easily."
-            ),
-        ],
-        [
-            "Puzzle Failure Rate",
-            (
-                "The percentage of all puzzle attempts within this level that ended in failure. "
-                "High puzzle failure rates indicate internal level difficulty even if the level is eventually completed."
-            ),
-        ],
-        [
-            "Total Puzzle Failures",
-            (
-                "The total number of failed puzzles attempted within this level across all users. "
-                "Helps identify specific levels where learners consistently struggle."
-            ),
-        ],
-        [
-            "Average Puzzles Solved",
-            (
-                "Average number of puzzles successfully completed within a level attempt. "
-                "Provides insight into within-level progression and learner persistence."
-            ),
-        ],
-    ],
-    columns=["Metric", "Definition"],
-)
+# =========================================================
+# 🛠️ Helper Utilities
+# =========================================================
 
+def get_color_map(keys, palette):
+    """
+    Create a stable color mapping based on given palette and key order.
+    """
+    cycle = itertools.cycle(palette)
+    return {k: next(cycle) for k in keys}
+
+
+def style_line_chart(fig, legend_title):
+    """
+    Apply consistent styling to line charts for visual uniformity.
+    """
+    fig.update_traces(
+        mode="lines+markers",
+        line=dict(width=2.0),
+        marker=dict(size=5, opacity=0.6, symbol="circle", line=dict(width=0)),
+    )
+
+    fig.update_layout(
+        height=600,
+        margin=dict(t=70, l=50, r=30, b=50),
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
+        font=dict(size=13, color="#222"),
+        hovermode="closest",
+        legend=dict(
+            title=legend_title,
+            yanchor="top", y=0.99,
+            xanchor="left", x=1.02,
+            itemsizing="constant",
+            traceorder="normal",
+            tracegroupgap=4,
+        ),
+    )
+
+    return fig
+
+
+def style_bar_chart(fig, legend_title):
+    """
+    Apply consistent styling for bar charts.
+    """
+    fig.update_layout(
+        height=700,
+        margin=dict(t=80, l=60, r=40, b=60),
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
+        font=dict(size=13, color="#222"),
+        yaxis=dict(autorange="reversed"),
+        legend=dict(
+            title=legend_title,
+            yanchor="top", y=0.99,
+            xanchor="left", x=1.02,
+            itemsizing="constant",
+            traceorder="normal",
+            tracegroupgap=4,
+        ),
+    )
+    return fig
+
+
+def assign_hover(fig, df, group_col, custom_cols, title):
+    """
+    Assign custom hover data for each trace based on group (language/app).
+    """
+    for trace in fig.data:
+        name = trace.name
+        sub = df[df[group_col] == name]
+        trace.customdata = sub[custom_cols].to_numpy().tolist()
+        trace.hovertemplate = (
+            f"<b>{title}:</b> %{{customdata[0]}}<br>"
+            "<b>Level:</b> %{x}<br>"
+            "<b>Difficulty:</b> %{y:.2f}<br>"
+            "Success Rate: %{customdata[1]:.2f}<br>"
+            "Puzzle Failure Rate: %{customdata[2]:.2f}<br>"
+            "Avg Puzzles Solved: %{customdata[3]:.2f}<br>"
+            "Puzzle Failures: %{customdata[4]}<br>"
+            "Users: %{customdata[5]}<br>"
+            "Attempts: %{customdata[6]}<extra></extra>"
+        )
+
+
+@st.cache_data(show_spinner=False)
+def load_data():
+    """
+    Load difficulty data from BigQuery and cache for performance.
+    """
+    _, client = get_gcp_credentials()
+    query = """
+    SELECT
+      language, level_number, app,
+      total_attempts, total_success, total_failure,
+      success_rate, avg_success_puzzles,
+      total_puzzle_failures, total_puzzle_attempts,
+      puzzle_failure_rate, relative_difficulty_score,
+      unique_users
+    FROM `dataexploration-193817.user_data.ftm_level_difficulty_by_language`
+    WHERE total_attempts >= 10
+    ORDER BY language, level_number
+    """
+    return client.query(query).to_dataframe()
+
+
+# =========================================================
+# 📊 METRIC DEFINITIONS TABLE
+# =========================================================
 st.markdown("## 📊 Level Difficulty Analysis")
+
+data_metrics = pd.DataFrame([
+    ("Adjusted Relative Difficulty Score", "Measures level challenge via completion difficulty + puzzle struggle."),
+    ("Success Rate", "Share of successful level attempts."),
+    ("Puzzle Failure Rate", "Percent of puzzles failed within the level."),
+    ("Total Puzzle Failures", "Total puzzle failures across all plays."),
+    ("Average Puzzles Solved", "Avg puzzles solved per attempt.")
+], columns=["Metric", "Definition"])
+
 display_definitions_table("Data & Metric Notes", data_metrics)
 
-# --------------------------------------
-# 2️⃣ Load Data from BigQuery
-# --------------------------------------
-_, bq_client = get_gcp_credentials()
-
-query = """
-SELECT
-  language,
-  level_number,
-  total_attempts,
-  total_success,
-  total_failure,
-  success_rate,
-  avg_success_puzzles,
-  total_puzzle_failures,
-  total_puzzle_attempts,
-  puzzle_failure_rate,
-  relative_difficulty_score,
-  unique_users
-FROM `dataexploration-193817.user_data.ftm_level_difficulty_by_language`
-WHERE total_attempts >= 10
-ORDER BY language, level_number
-"""
-df_difficulty = bq_client.query(query).to_dataframe()
-
-if df_difficulty.empty:
+# =========================================================
+# 🧠 LOAD DATA
+# =========================================================
+df = load_data()
+if df.empty:
     st.warning("No data found. Try lowering the attempt threshold.")
     st.stop()
 
-# --------------------------------------
-# 3️⃣ Controls
-# --------------------------------------
-st.markdown("### 📈 Adjusted Relative Difficulty Curve by Language")
+# =========================================================
+# 🎛️ LANGUAGE CONTROLS
+# =========================================================
+st.markdown("### 📈 Difficulty Curve by Language")
 
-lang_summary = (
-    df_difficulty.groupby("language")["total_attempts"]
-    .sum()
-    .sort_values(ascending=False)
-    .reset_index()
-)
-
+lang_totals = df.groupby("language")["total_attempts"].sum().sort_values(ascending=False).reset_index()
 c1, c2 = st.columns([2, 4])
 top_n = c1.slider("Top N languages by total gameplay volume", 1, 60, 5)
-st.caption("Ranked by total level attempts (successful or failed) across all learners.")
+selected_langs = c2.multiselect("Select languages to display", sorted(df["language"].unique()), default=lang_totals.head(top_n)["language"])
 
-top_langs = lang_summary.head(top_n)["language"].tolist()
-
-selected_langs = c2.multiselect(
-    "Select languages to display",
-    sorted(df_difficulty["language"].unique()),
-    default=top_langs,
-)
-
-filtered_df = df_difficulty[df_difficulty["language"].isin(selected_langs)].copy()
-if filtered_df.empty:
+df_lang = df[df["language"].isin(selected_langs)]
+if df_lang.empty:
     st.info("No data available for selected languages.")
     st.stop()
 
-# --------------------------------------
-# 4️⃣ Shared Color Map (unified across both charts)
-# --------------------------------------
-# palette that matches your bottom chart look
-preferred_palette = px.colors.qualitative.Bold + px.colors.qualitative.Set2
+# color map
+lang_color_map = get_color_map(selected_langs, AUTUMN_PALETTE)
 
-# preserve the multiselect order for legend & colors
-selected_langs_ordered = list(selected_langs)  # keep order as shown in UI
-color_cycle = itertools.cycle(preferred_palette)
+# =========================================================
+# 📈 Language Difficulty Curve
+# =========================================================
+language_cols = ["language","success_rate","puzzle_failure_rate","avg_success_puzzles","total_puzzle_failures","unique_users","total_attempts"]
 
-
-# --------------------------------------
-# 5️⃣ Difficulty Curve Chart
-# --------------------------------------
-custom_columns = [
-    "language", "success_rate", "puzzle_failure_rate", "avg_success_puzzles",
-    "total_puzzle_failures", "unique_users", "total_attempts"
-]
-filtered_df["customdata"] = filtered_df[custom_columns].to_numpy().tolist()
-
-color_cycle = itertools.cycle(autumn_palette)
-selected_color_map = {lang: next(color_cycle) for lang in selected_langs}
-
-fig = px.line(
-    filtered_df,
-    x="level_number",
-    y="relative_difficulty_score",
-    color="language",
-    color_discrete_map=selected_color_map,                    # <—
-    category_orders={"language": selected_langs_ordered},     # <—
-    title="Adjusted Relative Difficulty Curve by Language",
-    labels={"level_number": "Level", "relative_difficulty_score": "Adjusted Relative Difficulty Score"},
+fig_lang = px.line(
+    df_lang,
+    x="level_number", y="relative_difficulty_score", color="language",
+    color_discrete_map=lang_color_map,
+    category_orders={"language": selected_langs},
+    title="Adjusted Relative Difficulty Curve by Language"
 )
 
-fig.update_traces(
-    mode="lines+markers",
-    line=dict(width=2.0),
-    marker=dict(size=5, opacity=0.6, symbol="circle", line=dict(width=0)),
-    customdata=filtered_df["customdata"],
-    hovertemplate=(
-        "<b>Language:</b> %{customdata[0]}<br>"
-        "<b>Level:</b> %{x}<br>"
-        "<b>Difficulty:</b> %{y:.2f}<br>"
-        "Success Rate: %{customdata[1]:.2f}<br>"
-        "Puzzle Failure Rate: %{customdata[2]:.2f}<br>"
-        "Avg Puzzles Solved: %{customdata[3]:.2f}<br>"
-        "Puzzle Failures: %{customdata[4]}<br>"
-        "Users: %{customdata[5]}<br>"
-        "Attempts: %{customdata[6]}<extra></extra>"
-    ),
-)
+assign_hover(fig_lang, df_lang, "language", language_cols, "Language")
+fig_lang = style_line_chart(fig_lang, "Language")
+st.plotly_chart(fig_lang, use_container_width=True)
+st.caption("Each line shows difficulty progression across levels for selected languages.")
 
-for trace in fig.data:
-    trace.mode = "lines"
-
-fig.update_layout(
-    height=550,
-    margin=dict(t=70, l=50, r=30, b=50),
-    plot_bgcolor="rgba(0,0,0,0)",
-    paper_bgcolor="rgba(0,0,0,0)",
-    font=dict(size=13, color="#222"),
-    hovermode="closest",
-    legend=dict(
-        title="Language",
-        yanchor="top",
-        y=0.99,
-        xanchor="left",
-        x=1.02,
-        itemsizing="constant",
-        traceorder="normal",
-        tracegroupgap=4,
-    ),
-    legend_traceorder="normal"
-)
-st.plotly_chart(fig, use_container_width=True)
-st.caption("Each line represents a language’s difficulty curve based on adjusted level performance.")
-
-# --------------------------------------
-# 6️⃣ Top Hardest Levels by Language
-# --------------------------------------
+# =========================================================
+# 🥇 Top Hardest Levels (Language)
+# =========================================================
 st.markdown("### 🥇 Top Hardest Levels by Language")
+num_levels = st.slider("Top N hardest levels per language", 1, 80, 10)
 
-c1, c2 = st.columns([2, 4])
-num_levels = c1.slider("Top N hardest levels per language", 1, 80, 10)
-
-df_top_hardest = (
-    filtered_df
-    .sort_values(["language", "relative_difficulty_score"], ascending=[True, False])
-    .groupby("language", group_keys=False)
-    .apply(lambda g: g.head(num_levels))
-    .reset_index(drop=True)
+df_hard = (
+    df_lang.sort_values(["language","relative_difficulty_score"], ascending=[True,False])
+    .groupby("language", group_keys=False).head(num_levels)
+    .drop_duplicates(subset=["language","level_number"])
 )
-df_top_hardest = df_top_hardest.drop_duplicates(subset=["language", "level_number"]).dropna()
 
-fig_top = px.bar(
-    df_top_hardest,
-    x="relative_difficulty_score",
-    y="level_number",
-    color="language",
+fig_hard = px.bar(
+    df_hard,
+    x="relative_difficulty_score", y="level_number", color="language",
     orientation="h",
-    color_discrete_map=selected_color_map,                    # <—
-    category_orders={"language": selected_langs_ordered},     # <—
-    title=f"Top {num_levels} Hardest Levels per Language",
-    labels={"relative_difficulty_score": "Adjusted Relative Difficulty Score", "level_number": "Level"},
+    color_discrete_map=lang_color_map,
+    category_orders={"language": selected_langs},
+    title=f"Top {num_levels} Hardest Levels per Language"
 )
 
-fig_top.update_traces(
-    customdata=df_top_hardest[
-        [
-            "language", "success_rate", "puzzle_failure_rate", "avg_success_puzzles",
-            "total_puzzle_failures", "unique_users", "total_attempts",
-        ]
-    ].to_numpy().tolist(),
-    hovertemplate=(
-        "<b>Language:</b> %{customdata[0]}<br>"
-        "<b>Level:</b> %{y}<br>"
-        "<b>Difficulty:</b> %{x:.2f}<br>"
-        "Success Rate: %{customdata[1]:.2f}<br>"
-        "Puzzle Failure Rate: %{customdata[2]:.2f}<br>"
-        "Avg Puzzles Solved: %{customdata[3]:.2f}<br>"
-        "Puzzle Failures: %{customdata[4]}<br>"
-        "Users: %{customdata[5]}<br>"
-        "Attempts: %{customdata[6]}<extra></extra>"
-    ),
+assign_hover(fig_hard, df_hard, "language", language_cols, "Language")
+fig_hard = style_bar_chart(fig_hard, "Language")
+st.plotly_chart(fig_hard, use_container_width=True)
+st.caption("Bars highlight toughest levels across selected languages.")
+
+# =========================================================
+# 🎮 APP COMPARISON
+# =========================================================
+st.markdown("### 🎮 Difficulty Curve by App")
+
+apps = [a for a in get_apps() if a not in ["Unity", "CR", "WBS-standalone"]]
+
+selected_apps = st.multiselect("Select apps to compare", apps, default=apps[:4])
+df_app = df[df["app"].isin(selected_apps)]
+
+if df_app.empty:
+    st.info("No data available for selected apps.")
+    st.stop()
+
+app_color_map = get_color_map(selected_apps, AUTUMN_PALETTE)
+
+app_cols = ["app","success_rate","puzzle_failure_rate","avg_success_puzzles","total_puzzle_failures","unique_users","total_attempts"]
+
+fig_app = px.line(
+    df_app,
+    x="level_number", y="relative_difficulty_score", color="app",
+    color_discrete_map=app_color_map,
+    category_orders={"app": selected_apps},
+    title="Adjusted Relative Difficulty Curve by App"
 )
 
-fig_top.update_layout(
-    height=700,
-    margin=dict(t=80, l=60, r=40, b=60),
-    font=dict(size=13, color="#222"),
-    yaxis=dict(autorange="reversed"),
-    plot_bgcolor="rgba(0,0,0,0)",
-    paper_bgcolor="rgba(0,0,0,0)",
-    legend=dict(
-        title="Language",
-        yanchor="top",
-        y=0.99,
-        xanchor="left",
-        x=1.02,
-        itemsizing="constant",
-        traceorder="normal",
-        tracegroupgap=4,
-    ),
-    legend_traceorder="normal"
+assign_hover(fig_app, df_app, "app", app_cols, "App")
+fig_app = style_line_chart(fig_app, "App")
+st.plotly_chart(fig_app, use_container_width=True)
+st.caption("Each line shows difficulty curve by app version.")
+
+# =========================================================
+# 🧮 LOG VISUALIZATION
+# =========================================================
+st.markdown("### 🧮 Understanding the Log Weight in the Difficulty Formula")
+
+attempts = np.linspace(1, 1000, 200)
+log_weight = np.log1p(attempts)
+
+fig_log = go.Figure()
+fig_log.add_trace(
+    go.Scatter(
+        x=attempts, y=log_weight, mode="lines",
+        line=dict(width=3),
+        hovertemplate="Attempts: %{x:.0f}<br>Weight: %{y:.2f}"
+    )
 )
-st.plotly_chart(fig_top, use_container_width=True)
-st.caption("Each bar shows the hardest levels (by difficulty score) per selected language.")
+
+fig_log.update_layout(
+    title="How the Log Function Stabilizes Difficulty Weighting",
+    xaxis_title="Total Attempts", yaxis_title="log(1 + attempts)",
+    plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
+    height=400, margin=dict(t=60,l=60,r=30,b=60),
+)
+
+st.plotly_chart(fig_log, use_container_width=True)
+st.caption("Log growth stabilizes difficulty — early plays affect more than late plays.")
