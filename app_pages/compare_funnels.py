@@ -1,6 +1,6 @@
 import streamlit as st
 from rich import print as rprint
-from  ui_components import create_funnels_by_cohort,show_dual_metric_table
+from  ui_components import create_funnels_by_cohort,show_dual_metric_tiles
 import ui_widgets as ui
 from metrics import get_filtered_cohort,get_engagement_metrics_for_cohort
 from settings import initialize
@@ -75,7 +75,8 @@ if (
             funnel_size=funnel_size,
             app=appA
         )
-        show_dual_metric_table("Cohort A", metrics_home_A)
+        show_dual_metric_tiles("Cohort A",home_metrics=metrics_home_A,size="small")
+   
         csvA = ui.convert_for_download(user_cohort_dfA)
         st.download_button(
             label="Download",
@@ -94,7 +95,7 @@ if (
             funnel_size=funnel_size,
             app=appB
         )
-        show_dual_metric_table("Cohort B", metrics_home_B)
+        show_dual_metric_tiles("Cohort B",home_metrics=metrics_home_B,size="small")
         csvB = ui.convert_for_download(user_cohort_dfB)
         st.download_button(
             label="Download",
@@ -114,7 +115,7 @@ if (
             app=appC 
             )
         
-        show_dual_metric_table("Cohort C", metrics_home_C)
+        show_dual_metric_tiles("Cohort C",home_metrics=metrics_home_C,size="small")
         csvC = ui.convert_for_download(user_cohort_dfC)
         st.download_button(
             label="Download",

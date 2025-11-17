@@ -719,6 +719,36 @@ def show_dual_metric_table(title, home_metrics):
     st.markdown(f"### {title}")
     st.table(df)
     
+import streamlit as st
+
+def show_dual_metric_tiles(title, home_metrics, colors=None, size="small"):
+    """
+    Render stacked metric tiles instead of a table.
+
+    Parameters
+    ----------
+    title : str
+        Section title.
+    home_metrics : dict
+        Metric → numeric value
+    colors : list[str]
+        Optional list of tile background colors.
+    size : str
+        "large" or "small"
+    """
+
+    from ui_widgets import metric_tile
+
+    st.markdown(f"### {title}")
+
+    # Default pastel tones if none supplied
+    if colors is None:
+        colors = ["#DCEAFB", "#E6F4EA", "#FFF5E6", "#FDE7E7", "#EFEAFF", "#E8F5FA"]
+
+    for i, (metric, value) in enumerate(home_metrics.items()):
+        color = colors[i % len(colors)]
+        metric_tile(metric, f"{value:.2f}", color=color, size=size,width=300)
+
 
 @st.cache_data(ttl="1d", show_spinner="Calculating")
 def funnel_chart(

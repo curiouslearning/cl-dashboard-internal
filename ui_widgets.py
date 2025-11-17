@@ -483,3 +483,49 @@ def derive_ftm_outcome(row):
     if event == "level_completed":
         return "Unknown – Level"
     return None
+
+def metric_tile(label, value, color="#EEF3FF", size="large", width=900):
+    """
+    Render a single metric tile with adjustable font sizes and optional max width.
+    width = max width in px (centered). Set to None for full width.
+    """
+
+    # Font sizes depending on size
+    if size == "large":
+        label_size = "22px"
+        value_size = "32px"
+        padding = "22px"
+    else:  # "small"
+        label_size = "16px"
+        value_size = "22px"
+        padding = "16px"
+
+    # If width specified, wrap tile in a centered container
+    if width:
+        container_start = f"<div style='max-width:{width}px; margin:0 auto;'>"
+        container_end = "</div>"
+    else:
+        container_start = ""
+        container_end = ""
+
+    st.markdown(
+        f"""
+        {container_start}
+        <div style="
+            padding:{padding};
+            border-radius:18px;
+            background-color:{color};
+            text-align:center;
+            margin-bottom:18px;
+        ">
+            <div style="font-size:{label_size}; font-weight:500; color:#444; margin-bottom:6px;">
+                {label}
+            </div>
+            <div style="font-size:{value_size}; font-weight:700;">
+                {value}
+            </div>
+        </div>
+        {container_end}
+        """,
+        unsafe_allow_html=True,
+    )

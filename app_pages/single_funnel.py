@@ -1,6 +1,6 @@
 import streamlit as st
 from rich import print as rprint
-from  ui_components import create_funnels_by_cohort,show_dual_metric_table
+from  ui_components import create_funnels_by_cohort,show_dual_metric_tiles
 import ui_widgets as ui
 import metrics
 from users import ensure_user_data_initialized,get_language_list,get_country_list
@@ -57,7 +57,9 @@ if (len(countries_list) and len(daterange) == 2 ):
         funnel_size=funnel_size,
         app=app
     )
-    show_dual_metric_table(app[0], metrics_home)
+
+    show_dual_metric_tiles("Metrics",home_metrics=metrics_home,size="small")
+    
     csv = ui.convert_for_download(user_cohort_df)
     st.download_button(
         label="Download",

@@ -41,11 +41,19 @@ if (len(selected_languages) > 0 and len(selected_languages) > 0):
     user_cohort_df, user_cohort_df_LR = get_filtered_cohort(app=app, language=selected_languages, countries_list=countries_list,daterange=default_daterange)
     
     average_days_to_ra= calculate_average_metric_per_user(user_cohort_df,column_name="days_to_ra")
-    col1.metric(label="Avg Days to RA", value=f"{average_days_to_ra:.2f}")
+    
+    with col1:
+        ui.metric_tile(
+        label="Avg Days to RA",
+        value=f"{average_days_to_ra:.2f}",
+        color="#DCEAFB",
+        size="small",
+        width=200     # allows column to control width
+    )
     
     start = daterange[0].strftime("%b %d, %Y")
     end = daterange[1].strftime("%b %d, %Y")
-    st.write("Timerange: " + start + " to " + end)  
+    st.subheader("Timerange: " + start + " to " + end)  
     
     from ui_components import days_to_ra_chart,ra_ecdf_curve,avg_days_to_ra_by_dim_chart,ra_histogram_curve
     

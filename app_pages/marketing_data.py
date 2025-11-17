@@ -75,49 +75,103 @@ if len(daterange) == 2 and len(countries_list) > 0:
         countries_list=countries_list,
         )
 
-    LR = get_cohort_totals_by_metric(cohort_df=cohort_df, stat="LR")
-    col1.metric(label="Learners Reached", value=prettify(int(LR)))
-    
-    #******* LA *******
-    session_df = get_all_apps_combined_session_and_cohort_df(
-        stat="LA"
+ # --- COHORT METRICS ---
+
+LR = get_cohort_totals_by_metric(cohort_df=cohort_df, stat="LR")
+with col1:
+    ui.metric_tile(
+        label="Learners Reached",
+        value=prettify(int(LR)),
+        color="#DCEAFB",   # blue
+        size="small"
     )
 
-    cohort_df = get_user_cohort_df(
-        session_df=session_df,
-        daterange=daterange,
-        languages=language,
-        countries_list=countries_list,
-        )
+#******* LA *******
+session_df = get_all_apps_combined_session_and_cohort_df(stat="LA")
 
-    LA = get_cohort_totals_by_metric(cohort_df=cohort_df, stat="LA")
-    col2.metric(label="Learners Acquired", value=prettify(int(LA)))
+cohort_df = get_user_cohort_df(
+    session_df=session_df,
+    daterange=daterange,
+    languages=language,
+    countries_list=countries_list,
+)
 
-    RA = get_cohort_totals_by_metric(cohort_df=cohort_df, stat="RA")
-    col3.metric(label="Readers Acquired", value=prettify(int(RA)))
+LA = get_cohort_totals_by_metric(cohort_df=cohort_df, stat="LA")
+with col2:
+    ui.metric_tile(
+        label="Learners Acquired",
+        value=prettify(int(LA)),
+        color="#E6F4EA",  # green
+        size="small"
+    )
 
-    GC = get_cohort_totals_by_metric(cohort_df=cohort_df, stat="GC")
-    col1.metric(label="Games Completed", value=prettify(int(GC)))
+RA = get_cohort_totals_by_metric(cohort_df=cohort_df, stat="RA")
+with col3:
+    ui.metric_tile(
+        label="Readers Acquired",
+        value=prettify(int(RA)),
+        color="#FFF5E6",  # orange
+        size="small"
+    )
 
-    GPP = get_cohort_GPP_avg(cohort_df)
-    col2.metric(label="Game Progress Percent", value=f"{GPP:.2f}%")
+GC = get_cohort_totals_by_metric(cohort_df=cohort_df, stat="GC")
+with col1:
+    ui.metric_tile(
+        label="Games Completed",
+        value=prettify(int(GC)),
+        color="#FDE7E7",  # soft red
+        size="small"
+    )
 
-    #******* GCC_AVG *******
+GPP = get_cohort_GPP_avg(cohort_df)
+with col2:
+    ui.metric_tile(
+        label="Game Progress Percent",
+        value=f"{GPP:.2f}%",
+        color="#EFEAFF",  # soft purple
+        size="small"
+    )
 
-    GC_AVG = get_cohort_GC_avg(cohort_df)
-    col3.metric(label="Game Completion Avg", value=f"{GC_AVG:.2f}%")
+GC_AVG = get_cohort_GC_avg(cohort_df)
+with col3:
+    ui.metric_tile(
+        label="Game Completion Avg",
+        value=f"{GC_AVG:.2f}%",
+        color="#E8F5FA",  # soft teal
+        size="small"
+    )
 
-    df_campaigns_all = st.session_state["df_campaigns_all"]
-    df_campaigns = filter_campaigns(df_campaigns_all, daterange, language, countries_list)
+# --- COST + CAC METRICS ---
+df_campaigns_all = st.session_state["df_campaigns_all"]
+df_campaigns = filter_campaigns(df_campaigns_all, daterange, language, countries_list)
 
-    cost = df_campaigns["cost"].sum()
-    col1.metric(label="Cost", value=f"${prettify(int(cost))}")
+cost = df_campaigns["cost"].sum()
+with col1:
+    ui.metric_tile(
+        label="Cost",
+        value=f"${prettify(int(cost))}",
+        color="#DCEAFB",
+        size="small"
+    )
 
-    col2.metric(label="LRC", value=f"${cost/LR:.2f}" if LR != 0 else "N/A")
-    col3.metric(label="RAC", value=f"${cost/RA:.2f}" if RA != 0 else "N/A")
+with col2:
+    ui.metric_tile(
+        label="LRC",
+        value=f"${cost/LR:.2f}" if LR != 0 else "N/A",
+        color="#FFF5E6",
+        size="small"
+    )
+
+with col3:
+    ui.metric_tile(
+        label="RAC",
+        value=f"${cost/RA:.2f}" if RA != 0 else "N/A",
+        color="#FDE7E7",
+        size="small"
+    )
     
     csv = ui.convert_for_download(cohort_df) 
-    col3.download_button(
+    st.download_button(
             label="Download",
             data=csv,
             file_name="user_cohort.csv",
@@ -126,94 +180,94 @@ if len(daterange) == 2 and len(countries_list) > 0:
             mime="text/csv",
         )
     
-    #**** LR vs LRC chart ****
-    st.divider()
-    st.markdown(header)
-    session_df = get_all_apps_combined_session_and_cohort_df(
-        stat="LR"
+#**** LR vs LRC chart ****
+st.divider()
+st.markdown(header)
+session_df = get_all_apps_combined_session_and_cohort_df(
+    stat="LR"
+)
+
+df_total_LR_per_month = get_totals_per_month_from_cohort(cohort_df=session_df, stat="LR", daterange=daterange)
+if len(df_total_LR_per_month) > 0:
+    uic.lr_lrc_bar_chart(df_total_LR_per_month)
+    
+csv = ui.convert_for_download(df_total_LR_per_month) 
+st.download_button(
+        label="Download",
+        data=csv,
+        file_name="user_cohort.csv",
+        key="md2",
+        icon=":material/download:",
+        mime="text/csv",
     )
-    
-    df_total_LR_per_month = get_totals_per_month_from_cohort(cohort_df=session_df, stat="LR", daterange=daterange)
-    if len(df_total_LR_per_month) > 0:
-        uic.lr_lrc_bar_chart(df_total_LR_per_month)
-        
-    csv = ui.convert_for_download(df_total_LR_per_month) 
-    st.download_button(
-            label="Download",
-            data=csv,
-            file_name="user_cohort.csv",
-            key="md2",
-            icon=":material/download:",
-            mime="text/csv",
-        )
-    st.divider()
+st.divider()
 
-    st.subheader("Total Spend per Country")
-    st.markdown(header)
+st.subheader("Total Spend per Country")
+st.markdown(header)
 
-    source = ui.ads_platform_selector()     
+source = ui.ads_platform_selector()     
 
-    df = uic.spend_by_country_map(df_campaigns, source)
+df = uic.spend_by_country_map(df_campaigns, source)
 
-    csv = ui.convert_for_download(df) 
-    st.download_button(
-            label="Download",
-            data=csv,
-            file_name="user_cohort.csv",
-            key="md3",
-            icon=":material/download:",
-            mime="text/csv",
-        )
-    
-    st.divider()
-    st.subheader("LRC / LAC: : All apps")
-    st.markdown(header)
-
-    c1, c2, c3, c4 = st.columns(4)
-    with c1:
-        option = st.radio("Select a statistic", ("LRC", "LAC"), index=0, horizontal=True)
-    with c2:
-        display_category = st.radio(
-            "Display by", ("Country", "Language"), index=0, horizontal=True, key="e-4"
-        )
-
-    session_df = get_all_apps_combined_session_and_cohort_df(
-        stat="LR"
-        )
-
-    scatter_df = uic.lrc_scatter_chart(
-        option=option,
-        display_category=display_category,
-        df_campaigns=df_campaigns,
-        daterange=daterange,
-        session_df=session_df,
-        languages=language,
-        countries_list=countries_list,
+csv = ui.convert_for_download(df) 
+st.download_button(
+        label="Download",
+        data=csv,
+        file_name="user_cohort.csv",
+        key="md3",
+        icon=":material/download:",
+        mime="text/csv",
     )
 
-    csv = ui.convert_for_download(scatter_df) 
-    st.download_button(
-            label="Download",
-            data=csv,
-            file_name="user_cohort.csv",
-            key="md4",
-            icon=":material/download:",
-            mime="text/csv",
-        )
-        
-    st.divider()   
-    st.markdown(header)
+st.divider()
+st.subheader("LRC / LAC: : All apps")
+st.markdown(header)
+
+c1, c2, c3, c4 = st.columns(4)
+with c1:
+    option = st.radio("Select a statistic", ("LRC", "LAC"), index=0, horizontal=True)
+with c2:
+    display_category = st.radio(
+        "Display by", ("Country", "Language"), index=0, horizontal=True, key="e-4"
+    )
+
+session_df = get_all_apps_combined_session_and_cohort_df(
+    stat="LR"
+    )
+
+scatter_df = uic.lrc_scatter_chart(
+    option=option,
+    display_category=display_category,
+    df_campaigns=df_campaigns,
+    daterange=daterange,
+    session_df=session_df,
+    languages=language,
+    countries_list=countries_list,
+)
+
+csv = ui.convert_for_download(scatter_df) 
+st.download_button(
+        label="Download",
+        data=csv,
+        file_name="user_cohort.csv",
+        key="md4",
+        icon=":material/download:",
+        mime="text/csv",
+    )
     
-    col = df_campaigns.pop("country")
-    df_campaigns.insert(2, col.name, col)
-    df_campaigns.reset_index(drop=True, inplace=True)
+st.divider()   
+st.markdown(header)
 
-    col = df_campaigns.pop("app_language")
-    df_campaigns.insert(3, col.name, col)
-    df_campaigns.reset_index(drop=True, inplace=True)
+col = df_campaigns.pop("country")
+df_campaigns.insert(2, col.name, col)
+df_campaigns.reset_index(drop=True, inplace=True)
 
-    st.subheader("Marketing metrics table: : All apps")
-    df_campaign_table = campaigns.build_campaign_table(df_campaigns, session_df, daterange)
+col = df_campaigns.pop("app_language")
+df_campaigns.insert(3, col.name, col)
+df_campaigns.reset_index(drop=True, inplace=True)
 
-    keys = [12, 13, 14, 15, 16]
-    ui.paginated_dataframe(df_campaign_table, keys, sort_col="country")
+st.subheader("Marketing metrics table: : All apps")
+df_campaign_table = campaigns.build_campaign_table(df_campaigns, session_df, daterange)
+
+keys = [12, 13, 14, 15, 16]
+ui.paginated_dataframe(df_campaign_table, keys, sort_col="country")
