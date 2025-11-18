@@ -306,18 +306,36 @@ def get_users_ftm_event_timeline(cr_user_id_list):
 
     return df
 
-@st.cache_data(ttl="1d")
-def get_cohort_user_ids():
+@st.cache_data(ttl="1d",show_spinner=False)
+def get_cohort_list():
     """
     Returns a list of cr_user_id from your cohort table.
     """
     _, bq_client = get_gcp_credentials()
-    sql = """
-        SELECT cr_user_id
-        FROM `dataexploration-193817.user_data.cohort_groups`
+    sql = f"""
+        SELECT distinct cohort_name
+        FROM `dataexploration-193817.user_data.cr_cohorts`
     """
+
+    df = bq_client.query(sql).to_dataframe()
+    return df["cohort_name"].dropna().unique().tolist()
+
+
+@st.cache_data(ttl="1d",show_spinner=False)
+def get_cohort_user_ids(cohort_name):
+    """
+    Returns a list of cr_user_id from your cohort table.
+    """
+    _, bq_client = get_gcp_credentials()
+    sql = f"""
+        SELECT cr_user_id
+        FROM `dataexploration-193817.user_data.cr_cohorts`
+        where cohort_name = '{cohort_name}'
+    """
+
     df = bq_client.query(sql).to_dataframe()
     return df["cr_user_id"].dropna().unique().tolist()
+
 
 @st.cache_data(ttl="1d", show_spinner="Getting user events")
 def get_ftm_user_events(cr_user_id):

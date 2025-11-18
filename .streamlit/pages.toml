@@ -66,7 +66,7 @@ name = "User Lookup"
 icon = ":small_orange_diamond:"
 
 [[pages]]
-path = "app_pages/cl_test_site1.py"
-name = "Durban study group"
+path = "app_pages/cohort_history.py"
+name = "FTM Gameplay Timeline (Cohort Only)"
 icon = ":small_orange_diamond:"
 

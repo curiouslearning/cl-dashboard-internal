@@ -1,13 +1,13 @@
 
 import streamlit as st
-from users import get_cohort_user_ids, get_users_ftm_event_timeline
+from users import get_cohort_user_ids,get_cohort_list, get_users_ftm_event_timeline
 from ui_components import ftm_timeline_plot
 import pandas as pd
 
-st.title("FTM Gameplay Timeline (Cohort Only)")
-
-# 1. Get your cohort
-cohort_ids = get_cohort_user_ids()
+col1,col2 = st.columns([1,2])
+cohorts = get_cohort_list()
+cohort = col1.selectbox("Select a cohort",cohorts)
+cohort_ids = get_cohort_user_ids(cohort_name=cohort)
 
 # 2. Load the event data for just those users
 df = get_users_ftm_event_timeline(cohort_ids)
