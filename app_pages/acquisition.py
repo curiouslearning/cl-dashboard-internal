@@ -29,8 +29,8 @@ with col1:
     )
     
     languages = users.get_language_list()
-    language = ui.single_selector(
-        languages, title="Select a language", key="a-2"
+    language = ui.multi_select_all(
+        languages, title="Select one or more language", key="a-2"
     )
     selected_date, option = ui.calendar_selector(key="fa-3", index=1)
     daterange = ui.convert_date_to_range(selected_date, option)
@@ -40,7 +40,7 @@ with col2:
     app = ui.single_selector(distinct_apps, title="Select an App", key="a-10",include_All=False)
 
     display_category = st.radio(
-        "Display by", ("Country", "Language"), index=0, horizontal=True, key="a-3"
+        "Display by", ("Country", "Language"), index=1, horizontal=True, key="a-3"
     )
 
 
