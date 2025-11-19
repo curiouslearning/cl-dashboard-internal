@@ -3,6 +3,7 @@ import streamlit as st
 from users import get_cohort_user_ids,get_cohort_list, get_users_ftm_event_timeline
 from ui_components import ftm_timeline_plot
 import pandas as pd
+from metrics import get_engagement_metrics_for_cohort
 
 col1,col2 = st.columns([1,2])
 cohorts = get_cohort_list()
@@ -32,4 +33,9 @@ if subset.empty:
     st.stop()
 
 ftm_timeline_plot(subset)
+df = st.session_state["df_cr_users"]
+
+user_cohort_df = df[df["cr_user_id"].isin(users)].copy()
+
+metrics_home = get_engagement_metrics_for_cohort(user_cohort_df)
 
