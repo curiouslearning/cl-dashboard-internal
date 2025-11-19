@@ -5,7 +5,7 @@ import pandas as pd
 from users import ensure_user_data_initialized
 from settings import initialize
 from ui_components import ftm_timeline_plot
-from users import get_ftm_user_events,get_users_ftm_event_timeline
+from users import get_users_ftm_event_timeline
 from ui_widgets import highlight_success
 
 initialize()
@@ -87,10 +87,7 @@ if (len(cr_user_id) > 0):
     ftm_timeline_plot(user_ftm_df)
 
     st.markdown("---")  # Optional: visual separator
-
-    df_user_events = get_ftm_user_events(cr_user_id)
-    st.markdown("#### FTM Session & Game Event Timeline")
-    # Only works in st.dataframe (not st.table)
-
-    styled_df = df_user_events.style.apply(highlight_success, axis=1)
+    # Drop cr_user_id only if it exists
+    display_df = user_ftm_df.drop(columns=["cr_user_id"], errors="ignore")
+    styled_df = display_df.style.apply(highlight_success, axis=1)
     st.dataframe(styled_df, use_container_width=True)
