@@ -484,6 +484,7 @@ def derive_ftm_outcome(row):
         return "Unknown – Level"
     return None
 
+
 def metric_tile(label, value, color="#EEF3FF", size="large", width=900):
     """
     Render a single metric tile with adjustable font sizes and optional max width.

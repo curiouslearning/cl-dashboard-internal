@@ -8,6 +8,7 @@ import metrics
 from millify import prettify
 import numpy as np
 from ui_widgets import derive_ftm_outcome
+from colors import CHART_METRIC_COLORS,TILE_METRIC_COLORS
 
 
 default_daterange = [dt.datetime(2021, 1, 1).date(), dt.date.today()]
@@ -719,35 +720,6 @@ def show_dual_metric_table(title, home_metrics):
     st.markdown(f"### {title}")
     st.table(df)
     
-import streamlit as st
-
-def show_dual_metric_tiles(title, home_metrics, colors=None, size="small"):
-    """
-    Render stacked metric tiles instead of a table.
-
-    Parameters
-    ----------
-    title : str
-        Section title.
-    home_metrics : dict
-        Metric → numeric value
-    colors : list[str]
-        Optional list of tile background colors.
-    size : str
-        "large" or "small"
-    """
-
-    from ui_widgets import metric_tile
-
-    st.markdown(f"### {title}")
-
-    # Default pastel tones if none supplied
-    if colors is None:
-        colors = ["#DCEAFB", "#E6F4EA", "#FFF5E6", "#FDE7E7", "#EFEAFF", "#E8F5FA"]
-
-    for i, (metric, value) in enumerate(home_metrics.items()):
-        color = colors[i % len(colors)]
-        metric_tile(metric, f"{value:.2f}", color=color, size=size,width=300)
 
 
 @st.cache_data(ttl="1d", show_spinner="Calculating")
@@ -1214,3 +1186,109 @@ def ftm_timeline_plot(df, title="FTM Gameplay Timeline (Success / Failure by Eve
     )
 
     st.plotly_chart(fig, use_container_width=True)
+
+def display_metrics_for_users(df_users):
+    metric_display_names = [
+        "Max Level Reached",
+        "Number of Sessions",
+        "Total Play Time (min)",
+        "Avg Session Length (min)",
+        "Active Span (days)",
+        "Days to RA",
+    ]
+    
+    # Mapping each metric name to a fixed tile color
+    METRIC_COLOR_MAP = {
+        "Max Level Reached": "#DCEAFB",
+        "Number of Sessions": "#E6F4EA",
+        "Total Play Time (min)": "#E8F5FA",
+        "Avg Session Length (min)": "#FFF5E6",
+        "Active Span (days)": "#EFEAFF",
+        "Days to RA": "#FDE7E7",
+    }
+
+    selected_metric = st.radio(
+        "Select metric to chart",
+        metric_display_names,
+        index=2,
+        horizontal=True
+    )
+    
+    long_df = metrics.build_user_metrics_long_df(df_users)
+    chart_df = long_df[long_df["metric_display"] == selected_metric]
+
+    fig = px.bar(
+        chart_df,
+        x="cr_user_id",
+        y="value",
+        title=f"Per-User {selected_metric}",
+        text_auto=True,
+        color_discrete_sequence=[CHART_METRIC_COLORS[selected_metric]],
+    )
+
+    fig.update_layout(
+        xaxis_title="User",
+        yaxis_title=selected_metric,
+        showlegend=False,
+        margin=dict(l=40, r=20, t=50, b=40),
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+
+def show_dual_metric_tiles(title, home_metrics, colors=None, size="small"):
+    from colors import TILE_METRIC_COLORS
+
+    st.markdown(f"#### {title}")
+
+    # Build tiles as ONE HTML string, with NO leading spaces
+    tiles_html = '<div class="metric-flex-container">'
+
+    for metric, value in home_metrics.items():
+        color = TILE_METRIC_COLORS.get(metric, "#DCEAFB")
+
+        tiles_html += f"""
+<div class="metric-item">
+  <div style="padding:16px; border-radius:18px; background-color:{color}; text-align:center;">
+    <div style="font-size:16px; font-weight:500; color:#444; margin-bottom:6px;">
+      {metric}
+    </div>
+    <div style="font-size:22px; font-weight:700;">
+      {value:.2f}
+    </div>
+  </div>
+</div>
+"""
+
+    tiles_html += "</div>"
+
+    # Render ALL tiles at once
+    st.markdown(tiles_html, unsafe_allow_html=True)
+
+    # CSS for horizontal layout + wrapping
+    st.markdown(
+        """
+<style>
+.metric-flex-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: flex-start;
+  margin-top: 10px;
+  margin-bottom: 25px;
+}
+
+.metric-item {
+  flex: 0 0 auto;
+  width: 300px;   /* tile width */
+}
+
+/* Stack tiles on narrow screens */
+@media (max-width: 700px) {
+  .metric-item {
+    width: 100%;
+  }
+}
+</style>
+""",
+        unsafe_allow_html=True,
+    )

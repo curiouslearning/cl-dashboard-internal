@@ -575,3 +575,35 @@ def get_top_and_bottom_funnel_groups(
 
     return top10, bottom10, funnel_steps
 
+def build_user_metrics_long_df(user_cohort_df):
+    """
+    Convert user_cohort_df into long format for charting individual metrics.
+    """
+    metric_cols = [
+        "max_user_level",
+        "engagement_event_count",
+        "total_time_minutes",
+        "avg_session_length_minutes",
+        "active_span",
+        "days_to_ra",
+    ]
+
+    long_df = (
+        user_cohort_df[["cr_user_id"] + metric_cols]
+        .melt(id_vars="cr_user_id", var_name="metric", value_name="value")
+        .dropna(subset=["value"])
+    )
+
+    # Nice display names for the y-axis and dropdown
+    nice_names = {
+        "max_user_level": "Max Level Reached",
+        "engagement_event_count": "Number of Sessions",
+        "total_time_minutes": "Total Play Time (min)",
+        "avg_session_length_minutes": "Avg Session Length (min)",
+        "active_span": "Active Span (days)",
+        "days_to_ra": "Days to RA",
+    }
+
+    long_df["metric_display"] = long_df["metric"].map(nice_names)
+
+    return long_df

@@ -1,7 +1,7 @@
 
 import streamlit as st
 from users import get_cohort_user_ids,get_cohort_list, get_users_ftm_event_timeline
-from ui_components import ftm_timeline_plot
+from ui_components import ftm_timeline_plot,show_dual_metric_tiles,display_metrics_for_users
 import pandas as pd
 from metrics import get_engagement_metrics_for_cohort
 
@@ -36,6 +36,11 @@ ftm_timeline_plot(subset)
 df = st.session_state["df_cr_users"]
 
 user_cohort_df = df[df["cr_user_id"].isin(users)].copy()
+st.divider()
+st.subheader("Individual metrics")
+display_metrics_for_users(user_cohort_df)
 
+st.divider()
 metrics_home = get_engagement_metrics_for_cohort(user_cohort_df)
+show_dual_metric_tiles("Metrics",home_metrics=metrics_home,size="small")
 
