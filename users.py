@@ -314,3 +314,77 @@ def get_cohort_user_ids(cohort_name):
     df = bq_client.query(sql).to_dataframe()
     return df["cr_user_id"].dropna().unique().tolist()
 
+@st.cache_data(ttl="1d", show_spinner=False)
+def get_book_summary_for_cohort(cohort_ids):
+    """
+    Return per-user book interaction summary for the given list of cr_user_id,
+    based on the precomputed cr_book_user_summary_all table.
+
+    Output columns:
+      - cr_user_id
+      - distinct_books_accessed
+      - total_events
+      - first_access_date
+      - last_access_date
+      - most_read_book
+      - most_read_book_events
+    """
+    if not cohort_ids:
+        return pd.DataFrame()
+
+    ids_literal = ", ".join(f"'{cid}'" for cid in cohort_ids if cid)
+
+    sql = f"""
+    WITH cohort_users AS (
+      SELECT cr_user_id
+      FROM UNNEST([{ids_literal}]) AS cr_user_id
+    )
+    SELECT
+      s.*
+    FROM
+      `dataexploration-193817.user_data.cr_book_user_summary_all` AS s
+    JOIN
+      cohort_users cu
+    USING (cr_user_id)
+    ORDER BY
+      s.total_events DESC
+    """
+
+    _, bq_client = get_gcp_credentials()
+    return bq_client.query(sql).to_dataframe()
+
+
+@st.cache_data(ttl="1d", show_spinner=False)
+def get_books_for_user(cr_user_id: str) -> pd.DataFrame:
+    """
+    Return a per-book summary for a single cr_user_id.
+
+    Columns:
+      - book_title
+      - total_events
+      - first_access_date
+      - last_access_date
+    """
+    if not cr_user_id:
+        return pd.DataFrame()
+
+    sql = f"""
+    SELECT
+      book_title,
+      COUNT(*) AS total_events,
+      MIN(DATE(event_time)) AS first_access_date,
+      MAX(DATE(event_time)) AS last_access_date
+    FROM
+      `dataexploration-193817.user_data.cr_book_interactions_all`
+    WHERE
+      cr_user_id = '{cr_user_id}'
+      AND event_name = 'page_view'
+      AND book_title IS NOT NULL
+    GROUP BY
+      book_title
+    ORDER BY
+      total_events DESC, book_title
+    """
+
+    _, bq_client = get_gcp_credentials()
+    return bq_client.query(sql).to_dataframe()
