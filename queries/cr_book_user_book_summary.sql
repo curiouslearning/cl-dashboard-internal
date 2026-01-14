@@ -11,6 +11,9 @@ Derives engagement signals (active days, first/last access) and parses:
 - language_code via suffix matching (no delimiter in book_id)
 - base_book_id by removing the matched language suffix
 
+Adds:
+- book_language: canonical language name aligned to FTM naming (e.g. IsiZulu -> Zulu)
+
 Grain: One row per (cr_user_id, book_id)
 ===============================================================================
 */
@@ -18,9 +21,6 @@ Grain: One row per (cr_user_id, book_id)
 CREATE OR REPLACE TABLE `dataexploration-193817.user_data.cr_book_user_book_summary`
 AS
 WITH
-  -- 1) Maintain a suffix list of known language tokens appearing at the end of book IDs.
-  --    IMPORTANT: Put longer/multi-token suffixes here (e.g., IsiZulu, CVPortuguese) so
-  --    we can safely choose the LONGEST match.
   language_suffixes AS (
     SELECT * FROM UNNEST(
       [
@@ -67,17 +67,11 @@ WITH
       event_time,
       page_location,
       book_id,
-
-      -- Level number (Lv4 -> 4), if present
       SAFE_CAST(REGEXP_EXTRACT(book_id, r'Lv(\d+)$') AS INT64) AS book_level,
-
-      -- Strip trailing Lv# for language parsing
       REGEXP_REPLACE(book_id, r'Lv\d+$', '') AS book_no_level
     FROM base
     WHERE book_id IS NOT NULL
   ),
-
-  -- 2) Match the LONGEST language suffix that appears at the end of book_no_level.
   matched AS (
     SELECT
       p.*,
@@ -97,9 +91,6 @@ WITH
     SELECT
       cr_user_id,
       book_id,
-
-      -- Remove the matched suffix from the end to get base_book_id.
-      -- If no suffix matched, base_book_id will be NULL (we can handle later).
       CASE
         WHEN language_code IS NOT NULL
           THEN
@@ -107,7 +98,20 @@ WITH
               book_no_level, CONCAT(r'(', language_code, r')$'), '')
         ELSE NULL
         END AS base_book_id,
+
+      -- Raw suffix parsed from book_id (traceability)
       language_code,
+
+      -- Canonical language aligned to FTM naming
+      CASE
+        WHEN language_code = 'IsiZulu' THEN 'Zulu'
+        WHEN language_code IN ('En', 'English') THEN 'English'
+        WHEN language_code = 'CVPortuguese' THEN 'Portuguese'
+        WHEN language_code = 'CVCreole' THEN 'Creole'
+        WHEN language_code = 'Nep' THEN 'Nepali'
+        WHEN language_code = 'Ukr' THEN 'Ukrainian'
+        ELSE language_code
+        END AS book_language,
       book_level,
       COUNT(*) AS total_events,
       COUNT(DISTINCT event_date) AS active_days_for_book,
@@ -119,6 +123,7 @@ WITH
     -- Optional restriction if page_view is the only reliable signal:
     -- WHERE event_name = 'page_view'
     GROUP BY
-      cr_user_id, book_id, base_book_id, language_code, book_level
+      cr_user_id, book_id, base_book_id, language_code, book_language,
+      book_level
   )
 SELECT * FROM user_book;

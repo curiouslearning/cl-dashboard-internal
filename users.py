@@ -327,7 +327,7 @@ def get_book_summary_for_cohort(cohort_ids):
     SELECT
       c.cr_user_id,
       c.is_book_user,
-      c.book_language_code,
+      c.book_language,
       c.distinct_books_accessed,
       c.total_book_events,
       c.total_active_book_days,
