@@ -5,6 +5,7 @@ import numpy as np
 import gcsfs
 from settings import get_gcp_credentials
 from ui_widgets import derive_ftm_outcome
+from google.cloud import bigquery
 
 
 @st.cache_data(ttl="1d", show_spinner=False)
@@ -314,76 +315,91 @@ def get_cohort_user_ids(cohort_name):
     df = bq_client.query(sql).to_dataframe()
     return df["cr_user_id"].dropna().unique().tolist()
 
+import pandas as pd
+import streamlit as st
+
 @st.cache_data(ttl="1d", show_spinner=False)
 def get_book_summary_for_cohort(cohort_ids):
-    """
-    Return per-user book interaction summary for the given list of cr_user_id,
-    based on the precomputed cr_book_user_summary_all table.
-
-    Output columns:
-      - cr_user_id
-      - distinct_books_accessed
-      - total_events
-      - first_access_date
-      - last_access_date
-      - most_read_book
-      - most_read_book_events
-    """
     if not cohort_ids:
         return pd.DataFrame()
 
-    ids_literal = ", ".join(f"'{cid}'" for cid in cohort_ids if cid)
-
-    sql = f"""
-    WITH cohort_users AS (
-      SELECT cr_user_id
-      FROM UNNEST([{ids_literal}]) AS cr_user_id
-    )
+    sql = """
     SELECT
-      s.*
-    FROM
-      `dataexploration-193817.user_data.cr_book_user_summary_all` AS s
-    JOIN
-      cohort_users cu
-    USING (cr_user_id)
+      c.cr_user_id,
+      c.is_book_user,
+      c.book_language_code,
+      c.distinct_books_accessed,
+      c.total_book_events,
+      c.total_active_book_days,
+      c.books_with_2plus_days,
+      c.first_access_date,
+      c.last_access_date,
+      c.book_span_days,
+      c.most_read_book_id,
+      c.most_read_book_events
+    FROM `dataexploration-193817.user_data.cr_book_user_cohorts` c
+    WHERE c.cr_user_id IN UNNEST(@cohort_ids)
     ORDER BY
-      s.total_events DESC
+      c.total_book_events DESC,
+      c.total_active_book_days DESC,
+      c.distinct_books_accessed DESC
     """
 
     _, bq_client = get_gcp_credentials()
-    return bq_client.query(sql).to_dataframe()
+
+    job_config = bigquery.QueryJobConfig(
+        query_parameters=[
+            bigquery.ArrayQueryParameter(
+                "cohort_ids",
+                "STRING",
+                cohort_ids,
+            )
+        ]
+    )
+
+    return bq_client.query(sql, job_config=job_config).to_dataframe()
 
 
 @st.cache_data(ttl="1d", show_spinner=False)
 def get_books_for_user(cr_user_id: str) -> pd.DataFrame:
     """
-    Return a per-book summary for a single cr_user_id.
+    Return a per-book summary for a single cr_user_id using the new canonical
+    user–book table: cr_book_user_book_summary.
 
-    Columns:
-      - book_title
+    Columns (new model):
+      - book_id
+      - base_book_id
+      - language_code
+      - book_level
       - total_events
+      - active_days_for_book
       - first_access_date
       - last_access_date
     """
     if not cr_user_id:
         return pd.DataFrame()
 
+    # Basic escaping to avoid breaking the SQL string (recommended even if ids are trusted)
+    safe_id = cr_user_id.replace("'", "\\'")
+
     sql = f"""
     SELECT
-      book_title,
-      COUNT(*) AS total_events,
-      MIN(DATE(event_time)) AS first_access_date,
-      MAX(DATE(event_time)) AS last_access_date
+      book_id,
+      base_book_id,
+      language_code,
+      book_level,
+      total_events,
+      active_days_for_book,
+      first_access_date,
+      last_access_date
     FROM
-      `dataexploration-193817.user_data.cr_book_interactions_all`
+      `dataexploration-193817.user_data.cr_book_user_book_summary`
     WHERE
-      cr_user_id = '{cr_user_id}'
-      AND event_name = 'page_view'
-      AND book_title IS NOT NULL
-    GROUP BY
-      book_title
+      cr_user_id = '{safe_id}'
     ORDER BY
-      total_events DESC, book_title
+      total_events DESC,
+      active_days_for_book DESC,
+      book_id
     """
 
     _, bq_client = get_gcp_credentials()
