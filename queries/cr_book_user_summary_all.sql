@@ -7,78 +7,78 @@ Purpose:
 Canonical USER-level summary of Curious Reader book engagement.
 Each row represents one user who has interacted with at least one book.
 
-Derived from:
-- user_data.cr_book_user_book_summary (user–book grain)
+Language normalization:
+----------------------
+Uses book_language (canonical, aligned to FTM naming; e.g., IsiZulu -> Zulu).
+Keeps language_code (raw suffix parsed from book_id) for traceability.
 
-Provides engagement signals without relying on time-on-task:
-- distinct_books_accessed
-- total_book_events
-- total_active_book_days (sum of active days across books)
-- books_with_2plus_days (count of books engaged with across 2+ distinct days)
-- first/last access dates and overall engagement span
-- most_read_book (by total_events)
-
-Downstream Usage:
------------------
-- Joined to full user universe to create cr_book_user_cohorts (includes non-book users)
-- Dashboard metrics and segmentation
+IMPORTANT:
+----------
+To avoid mismatched combinations for multilingual users, we select the most
+common (book_language, language_code) PAIR per user, not each field independently.
 ===============================================================================
 */
 
-CREATE OR REPLACE TABLE `dataexploration-193817.user_data.cr_book_user_summary_all`
-AS
-WITH
-  user_rollup AS (
-    SELECT
-      cr_user_id,
+CREATE OR REPLACE TABLE `dataexploration-193817.user_data.cr_book_user_summary_all` AS
+WITH base AS (
+  SELECT
+    cr_user_id,
+    book_id,
+    book_language,
+    language_code,
+    total_events,
+    active_days_for_book,
+    first_access_date,
+    last_access_date,
 
-      -- Book language derived from URL/book_id, not FTM.
-      -- If a user has multiple book languages, we keep the most common one.
-      (ARRAY_AGG(language_code ORDER BY cnt DESC, language_code LIMIT 1))[
-        OFFSET(0)] AS language_code,
-      COUNT(DISTINCT book_id) AS distinct_books_accessed,
-      SUM(total_events) AS total_book_events,
+    -- frequency of the (book_language, language_code) pair for this user
+    COUNT(*) OVER (PARTITION BY cr_user_id, book_language, language_code) AS cnt_pair
+  FROM `dataexploration-193817.user_data.cr_book_user_book_summary`
+),
 
-      -- engagement strength
-      SUM(active_days_for_book) AS total_active_book_days,
-      COUNTIF(active_days_for_book >= 2) AS books_with_2plus_days,
+user_rollup AS (
+  SELECT
+    cr_user_id,
 
-      -- overall access window
-      MIN(first_access_date) AS first_access_date,
-      MAX(last_access_date) AS last_access_date,
-      DATE_DIFF(MAX(last_access_date), MIN(first_access_date), DAY)
-        AS book_span_days
-    FROM
-      (
-        SELECT
-          cr_user_id,
-          book_id,
-          language_code,
-          total_events,
-          active_days_for_book,
-          first_access_date,
-          last_access_date,
-          COUNT(*) OVER (PARTITION BY cr_user_id, language_code) AS cnt
-        FROM `dataexploration-193817.user_data.cr_book_user_book_summary`
-      )
-    GROUP BY cr_user_id
-  ),
-  most_read AS (
-    SELECT
-      cr_user_id,
-      book_id AS most_read_book_id,
-      MAX(total_events) AS most_read_book_events
-    FROM `dataexploration-193817.user_data.cr_book_user_book_summary`
-    GROUP BY cr_user_id, book_id
-    QUALIFY
-      ROW_NUMBER()
-        OVER (
-          PARTITION BY cr_user_id ORDER BY most_read_book_events DESC, book_id
-        )
-      = 1
-  )
+    -- Choose the dominant (book_language, language_code) pair together
+    (ARRAY_AGG(STRUCT(book_language, language_code)
+      ORDER BY cnt_pair DESC, book_language, language_code LIMIT 1
+    ))[OFFSET(0)].book_language AS book_language,
+
+    (ARRAY_AGG(STRUCT(book_language, language_code)
+      ORDER BY cnt_pair DESC, book_language, language_code LIMIT 1
+    ))[OFFSET(0)].language_code AS language_code,
+
+    COUNT(DISTINCT book_id) AS distinct_books_accessed,
+    SUM(total_events) AS total_book_events,
+
+    SUM(active_days_for_book) AS total_active_book_days,
+    COUNTIF(active_days_for_book >= 2) AS books_with_2plus_days,
+
+    MIN(first_access_date) AS first_access_date,
+    MAX(last_access_date) AS last_access_date,
+    DATE_DIFF(MAX(last_access_date), MIN(first_access_date), DAY) AS book_span_days
+  FROM base
+  GROUP BY cr_user_id
+),
+
+most_read AS (
+  SELECT
+    cr_user_id,
+    book_id AS most_read_book_id,
+    MAX(total_events) AS most_read_book_events
+  FROM `dataexploration-193817.user_data.cr_book_user_book_summary`
+  GROUP BY cr_user_id, book_id
+  QUALIFY
+    ROW_NUMBER() OVER (
+      PARTITION BY cr_user_id
+      ORDER BY most_read_book_events DESC, book_id
+    ) = 1
+)
+
 SELECT
   u.cr_user_id,
+  u.book_language,
   u.language_code,
   u.distinct_books_accessed,
   u.total_book_events,
