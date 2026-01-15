@@ -31,12 +31,12 @@ is_section = true
 
 [[pages]]
 path = "app_pages/time_to_ra.py"
-name = "Time to Reach RA"
+name = "Readers Acquired"
 icon = ":small_orange_diamond:"
 
 [[pages]]
 path = "app_pages/levels_reached.py"
-name = "Levels Reached"
+name = "Levels"
 icon = ":small_orange_diamond:"
 
 
@@ -47,12 +47,22 @@ icon = ":small_orange_diamond:"
 
 [[pages]]
 path = "app_pages/difficulty_by_language.py"
-name = "Difficulty by language"
+name = "Language Difficulty"
 icon = ":small_orange_diamond:"
 
 [[pages]]
 path = "app_pages/marketing_data.py"
 name = "Marketing Data"
+icon = ":small_orange_diamond:"
+
+[[pages]]
+name = "Books"
+icon = ":large_brown_circle:"
+is_section = true
+
+[[pages]]
+path = "app_pages/books.py"
+name = "Books"
 icon = ":small_orange_diamond:"
 
 [[pages]]

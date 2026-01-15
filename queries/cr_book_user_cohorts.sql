@@ -22,7 +22,8 @@ One row per cr_user_id in the selected universe.
 ===============================================================================
 */
 
-CREATE OR REPLACE TABLE `dataexploration-193817.user_data.cr_book_user_cohorts` AS
+CREATE OR REPLACE TABLE `dataexploration-193817.user_data.cr_book_user_cohorts`
+AS
 WITH
   -- Use canonical language aligned to FTM (e.g., Zulu)
   book_languages AS (
@@ -30,13 +31,11 @@ WITH
     FROM `dataexploration-193817.user_data.cr_book_user_summary_all`
     WHERE book_language IS NOT NULL
   ),
-
   book_users AS (
     SELECT
       cr_user_id,
-      book_language AS book_language,   -- canonical (use for matching vs FTM)
-      language_code AS book_language_code, -- raw suffix (debug only)
-
+      book_language AS book_language,  -- canonical (use for matching vs FTM)
+      language_code AS book_language_code,  -- raw suffix (debug only)
       distinct_books_accessed,
       total_book_events,
       total_active_book_days,
@@ -48,7 +47,6 @@ WITH
       most_read_book_events
     FROM `dataexploration-193817.user_data.cr_book_user_summary_all`
   ),
-
   user_universe AS (
     SELECT
       p.user_pseudo_id,
@@ -89,17 +87,14 @@ WITH
       p.cr_user_id IS NOT NULL
       AND (bl.book_language IS NOT NULL OR bu.cr_user_id IS NOT NULL)
   ),
-
   joined AS (
     SELECT
       u.*,
-
       bu.cr_user_id IS NOT NULL AS is_book_user,
 
       -- canonical + raw book language fields
       bu.book_language,
       bu.book_language_code,
-
       COALESCE(bu.distinct_books_accessed, 0) AS distinct_books_accessed,
       COALESCE(bu.total_book_events, 0) AS total_book_events,
       COALESCE(bu.total_active_book_days, 0) AS total_active_book_days,
@@ -113,29 +108,28 @@ WITH
     LEFT JOIN book_users bu
       ON u.cr_user_id = bu.cr_user_id
   ),
-
   tiered AS (
     SELECT
       *,
       CASE
         WHEN NOT is_book_user THEN 0
         WHEN total_active_book_days = 1 THEN 1
-        WHEN (
-          total_active_book_days >= 2
-          OR distinct_books_accessed >= 2
-          OR books_with_2plus_days >= 1
-        ) THEN 2
-        WHEN (
-          total_active_book_days >= 3
-          AND (
-            distinct_books_accessed >= 3
-            OR books_with_2plus_days >= 2
-            OR book_span_days >= 3
-          )
-        ) THEN 3
+        WHEN
+          (
+            total_active_book_days >= 3
+            AND (
+              distinct_books_accessed >= 3
+              OR books_with_2plus_days >= 2
+              OR book_span_days >= 3))
+          THEN 3
+        WHEN
+          (
+            total_active_book_days >= 2
+            OR distinct_books_accessed >= 2
+            OR books_with_2plus_days >= 1)
+          THEN 2
         ELSE 2
-      END AS book_engagement_tier
+        END AS book_engagement_tier
     FROM joined
   )
-
 SELECT * FROM tiered;
