@@ -161,6 +161,8 @@ show_dual_metric_tiles(
 
 st.caption("Some users read books in a language different from their primary FTM language.")
 
+
+
 # ----------------------------
 # Pie data + labels
 # ----------------------------
@@ -171,13 +173,31 @@ TIER_LABELS = {
     3: "Highly engaged",
 }
 
+TIER_HOVER_DEFS = {
+    "No book use": "Tier 0: not a book user (no recorded book activity)",
+    "Tried once": "Tier 1: total_active_book_days = 1",
+    "Returning reader": "Tier 2: active days ≥ 2 OR distinct books ≥ 2 OR any book with ≥2 active days",
+    "Highly engaged": "Tier 3: active days ≥ 3 AND (distinct books ≥ 3 OR ≥2 books with ≥2 days OR span ≥ 3 days)",
+    "Unknown": "Tier ?: definition unavailable",
+}
+
 df_pie_book_tiers = (
     pie_base.groupby("book_engagement_tier", as_index=False)["cr_user_id"]
     .nunique()
     .rename(columns={"cr_user_id": "users"})
 )
+df_pie_book_tiers["tier_label"] = (
+    df_pie_book_tiers["book_engagement_tier"]
+    .map(TIER_LABELS)
+    .fillna("Unknown")
+)
 
-df_pie_book_tiers["tier_label"] = df_pie_book_tiers["book_engagement_tier"].map(TIER_LABELS).fillna("Unknown")
+df_pie_book_tiers["tier_def"] = (
+    df_pie_book_tiers["tier_label"]
+    .map(TIER_HOVER_DEFS)
+    .fillna(TIER_HOVER_DEFS["Unknown"])
+)
+
 df_pie_book_tiers["tier_order"] = df_pie_book_tiers["book_engagement_tier"]
 df_pie_book_tiers = df_pie_book_tiers.sort_values("tier_order")
 
@@ -200,7 +220,9 @@ fig_book_tier_pie = px.pie(
     color="tier_label",
     color_discrete_map=PIE_COLOR_MAP,
     hole=0,
+    custom_data=["tier_def"],   # <- add this
 )
+
 
 fig_book_tier_pie.update_traces(
     textinfo="percent+label",
@@ -208,8 +230,7 @@ fig_book_tier_pie.update_traces(
     sort=False,
     hovertemplate=(
         "<b>%{label}</b><br>"
-        "Users: %{value:,}<br>"
-        "Share: %{percent}<extra></extra>"
+        "%{customdata[0]}<br><br>"
     ),
 )
 
