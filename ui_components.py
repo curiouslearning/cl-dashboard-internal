@@ -1235,16 +1235,31 @@ def display_metrics_for_users(df_users):
 
     st.plotly_chart(fig, use_container_width=True)
 
-def show_dual_metric_tiles(title, home_metrics, colors=None, size="small"):
+def show_dual_metric_tiles(title, home_metrics, colors=None, size="small", formats=None):
+
     from colors import TILE_METRIC_COLORS
 
     st.markdown(f"#### {title}")
 
-    # Build tiles as ONE HTML string, with NO leading spaces
     tiles_html = '<div class="metric-flex-container">'
 
     for metric, value in home_metrics.items():
-        color = TILE_METRIC_COLORS.get(metric, "#DCEAFB")
+
+        # ---- color resolution (override > global > fallback)
+        if colors and metric in colors:
+            color = colors[metric]
+        else:
+            color = TILE_METRIC_COLORS.get(metric, "#DCEAFB")
+
+        # ---- value formatting (per-metric > default)
+        if formats and metric in formats:
+            fmt = formats[metric]
+            if callable(fmt):
+                display_value = fmt(value)
+            else:
+                display_value = fmt.format(value)
+        else:
+            display_value = f"{value:.2f}"
 
         tiles_html += f"""
 <div class="metric-item">
@@ -1253,7 +1268,7 @@ def show_dual_metric_tiles(title, home_metrics, colors=None, size="small"):
       {metric}
     </div>
     <div style="font-size:22px; font-weight:700;">
-      {value:.2f}
+      {display_value}
     </div>
   </div>
 </div>
@@ -1261,10 +1276,8 @@ def show_dual_metric_tiles(title, home_metrics, colors=None, size="small"):
 
     tiles_html += "</div>"
 
-    # Render ALL tiles at once
     st.markdown(tiles_html, unsafe_allow_html=True)
 
-    # CSS for horizontal layout + wrapping
     st.markdown(
         """
 <style>
@@ -1279,10 +1292,9 @@ def show_dual_metric_tiles(title, home_metrics, colors=None, size="small"):
 
 .metric-item {
   flex: 0 0 auto;
-  width: 300px;   /* tile width */
+  width: 300px;
 }
 
-/* Stack tiles on narrow screens */
 @media (max-width: 700px) {
   .metric-item {
     width: 100%;

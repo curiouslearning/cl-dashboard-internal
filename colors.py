@@ -31,3 +31,9 @@ TILE_METRIC_COLORS = {
     "Active Span / User": PALETTE["purple"],
     "Avg Days to RA": PALETTE["pink"],
 }
+TILE_METRIC_COLORS.update({
+    "Eligible users": PALETTE["blue"],
+    "Book readers (language-mapped)": PALETTE["green"],
+    "Uptake": PALETTE["peach"],
+    "Book readers (unmapped)": PALETTE["pink"],
+})
