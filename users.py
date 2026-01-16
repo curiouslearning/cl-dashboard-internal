@@ -30,6 +30,9 @@ def load_cr_user_progress_from_gcs():
 def load_cr_app_launch_from_gcs():
     return load_parquet_from_gcs("user_data_parquet_cache/cr_app_launch_*.parquet")
 
+def load_cr_book_user_cohorts_from_gcs():
+    return load_parquet_from_gcs("user_data_parquet_cache/cr_book_user_cohorts_*.parquet")
+
 
 def ensure_user_data_initialized():
     import traceback
@@ -58,6 +61,7 @@ def init_user_data():
 
             df_unity_users = load_unity_user_progress_from_gcs()
             df_cr_app_launch = load_cr_app_launch_from_gcs()
+            df_cr_book_user_cohorts = load_cr_book_user_cohorts_from_gcs()
 
             # Validation
             if df_cr_users.empty or df_unity_users.empty or df_cr_app_launch.empty:
@@ -68,7 +72,9 @@ def init_user_data():
             df_cr_users = fix_date_columns(df_cr_users, ["first_open", "last_event_date"])
             df_unity_users = fix_date_columns(df_unity_users, ["first_open", "la_date", "last_event_date"])
             df_cr_app_launch = fix_date_columns(df_cr_app_launch, ["first_open"])
-
+            df_cr_book_user_cohorts = fix_date_columns(df_cr_book_user_cohorts, ["first_access_date", "last_access_date"])
+            
+            
             max_level_indices = df_unity_users.groupby("user_pseudo_id")["max_user_level"].idxmax()
             df_unity_users = df_unity_users.loc[max_level_indices].reset_index(drop=True)
 
@@ -88,6 +94,7 @@ def init_user_data():
             st.session_state["df_cr_users"] = df_cr_users
             st.session_state["df_unity_users"] = df_unity_users
             st.session_state["df_cr_app_launch"] = df_cr_app_launch
+            st.session_state["df_cr_book_user_cohorts"] = df_cr_book_user_cohorts
             st.session_state["user_data_initialized"] = True
 
         # Log the profile only once
@@ -315,8 +322,6 @@ def get_cohort_user_ids(cohort_name):
     df = bq_client.query(sql).to_dataframe()
     return df["cr_user_id"].dropna().unique().tolist()
 
-import pandas as pd
-import streamlit as st
 
 @st.cache_data(ttl="1d", show_spinner=False)
 def get_book_summary_for_cohort(cohort_ids):
@@ -404,3 +409,4 @@ def get_books_for_user(cr_user_id: str) -> pd.DataFrame:
 
     _, bq_client = get_gcp_credentials()
     return bq_client.query(sql).to_dataframe()
+

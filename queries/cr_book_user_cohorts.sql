@@ -25,17 +25,18 @@ One row per cr_user_id in the selected universe.
 CREATE OR REPLACE TABLE `dataexploration-193817.user_data.cr_book_user_cohorts`
 AS
 WITH
-  -- Use canonical language aligned to FTM (e.g., Zulu)
+  -- canonical book languages that exist
   book_languages AS (
     SELECT DISTINCT book_language
     FROM `dataexploration-193817.user_data.cr_book_user_summary_all`
     WHERE book_language IS NOT NULL
   ),
+
   book_users AS (
     SELECT
       cr_user_id,
-      book_language AS book_language,  -- canonical (use for matching vs FTM)
-      language_code AS book_language_code,  -- raw suffix (debug only)
+      book_language AS book_language,          -- canonical
+      language_code AS book_language_code,     -- raw suffix (debug/trace)
       distinct_books_accessed,
       total_book_events,
       total_active_book_days,
@@ -47,6 +48,52 @@ WITH
       most_read_book_events
     FROM `dataexploration-193817.user_data.cr_book_user_summary_all`
   ),
+
+  -- Normalize app_language into the same canonical naming as book_language
+  progress_norm AS (
+    SELECT
+      p.*,
+
+      CASE
+        -- English variants
+        WHEN LOWER(p.app_language) IN (
+          'english','australianenglish','englishaus','englishindian','indianenglish',
+          'englishwestafrican','saenglish'
+        ) THEN 'English'
+
+        -- Portuguese variants
+        WHEN LOWER(p.app_language) IN (
+          'portuguese','brazilianportuguese','caboverdeportuguese'
+        ) THEN 'Portuguese'
+
+        -- Creole variants (books are Cape Verde Creole; still map common creole codes)
+        WHEN LOWER(p.app_language) IN (
+          'caboverdecreole','haitiancreole'
+        ) THEN 'Creole'
+
+        -- Direct one-to-one book languages
+        WHEN LOWER(p.app_language) = 'amharic' THEN 'Amharic'
+        WHEN LOWER(p.app_language) = 'bangla' THEN 'Bangla'
+        WHEN LOWER(p.app_language) = 'hausa' THEN 'Hausa'
+        WHEN LOWER(p.app_language) = 'hindi' THEN 'Hindi'
+        WHEN LOWER(p.app_language) = 'marathi' THEN 'Marathi'
+        WHEN LOWER(p.app_language) = 'nepali' THEN 'Nepali'
+        WHEN LOWER(p.app_language) = 'oromo' THEN 'Oromo'
+        WHEN LOWER(p.app_language) = 'somali' THEN 'Somali'
+        WHEN LOWER(p.app_language) = 'swahili' THEN 'Swahili'
+        WHEN LOWER(p.app_language) = 'tigrigna' THEN 'Tigirigna'
+        WHEN LOWER(p.app_language) = 'ukrainian' THEN 'Ukrainian'
+        WHEN LOWER(p.app_language) = 'wolof' THEN 'Wolof'
+        WHEN LOWER(p.app_language) = 'zulu' THEN 'Zulu'
+
+        -- Luganda shows up as lugandan in FTM list
+        WHEN LOWER(p.app_language) IN ('lugandan','luganda','lug') THEN 'Luganda'
+
+        ELSE NULL
+      END AS app_language_book
+    FROM `dataexploration-193817.user_data.cr_user_progress` p
+  ),
+
   user_universe AS (
     SELECT
       p.user_pseudo_id,
@@ -54,6 +101,7 @@ WITH
       p.first_open,
       p.country,
       p.app_language,
+      p.app_language_book,   -- NEW: canonicalized to match book_language
       p.cohort_name,
       p.app,
 
@@ -78,21 +126,21 @@ WITH
       p.ra_flag,
       p.gc_flag,
       p.lr_flag
-    FROM `dataexploration-193817.user_data.cr_user_progress` p
+    FROM progress_norm p
     LEFT JOIN book_languages bl
-      ON p.app_language = bl.book_language
+      ON p.app_language_book = bl.book_language
     LEFT JOIN book_users bu
       ON p.cr_user_id = bu.cr_user_id
     WHERE
       p.cr_user_id IS NOT NULL
       AND (bl.book_language IS NOT NULL OR bu.cr_user_id IS NOT NULL)
   ),
+
   joined AS (
     SELECT
       u.*,
       bu.cr_user_id IS NOT NULL AS is_book_user,
 
-      -- canonical + raw book language fields
       bu.book_language,
       bu.book_language_code,
       COALESCE(bu.distinct_books_accessed, 0) AS distinct_books_accessed,
@@ -108,28 +156,29 @@ WITH
     LEFT JOIN book_users bu
       ON u.cr_user_id = bu.cr_user_id
   ),
+
   tiered AS (
     SELECT
       *,
       CASE
         WHEN NOT is_book_user THEN 0
         WHEN total_active_book_days = 1 THEN 1
-        WHEN
-          (
-            total_active_book_days >= 3
-            AND (
-              distinct_books_accessed >= 3
-              OR books_with_2plus_days >= 2
-              OR book_span_days >= 3))
-          THEN 3
-        WHEN
-          (
-            total_active_book_days >= 2
-            OR distinct_books_accessed >= 2
-            OR books_with_2plus_days >= 1)
-          THEN 2
+        WHEN (
+          total_active_book_days >= 3
+          AND (
+            distinct_books_accessed >= 3
+            OR books_with_2plus_days >= 2
+            OR book_span_days >= 3
+          )
+        ) THEN 3
+        WHEN (
+          total_active_book_days >= 2
+          OR distinct_books_accessed >= 2
+          OR books_with_2plus_days >= 1
+        ) THEN 2
         ELSE 2
-        END AS book_engagement_tier
+      END AS book_engagement_tier
     FROM joined
   )
+
 SELECT * FROM tiered;

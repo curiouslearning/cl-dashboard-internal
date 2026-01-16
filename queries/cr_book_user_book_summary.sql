@@ -43,9 +43,12 @@ WITH
         'Portuguese',
         'Ukr',
         'Nep',
-        'Lug',
-        'En']) AS suffix
+        'Lug',   -- IMPORTANT: Luganda books sometimes use Lug (e.g. ColoursLugLv4)
+        'En'
+      ]
+    ) AS suffix
   ),
+
   base AS (
     SELECT
       cr_user_id,
@@ -55,10 +58,10 @@ WITH
       page_location,
       REGEXP_EXTRACT(page_location, r'[?&]book=([^&]+)') AS book_id
     FROM `dataexploration-193817.user_data.cr_book_users`
-    WHERE
-      cr_user_id IS NOT NULL
+    WHERE cr_user_id IS NOT NULL
       AND page_location IS NOT NULL
   ),
+
   parsed AS (
     SELECT
       cr_user_id,
@@ -72,6 +75,7 @@ WITH
     FROM base
     WHERE book_id IS NOT NULL
   ),
+
   matched AS (
     SELECT
       p.*,
@@ -80,24 +84,22 @@ WITH
     LEFT JOIN language_suffixes s
       ON ENDS_WITH(p.book_no_level, s.suffix)
     QUALIFY
-      ROW_NUMBER()
-        OVER (
-          PARTITION BY p.cr_user_id, p.book_id
-          ORDER BY LENGTH(s.suffix) DESC
-        )
-      = 1
+      ROW_NUMBER() OVER (
+        PARTITION BY p.cr_user_id, p.book_id
+        ORDER BY LENGTH(s.suffix) DESC
+      ) = 1
   ),
+
   user_book AS (
     SELECT
       cr_user_id,
       book_id,
+
       CASE
-        WHEN language_code IS NOT NULL
-          THEN
-            REGEXP_REPLACE(
-              book_no_level, CONCAT(r'(', language_code, r')$'), '')
+        WHEN language_code IS NOT NULL THEN
+          REGEXP_REPLACE(book_no_level, CONCAT(r'(', language_code, r')$'), '')
         ELSE NULL
-        END AS base_book_id,
+      END AS base_book_id,
 
       -- Raw suffix parsed from book_id (traceability)
       language_code,
@@ -110,8 +112,10 @@ WITH
         WHEN language_code = 'CVCreole' THEN 'Creole'
         WHEN language_code = 'Nep' THEN 'Nepali'
         WHEN language_code = 'Ukr' THEN 'Ukrainian'
+        WHEN language_code = 'Lug' THEN 'Luganda'   -- FIX
         ELSE language_code
-        END AS book_language,
+      END AS book_language,
+
       book_level,
       COUNT(*) AS total_events,
       COUNT(DISTINCT event_date) AS active_days_for_book,
@@ -120,10 +124,8 @@ WITH
       MIN(event_time) AS first_access_time,
       MAX(event_time) AS last_access_time
     FROM matched
-    -- Optional restriction if page_view is the only reliable signal:
-    -- WHERE event_name = 'page_view'
     GROUP BY
-      cr_user_id, book_id, base_book_id, language_code, book_language,
-      book_level
+      cr_user_id, book_id, base_book_id, language_code, book_language, book_level
   )
+
 SELECT * FROM user_book;

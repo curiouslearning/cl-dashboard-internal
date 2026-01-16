@@ -234,7 +234,8 @@ def single_selector(selections,  title="", key="key", include_All=True,index=0):
 
 # Pass a unique key into the function in order to use this on multiple pages safel
 def multi_select_all(available_options,  title="", key="key"):
-    available_options.insert(0, "All")
+    
+    available_options = ["All"] + list(available_options)
 
     # Ensure each instance has its own session state keys
     if key not in st.session_state:

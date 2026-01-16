@@ -30,8 +30,6 @@ WITH base AS (
     active_days_for_book,
     first_access_date,
     last_access_date,
-
-    -- frequency of the (book_language, language_code) pair for this user
     COUNT(*) OVER (PARTITION BY cr_user_id, book_language, language_code) AS cnt_pair
   FROM `dataexploration-193817.user_data.cr_book_user_book_summary`
 ),
@@ -39,8 +37,6 @@ WITH base AS (
 user_rollup AS (
   SELECT
     cr_user_id,
-
-    -- Choose the dominant (book_language, language_code) pair together
     (ARRAY_AGG(STRUCT(book_language, language_code)
       ORDER BY cnt_pair DESC, book_language, language_code LIMIT 1
     ))[OFFSET(0)].book_language AS book_language,
@@ -51,10 +47,8 @@ user_rollup AS (
 
     COUNT(DISTINCT book_id) AS distinct_books_accessed,
     SUM(total_events) AS total_book_events,
-
     SUM(active_days_for_book) AS total_active_book_days,
     COUNTIF(active_days_for_book >= 2) AS books_with_2plus_days,
-
     MIN(first_access_date) AS first_access_date,
     MAX(last_access_date) AS last_access_date,
     DATE_DIFF(MAX(last_access_date), MIN(first_access_date), DAY) AS book_span_days
