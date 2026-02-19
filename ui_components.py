@@ -1304,3 +1304,139 @@ def show_dual_metric_tiles(title, home_metrics, colors=None, size="small", forma
 """,
         unsafe_allow_html=True,
     )
+
+import pandas as pd
+import plotly.graph_objects as go
+import streamlit as st
+
+@st.cache_data(show_spinner=False)
+def build_survival_curve_by_tier(
+    df_ftm_base: pd.DataFrame,
+    max_level: int = 40,
+    tiers_to_plot: list[int] | None = None,
+    include_overall_baseline: bool = True,
+):
+    """
+    Build survival curve dataframe + Plotly figure.
+
+    For each curve:
+        percent of LA users reaching level >= L
+
+    df_ftm_base is expected to already be LA-only and in the mapped universe.
+
+    Parameters
+    ----------
+    df_ftm_base : user-level dataframe returned from build_ftm_compare_la_only
+    max_level   : maximum level to display
+    tiers_to_plot : which tiers to include (0..3). None = all tiers found in df
+    include_overall_baseline : if True, add an "All tiers" curve (within this same universe)
+
+    Returns
+    -------
+    df_survival : dataframe (tier, tier_label, level, pct_reaching, users)
+    fig         : plotly figure
+    """
+
+    # Which tiers are present / requested
+    if tiers_to_plot is None:
+        tiers = sorted(df_ftm_base["book_engagement_tier"].dropna().unique().tolist())
+    else:
+        tiers = sorted(tiers_to_plot)
+
+    rows = []
+
+    TIER_LABELS = {
+        0: "Tier 0 – No book use",
+        1: "Tier 1 – Tried once",
+        2: "Tier 2 – Returning reader",
+        3: "Tier 3 – Highly engaged",
+    }
+
+    def add_curve(df_slice: pd.DataFrame, label: str, tier_value):
+        total_users = df_slice["cr_user_id"].nunique()
+        if total_users == 0:
+            return
+
+        # For each level L, compute % users with max_user_level >= L
+        for level in range(1, max_level + 1):
+            pct_reaching = float((df_slice["max_user_level"] >= level).mean())
+
+            rows.append({
+                "book_engagement_tier": tier_value,   # None for baseline
+                "tier_label": label,
+                "level": level,
+                "pct_reaching": pct_reaching,
+                "users": total_users,
+            })
+
+    # Optional baseline: all tiers combined (within the same universe)
+    if include_overall_baseline:
+        add_curve(df_ftm_base, "All tiers (mapped LA universe)", None)
+
+    # Per-tier curves
+    for tier in tiers:
+        df_tier = df_ftm_base[df_ftm_base["book_engagement_tier"] == tier]
+        add_curve(df_tier, TIER_LABELS.get(tier, f"Tier {tier}"), tier)
+
+    df_survival = pd.DataFrame(rows)
+
+    # Build Plotly figure
+    fig = go.Figure()
+
+    # Baseline first (if present)
+    if include_overall_baseline:
+        df_all = df_survival[df_survival["book_engagement_tier"].isna()]
+        fig.add_trace(
+            go.Scatter(
+                x=df_all["level"],
+                y=df_all["pct_reaching"],
+                mode="lines",
+                name="All tiers (mapped LA universe)",
+                hovertemplate=(
+                    "<b>%{fullData.name}</b><br>"
+                    "Level ≥ %{x}<br>"
+                    "%{y:.1%} reaching<br><extra></extra>"
+                ),
+            )
+        )
+
+    # Tier lines
+    for tier in tiers:
+        df_t = df_survival[df_survival["book_engagement_tier"] == tier]
+        fig.add_trace(
+            go.Scatter(
+                x=df_t["level"],
+                y=df_t["pct_reaching"],
+                mode="lines",
+                name=TIER_LABELS.get(tier, f"Tier {tier}"),
+                hovertemplate=(
+                    "<b>%{fullData.name}</b><br>"
+                    "Level ≥ %{x}<br>"
+                    "%{y:.1%} reaching<br><extra></extra>"
+                ),
+            )
+        )
+
+    fig.update_layout(
+        title="FTM Level Survival Curve by Book Engagement Tier (LA users, mapped universe)",
+        xaxis_title="Level",
+        yaxis_title="Percent reaching level",
+        yaxis_tickformat=".0%",
+        legend_title="Curve",
+        margin=dict(l=20, r=20, t=60, b=20),
+    )
+
+    # Data-informed milestone levels
+    MILESTONE_LEVELS = [2, 4, 10, 25]
+
+    for lvl in MILESTONE_LEVELS:
+        fig.add_vline(
+            x=lvl,
+            line_width=1,
+            line_dash="dot",
+            opacity=0.35,
+            annotation_text=f"L{lvl}",
+            annotation_position="top",
+        )
+
+    return df_survival, fig
