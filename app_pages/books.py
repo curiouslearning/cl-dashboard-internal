@@ -6,7 +6,7 @@ import ui_widgets as ui
 from users import ensure_user_data_initialized
 from settings import initialize
 
-from ui_components import show_dual_metric_tiles,build_survival_curve_by_tier
+from ui_components import plot_days_to_ra_by_tier, show_dual_metric_tiles,build_survival_curve_by_tier
 import books_helpers as bh
 
 
@@ -229,7 +229,7 @@ st.dataframe(
 )
 
 st.subheader("Survival curve by book engagement tier")
-c1, c2 = st.columns([1,2])
+c1, c2 = st.columns(2)
 with c1:
     tiers_to_plot = st.multiselect(
         "Show tiers",
@@ -253,3 +253,9 @@ st.caption(
     "Each line shows the % of LA users in the mapped universe reaching each level. "
     "Early separation suggests reduced friction; tail separation suggests long-term persistence."
 )
+st.divider()
+st.subheader("Average days to RA by book engagement tier")
+
+agg_df = bh.build_days_to_ra_by_tier(df_cr_users, df_cr_book_user_cohorts)
+fig = plot_days_to_ra_by_tier(agg_df)
+st.plotly_chart(fig, use_container_width=True)

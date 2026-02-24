@@ -62,7 +62,6 @@ def lrc_scatter_chart(option, display_category, df_campaigns, daterange, session
     df_campaigns: campaign spend data (filtered for date range, countries/languages)
     daterange, session_df,  languages, countries_list: for user cohort filtering
     """
-    import plotly.express as px
 
     # Determine grouping
     if display_category == "Country":
@@ -1305,9 +1304,6 @@ def show_dual_metric_tiles(title, home_metrics, colors=None, size="small", forma
         unsafe_allow_html=True,
     )
 
-import pandas as pd
-import plotly.graph_objects as go
-import streamlit as st
 
 @st.cache_data(show_spinner=False)
 def build_survival_curve_by_tier(
@@ -1440,3 +1436,44 @@ def build_survival_curve_by_tier(
         )
 
     return df_survival, fig
+
+
+def plot_days_to_ra_by_tier(agg_df):
+    fig = px.bar(
+        agg_df,
+        x="book_engagement_tier",
+        y="avg_days_to_ra",
+        text="avg_days_to_ra",
+        hover_data={
+            "median_days_to_ra": True,
+            "users": True
+        },
+        labels={
+            "book_engagement_tier": "Book Engagement Tier",
+            "avg_days_to_ra": "Average Days to Reader Acquired"
+        }
+    )
+
+    fig.update_traces(
+        texttemplate="%{text:.1f}",
+        textposition="outside"
+    )
+    
+    fig.update_xaxes(
+        type="category",
+        categoryorder="array",
+        categoryarray=sorted(agg_df["book_engagement_tier"].unique())
+    )
+
+    fig.update_traces(
+        marker_color="#EFEAFF"
+    )
+    
+    fig.update_layout(
+        yaxis_title="Average Days to RA",
+        xaxis_title="Tier",
+        uniformtext_minsize=8,
+        uniformtext_mode="hide"
+    )
+
+    return fig

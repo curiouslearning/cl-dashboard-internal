@@ -273,3 +273,31 @@ def build_ftm_compare_la_only(
 
     return df_base, df_compare
 
+
+def build_days_to_ra_by_tier(df_users, df_cohorts):
+    # RA only
+    df_ra = df_users[df_users["days_to_ra"].notna()].copy()
+
+    # Join tier
+    df = df_ra.merge(
+        df_cohorts[["cr_user_id", "book_engagement_tier"]],
+        on="cr_user_id",
+        how="left"
+    )
+
+    # Drop missing tiers
+    df = df[df["book_engagement_tier"].notna()]
+
+    # Aggregate
+    agg = (
+        df.groupby("book_engagement_tier", as_index=False)
+          .agg(
+              avg_days_to_ra=("days_to_ra", "mean"),
+              median_days_to_ra=("days_to_ra", "median"),
+              users=("cr_user_id", "nunique")
+          )
+          .sort_values("book_engagement_tier")
+    )
+
+    return agg
+
