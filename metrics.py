@@ -294,11 +294,11 @@ def get_user_cohort_df(
     if (
         cohort
         and cohort != ["All"]
-        and "cohort_group" in cohort_df.columns
+        and "cohort_name" in cohort_df.columns
         and app[0] == "CR"
     ):
         cohorts = [cohort] if isinstance(cohort, str) else cohort
-        cohort_df = cohort_df[cohort_df["cohort_group"].isin(cohorts)]
+        cohort_df = cohort_df[cohort_df["cohort_name"].isin(cohorts)]
 
     return cohort_df
 
