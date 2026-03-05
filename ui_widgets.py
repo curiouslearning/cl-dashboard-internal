@@ -435,10 +435,6 @@ def get_apps():
 
     return distinct_apps
 
-def get_predefined_cohorts():
-    distinct_cohorts = sorted(st.session_state["df_cr_users"]["cohort_name"].dropna().unique())
-    distinct_cohorts.sort()
-    return distinct_cohorts
 
 def highlight_success(row):
     color = ""

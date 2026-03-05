@@ -3,7 +3,7 @@ from rich import print as rprint
 from  ui_components import create_funnels_by_cohort,show_dual_metric_tiles
 import ui_widgets as ui
 import metrics
-from users import ensure_user_data_initialized,get_language_list,get_country_list
+from users import ensure_user_data_initialized, get_cohort_list,get_language_list,get_country_list
 from settings import initialize
 
 initialize()
@@ -15,7 +15,7 @@ languages = get_language_list()
 countries_list = get_country_list()
 
 distinct_apps = ui.get_apps()
-distinct_cohorts = ui.get_predefined_cohorts()
+distinct_cohorts = get_cohort_list()
 
 col1, col2 = st.columns(2)
 

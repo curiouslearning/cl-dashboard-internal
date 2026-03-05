@@ -131,10 +131,15 @@ if page > total_pages:
 df_events = get_users_ftm_event_timeline(page_user_ids)
 df_events = _coerce_ts(df_events)
 
+event_options = sorted(df_events["event_name"].dropna().unique().tolist())
+
+default_events = ["puzzle_completed", "level_completed"]
+valid_defaults = [e for e in default_events if e in event_options]
+
 events = col1.multiselect(
     "Event types",
-    sorted(df_events["event_name"].dropna().unique().tolist()),
-    default=["puzzle_completed", "level_completed"],
+    event_options,
+    default=valid_defaults,
 )
 
 subset = df_events[df_events["event_name"].isin(events)].copy()
