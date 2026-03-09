@@ -4,7 +4,7 @@ from millify import prettify
 import ui_components as uic
 import ui_widgets as ui
 import users
-from metrics import get_filtered_cohort,get_cohort_totals_by_metric
+from metrics import get_filtered_users,get_cohort_totals_by_metric
 from settings import initialize,init_campaign_data
 from users import ensure_user_data_initialized
 
@@ -49,7 +49,7 @@ if (len(countries_list)) > 0 and (len(daterange) == 2):
     end = daterange[1].strftime("%b %d, %Y")
     st.write("Timerange: " + start + " to " + end)
     
-    user_cohort_df, user_cohort_df_LR = get_filtered_cohort(app, daterange, language, countries_list)
+    user_cohort_df, user_cohort_df_LR = get_filtered_users(app, daterange, language, countries_list)
     
     is_cr = (app == ["CR"] or app == "CR")
     if is_cr:

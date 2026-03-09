@@ -1,7 +1,7 @@
 import streamlit as st
 from ui_components import funnel_chart
 import ui_widgets as ui
-from metrics import get_filtered_cohort
+from metrics import get_filtered_users
 from settings import default_daterange,initialize
 from users import ensure_user_data_initialized, get_country_list,get_language_list
 
@@ -21,7 +21,7 @@ with col1:
     app = ui.single_selector(distinct_apps, title="Select an App", key="sf-10",include_All=False)
     sort_by = st.radio(label="Sort By: ", options=["Percent","Total"])      
 
-user_cohort_df, user_cohort_df_LR = get_filtered_cohort(app=app, language=selected_languages, countries_list=countries_list,daterange=default_daterange)
+user_cohort_df, user_cr_df_LR = get_filtered_users(app=app, language=selected_languages, countries_list=countries_list,daterange=default_daterange)
 
 options = ["LR","PC","LA","RA","GC"]
 with col2:
@@ -37,7 +37,7 @@ else:
 
 df_values = funnel_chart(chart_title=title,
     cohort_df=user_cohort_df,
-    cohort_df_LR=user_cohort_df_LR,   # For CR, otherwise just pass None or omit
+    cr_df_LR=user_cr_df_LR,   # For CR, otherwise just pass None or omit
     groupby_col="app_language",
     app=app,
     stat=selected_option, 

@@ -4,7 +4,7 @@ import ui_widgets as ui
 import ui_components as uic
 from users import ensure_user_data_initialized
 from settings import initialize,init_cr_app_version_list,default_daterange
-from metrics import get_filtered_cohort
+from metrics import get_filtered_users
 
 initialize()
 init_cr_app_version_list()
@@ -41,7 +41,7 @@ for i in range(num_cohorts):
 
     cohort_label = f"{language} / {countries[0]} / {app}"
 
-    user_cohort_df, _ = get_filtered_cohort(app=app, language=language, countries_list=countries_list,daterange=default_daterange)
+    user_cohort_df, _ = get_filtered_users(app=app, language=language, countries_list=countries_list,daterange=default_daterange)
 
 
     if user_cohort_df.empty:

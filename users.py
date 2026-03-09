@@ -51,6 +51,10 @@ def load_cr_book_user_cohorts_from_gcs():
         "user_data_parquet_cache/cr_book_user_cohorts/run_date=*/cr_book_user_cohorts_*.parquet"
     )
 
+def load_cr_cohorts_from_gcs():
+    return load_parquet_from_gcs(
+        "user_data_parquet_cache/cr_cohorts/run_date=*/cr_cohorts_*.parquet"
+    )
 
 def ensure_user_data_initialized():
     import traceback
@@ -80,6 +84,7 @@ def init_user_data():
             df_unity_users = load_unity_user_progress_from_gcs()
             df_cr_app_launch = load_cr_app_launch_from_gcs()
             df_cr_book_user_cohorts = load_cr_book_user_cohorts_from_gcs()
+            df_cr_cohorts = load_cr_cohorts_from_gcs()
 
             # Validation
             if df_cr_users.empty or df_unity_users.empty or df_cr_app_launch.empty:
@@ -114,7 +119,7 @@ def init_user_data():
             st.session_state["df_cr_app_launch"] = df_cr_app_launch
             st.session_state["df_cr_book_user_cohorts"] = df_cr_book_user_cohorts
             st.session_state["user_data_initialized"] = True
-
+            st.session_state["df_cr_cohorts"] = df_cr_cohorts
         # Log the profile only once
         settings.get_logger().debug(
             profiler.output(ConsoleRenderer(show_all=False, timeline=True, color=True, unicode=True, short_mode=False))
@@ -312,17 +317,10 @@ def get_users_ftm_event_timeline(cr_user_id_list):
 
 @st.cache_data(ttl="1d",show_spinner=False)
 def get_cohort_list():
-    """
-    Returns a list of cr_user_id from your cohort table.
-    """
-    _, bq_client = get_gcp_credentials()
-    sql = f"""
-        SELECT distinct cohort_name
-        FROM `dataexploration-193817.user_data.cr_cohorts`
-    """
-
-    df = bq_client.query(sql).to_dataframe()
-    return df["cohort_name"].dropna().unique().tolist()
+    df = st.session_state.get("df_cr_cohorts")
+    if df is None or df.empty:
+        return []
+    return sorted(df["cohort_name"].dropna().unique().tolist())
 
 
 @st.cache_data(ttl="1d",show_spinner=False)

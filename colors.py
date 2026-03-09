@@ -22,7 +22,7 @@ CHART_METRIC_COLORS = {
     "Days to RA": PALETTE["pink"],
 }
 
-# Engagement metric names used in TILES (from get_engagement_metrics_for_cohort)
+# Engagement metric names used in TILES (from get_engagement_metrics)
 TILE_METRIC_COLORS = {
     "Avg Level Reached": PALETTE["blue"],
     "Avg # Sessions / User": PALETTE["green"],

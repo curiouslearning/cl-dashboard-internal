@@ -6,7 +6,7 @@ import ui_widgets as ui
 import datetime as dt
 import campaigns
 import pandas as pd
-from metrics import filter_campaigns,get_totals_per_month_from_cohort,get_all_apps_combined_session_and_cohort_df,get_user_cohort_df,get_cohort_totals_by_metric,get_cohort_GC_avg,get_cohort_GPP_avg
+from metrics import filter_campaigns,get_totals_per_month_from_cohort,get_all_apps_combined_session_and_cohort_df,apply_user_filters,get_cohort_totals_by_metric,get_cohort_GC_avg,get_cohort_GPP_avg
 from users import ensure_user_data_initialized,get_language_list,get_country_list
 from settings import initialize,init_campaign_data
 from users import ensure_user_data_initialized
@@ -68,7 +68,7 @@ if len(daterange) == 2 and len(countries_list) > 0:
         stat="LR"
     )
 
-    cohort_df = get_user_cohort_df(
+    cohort_df = apply_user_filters(
         session_df=session_df,
         daterange=daterange,
         languages=language,
@@ -89,7 +89,7 @@ with col1:
 #******* LA *******
 session_df = get_all_apps_combined_session_and_cohort_df(stat="LA")
 
-cohort_df = get_user_cohort_df(
+cohort_df = apply_user_filters(
     session_df=session_df,
     daterange=daterange,
     languages=language,

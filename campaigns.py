@@ -163,7 +163,7 @@ def build_campaign_table(df_campaigns, session_df, daterange):
     rows = []
     for country, app_language in group_keys:
         # 2. Filter user data for this group (and current date range)
-        cohort_df = metrics.get_user_cohort_df(
+        cohort_df = metrics.apply_user_filters(
             session_df=session_df,
             daterange=daterange,
             countries_list=[country],

@@ -14,7 +14,7 @@ from ui_components import (
     show_dual_metric_tiles,
     display_metrics_for_users,
 )
-from metrics import get_engagement_metrics_for_cohort
+from metrics import get_engagement_metrics
 
 # ----------------------------
 # Page-level styling
@@ -202,11 +202,11 @@ user_page_df = df_users_all[df_users_all["cr_user_id"].isin(page_user_ids)].copy
 display_metrics_for_users(user_page_df)
 
 st.divider()
-metrics_home = get_engagement_metrics_for_cohort(user_page_df)
+metrics_home = get_engagement_metrics(user_page_df)
 show_dual_metric_tiles("Metrics (this page)", home_metrics=metrics_home, size="small")
 
 with st.expander("Full cohort metrics", expanded=False):
-    metrics_all = get_engagement_metrics_for_cohort(cohort_users_df)
+    metrics_all = get_engagement_metrics(cohort_users_df)
     show_dual_metric_tiles("Metrics (full cohort)", home_metrics=metrics_all, size="small")
 
 # ----------------------------

@@ -81,7 +81,7 @@ def lrc_scatter_chart(option, display_category, df_campaigns, daterange, session
             filtered_countries = countries_list
             filtered_languages = [group]
 
-        cohort_df = metrics.get_user_cohort_df(
+        cohort_df = metrics.apply_user_filters(
             session_df=session_df,
             daterange=daterange,
             languages=filtered_languages,
@@ -249,7 +249,7 @@ def levels_reached_chart(
     traces = []
 
     for app_name in app_names:
-        user_cohort_df, _ = metrics.get_filtered_cohort(app=app_name, language=["All"], countries_list=["All"],daterange=default_daterange)
+        user_cohort_df, _ = metrics.get_filtered_users(app=app_name, language=["All"], countries_list=["All"],daterange=default_daterange)
 
         if user_cohort_df is None or user_cohort_df.empty:
             continue
@@ -308,11 +308,11 @@ def levels_reached_chart(
     return fig
 
 
-def create_funnels_by_cohort(
-    cohort_df,
+def create_engagement_funnel(
+    user_df,
     key_prefix="",
     funnel_size="medium",
-    cohort_df_LR=None,
+    cr_df_LR=None,
     app=None,
 ):
 
@@ -352,13 +352,14 @@ def create_funnels_by_cohort(
     funnel_step_counts = []
     for stat in stats:
         if stat == "LR":
-            count = (
-                cohort_df_LR[user_key].nunique()
-                if cohort_df_LR is not None and user_key in cohort_df_LR.columns
-                else cohort_df[user_key].nunique()
-            )
+            if cr_df_LR is not None and user_key in cr_df_LR.columns:
+                count = cr_df_LR[user_key].nunique()
+            else:
+            # Cohort mode or no LR data — total users in filtered set is the LR count
+                count = user_df[user_key].nunique()
         else:
-            count = metrics.get_cohort_totals_by_metric(cohort_df, stat=stat)
+            count = metrics.get_cohort_totals_by_metric(user_df, stat=stat)
+            
         funnel_step_counts.append(count)
 
     # --- Percentages ---
@@ -724,7 +725,7 @@ def show_dual_metric_table(title, home_metrics):
 @st.cache_data(ttl="1d", show_spinner="Calculating")
 def funnel_chart(
     cohort_df,
-    cohort_df_LR=None,
+    cr_df_LR=None,
     groupby_col="app_language",
     app=None,
     chart_title=None,
@@ -742,7 +743,7 @@ def funnel_chart(
     # 1. Compute funnel summary and step order
     df, funnel_steps = metrics.funnel_percent_by_group(
         cohort_df=cohort_df,
-        cohort_df_LR=cohort_df_LR,
+        cr_df_LR=cr_df_LR,
         groupby_col=groupby_col,
         app=app,
         min_funnel=min_funnel
@@ -875,7 +876,7 @@ def funnel_chart(
 @st.cache_data(ttl="1d", show_spinner="Calculating")
 def get_sorted_funnel_df(
     cohort_df,
-    cohort_df_LR=None,
+    cr_df_LR=None,
     groupby_col="app_language",
     app=None,
     min_funnel=True,
@@ -891,7 +892,7 @@ def get_sorted_funnel_df(
     # Compute funnel summary and steps
     df, funnel_steps = metrics.funnel_percent_by_group(
         cohort_df=cohort_df,
-        cohort_df_LR=cohort_df_LR,
+        cr_df_LR=cr_df_LR,
         groupby_col=groupby_col,
         app=app,
         min_funnel=min_funnel
@@ -913,7 +914,7 @@ def get_sorted_funnel_df(
 @st.cache_data(ttl="1d", show_spinner="Calculating")
 def funnel_chart(
     cohort_df,
-    cohort_df_LR=None,
+    cr_df_LR=None,
     groupby_col="app_language",
     app=None,
     chart_title=None,
@@ -934,7 +935,7 @@ def funnel_chart(
     # ✅ Get sorted data and funnel step order
     df, funnel_steps = get_sorted_funnel_df(
         cohort_df=cohort_df,
-        cohort_df_LR=cohort_df_LR,
+        cr_df_LR=cr_df_LR,
         groupby_col=groupby_col,
         app=app,
         min_funnel=min_funnel,

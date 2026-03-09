@@ -75,22 +75,11 @@ def select_user_dataframe(app, stat=None):
     apps = [app] if isinstance(app, str) else app
 
     if "Unity" in apps:
-        df = st.session_state.df_unity_users
-        return df
-
-    elif any(a.endswith("-standalone") for a in apps if isinstance(a, str)):
-        df = st.session_state.df_cr_users
-        if "All" not in apps:
-            df = df[df["app"].isin(apps)]
-        return df
-
+        return st.session_state["df_unity_users"]
     elif apps == ["CR"] and stat == "LR":
-        df = st.session_state.df_cr_app_launch
-        return df
-
+        return st.session_state["df_cr_app_launch"]
     else:
-        df = st.session_state.df_cr_users
-        return df
+        return st.session_state["df_cr_users"]
 
 
 @st.cache_data(ttl="1d", show_spinner=False)
@@ -240,7 +229,7 @@ def get_totals_per_month_from_cohort(cohort_df, stat, daterange, date_col="first
     return pd.DataFrame(totals_by_month)
 
 
-def get_user_cohort_df(
+def apply_user_filters(
     session_df,
     daterange=None,
     languages=["All"],
@@ -249,7 +238,7 @@ def get_user_cohort_df(
     cohort=None,
 ):
     """
-    Returns a filtered DataFrame for the cohort matching selected filters.
+    Returns a filtered DataFrame matching selected filters.
 
     Parameters
     ----------
@@ -262,45 +251,39 @@ def get_user_cohort_df(
     countries_list : list[str]
         Filters by country (default: ["All"]).
     app : str or list[str]
-        Filters by app name (e.g. "CR", "Unity", "WBS-standalone").
+        Filters by app name (e.g. "CR", "Unity").
     cohort : str or list[str]
-        Filters by cohort_group (only applied when app == "CR").
+        Filters by named cohort via cr_cohorts lookup.
     """
-    cohort_df = session_df.copy()
+    df = session_df.copy()
 
-    # --- Date range filter ---
     if daterange is not None and len(daterange) == 2:
         start = pd.to_datetime(daterange[0])
         end = pd.to_datetime(daterange[1])
-        cohort_df = cohort_df[
-            (cohort_df["first_open"] >= start) & (cohort_df["first_open"] <= end)
-        ]
+        df = df[(df["first_open"] >= start) & (df["first_open"] <= end)]
 
-    # --- Country filter ---
     if countries_list and countries_list != ["All"]:
-        cohort_df = cohort_df[cohort_df["country"].isin(countries_list)]
+        df = df[df["country"].isin(countries_list)]
 
-    # --- Language filter ---
     if languages and languages != ["All"]:
-        lang_col = "app_language" if "app_language" in cohort_df.columns else "language"
-        cohort_df = cohort_df[cohort_df[lang_col].isin(languages)]
+        lang_col = "app_language" if "app_language" in df.columns else "language"
+        df = df[df[lang_col].isin(languages)]
 
-    # --- App filter ---
-    if app and app != ["All"] and "app" in cohort_df.columns:
+    if app and app not in (["All"], "All") and "app" in df.columns:
         apps = [app] if isinstance(app, str) else app
-        cohort_df = cohort_df[cohort_df["app"].isin(apps)]
-
-    # --- Cohort filter (applies only for CR app) ---
-    if (
-        cohort
-        and cohort != ["All"]
-        and "cohort_name" in cohort_df.columns
-        and app[0] == "CR"
-    ):
-        cohorts = [cohort] if isinstance(cohort, str) else cohort
-        cohort_df = cohort_df[cohort_df["cohort_name"].isin(cohorts)]
-
-    return cohort_df
+        df = df[df["app"].isin(apps)]
+        
+        # --- Cohort filter ---
+    if cohort and cohort not in (["All"], "All") and "cr_user_id" in df.columns:
+        df_cr_cohorts = st.session_state.get("df_cr_cohorts")
+        if df_cr_cohorts is not None:
+            cohorts = [cohort] if isinstance(cohort, str) else cohort
+            valid_user_ids = df_cr_cohorts.loc[
+                df_cr_cohorts["cohort_name"].isin(cohorts), "cr_user_id"
+            ]
+            df = df[df["cr_user_id"].isin(valid_user_ids)]    
+        
+    return df
 
 
 
@@ -330,7 +313,7 @@ def calculate_average_metric_per_user(user_cohort_df, column_name):
 
 
 @st.cache_data(ttl="1d", show_spinner="Calculating metrics")
-def get_engagement_metrics_for_cohort(user_cohort_df):
+def get_engagement_metrics(user_cohort_df):
 
     return {
         "Avg Level Reached": calculate_average_metric_per_user(user_cohort_df=user_cohort_df,column_name="max_user_level"),
@@ -358,12 +341,17 @@ def get_all_apps_combined_session_and_cohort_df(stat=None):
     return combined_session_df
 
 
-def get_filtered_cohort(app, daterange, language, countries_list, cohort=None):
-    """Returns (user_cohort_df, user_cohort_df_LR) for app selection."""
+def get_filtered_users(app, daterange, language, countries_list, cohort=None):
+    """Returns (user_cohort_df, user_cr_df_LR) for app selection."""
     is_cr = (app == ["CR"] or app == "CR")
-    user_cohort_df_LR = None
+    
+    # LR applies whenever we're working with CR data — either explicit CR app,
+    # or cohort mode (app="All") which is always CR users
+    is_cr_data = "Unity" not in app and cohort in ("All", ["All"], None)
+
+    user_cr_df_LR = None
     session_df = select_user_dataframe(app=app)
-    user_cohort_df = get_user_cohort_df(
+    user_cohort_df = apply_user_filters(
         session_df=session_df,
         daterange=daterange,
         languages=language,
@@ -371,9 +359,9 @@ def get_filtered_cohort(app, daterange, language, countries_list, cohort=None):
         app=app,
         cohort=cohort
     )
-    if is_cr:
-        session_df_LR = select_user_dataframe(app=app, stat="LR")
-        user_cohort_df_LR = get_user_cohort_df(
+    if is_cr_data:
+        session_df_LR = select_user_dataframe(app="CR", stat="LR")
+        user_cr_df_LR = apply_user_filters(
             session_df=session_df_LR,
             daterange=daterange,
             languages=language,
@@ -381,12 +369,11 @@ def get_filtered_cohort(app, daterange, language, countries_list, cohort=None):
             app=app,
             cohort=cohort
         )
-    return user_cohort_df, user_cohort_df_LR
-
+    return user_cohort_df, user_cr_df_LR
 
 def funnel_percent_by_group(
     cohort_df,
-    cohort_df_LR=None,
+    cr_df_LR=None,
     groupby_col="app_language",
     app=None,
     min_funnel=False
@@ -399,22 +386,25 @@ def funnel_percent_by_group(
     app_name = app[0] if isinstance(app, list) and len(app) > 0 else app
     app_name = str(app_name) if app_name is not None else ""
 
+    # Cohort selections are always CR users (app == "All")
+    is_cr = app_name in ("CR", "All")
+
     user_key = "cr_user_id"
     funnel_steps = ["LR", "PC", "LA", "RA", "GC"]
-    if app_name == "CR" and min_funnel == False:
+
+    if is_cr and not min_funnel:
         funnel_steps = ["LR", "DC", "TS", "SL", "PC", "LA", "RA", "GC"]
     elif app_name == "Unity":
         user_key = "user_pseudo_id"
 
-
     group_vals = set(cohort_df[groupby_col].dropna().unique())
-    if cohort_df_LR is not None:
-        group_vals = group_vals | set(cohort_df_LR[groupby_col].dropna().unique())
+    if cr_df_LR is not None:
+        group_vals = group_vals | set(cr_df_LR[groupby_col].dropna().unique())
 
     records = []
     for group in sorted(group_vals):
-        if app_name == "CR" and cohort_df_LR is not None:
-            group_LR = cohort_df_LR[cohort_df_LR[groupby_col] == group]
+        if is_cr and cr_df_LR is not None:
+            group_LR = cr_df_LR[cr_df_LR[groupby_col] == group]
             count_LR = group_LR[user_key].nunique() if user_key in group_LR else len(group_LR)
         else:
             group_LR = cohort_df[cohort_df[groupby_col] == group]
@@ -427,23 +417,25 @@ def funnel_percent_by_group(
         records.append(row)
 
     df = pd.DataFrame(records)
+
     # Add percent-normalized columns with _pct suffix
     norm_steps = [s for s in funnel_steps if s != "LR"]
     for step in funnel_steps:
         if step == "LR":
-            df[f"{step}_pct"] = 100.0  # 100% at baseline
+            df[f"{step}_pct"] = 100.0
         else:
             df[f"{step}_pct"] = df[step] / df["LR"] * 100
 
-    # Drop rows where all post-LR steps are zero (optional)
+    # Drop rows where all post-LR steps are zero
     all_zero = (df[norm_steps].fillna(0).astype(float) == 0).all(axis=1)
     df = df[~all_zero].reset_index(drop=True)
-    return df, funnel_steps  # Or just return df if you don't need funnel_steps
+
+    return df, funnel_steps
 
 @st.cache_data(ttl="1d", show_spinner=False)
 def get_sorted_funnel_df(
     cohort_df,
-    cohort_df_LR=None,
+    cr_df_LR=None,
     groupby_col="app_language",
     app=None,
     min_funnel=True,
@@ -460,7 +452,7 @@ def get_sorted_funnel_df(
     ----------
     cohort_df : pd.DataFrame
         Main cohort dataframe (includes all funnel users)
-    cohort_df_LR : pd.DataFrame, optional
+    cr_df_LR : pd.DataFrame, optional
         Learners Reached dataframe (for CR app only)
     groupby_col : str, default "app_language"
         Column to group by ("app_language", "country", etc.)
@@ -488,7 +480,7 @@ def get_sorted_funnel_df(
     # Compute funnel summary and funnel step order
     df, funnel_steps = funnel_percent_by_group(
         cohort_df=cohort_df,
-        cohort_df_LR=cohort_df_LR,
+        cr_df_LR=cr_df_LR,
         groupby_col=groupby_col,
         app=app,
         min_funnel=min_funnel
@@ -512,7 +504,7 @@ def get_sorted_funnel_df(
 @st.cache_data(ttl="1d", show_spinner=False)
 def get_top_and_bottom_funnel_groups(
     cohort_df,
-    cohort_df_LR=None,
+    cr_df_LR=None,
     groupby_col="app_language",
     app=None,
     stat="RA",
@@ -526,7 +518,7 @@ def get_top_and_bottom_funnel_groups(
     ----------
     cohort_df : pd.DataFrame
         Main cohort dataframe
-    cohort_df_LR : pd.DataFrame, optional
+    cr_df_LR : pd.DataFrame, optional
         Learners Reached dataframe (for CR app only)
     groupby_col : str, default "app_language"
         Column to group by ("app_language", "country", etc.)
@@ -551,7 +543,7 @@ def get_top_and_bottom_funnel_groups(
 
     top10, funnel_steps = get_sorted_funnel_df(
         cohort_df=cohort_df,
-        cohort_df_LR=cohort_df_LR,
+        cr_df_LR=cr_df_LR,
         groupby_col=groupby_col,
         app=app,
         min_funnel=min_funnel,
@@ -563,7 +555,7 @@ def get_top_and_bottom_funnel_groups(
 
     bottom10, _ = get_sorted_funnel_df(
         cohort_df=cohort_df,
-        cohort_df_LR=cohort_df_LR,
+        cr_df_LR=cr_df_LR,
         groupby_col=groupby_col,
         app=app,
         min_funnel=min_funnel,
