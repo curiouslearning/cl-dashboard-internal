@@ -88,8 +88,8 @@ def lrc_scatter_chart(option, display_category, df_campaigns, daterange, session
             countries_list=filtered_countries,
             app=None
         )
-        LR = metrics.get_cohort_totals_by_metric(cohort_df=cohort_df, stat="LR")
-        LA = metrics.get_cohort_totals_by_metric(cohort_df=cohort_df, stat="LA")
+        LR = metrics.get_metric_user_count(user_df=cohort_df, stat="LR")
+        LA = metrics.get_metric_user_count(user_df=cohort_df, stat="LA")
         group_counts.append({"group": group, "LR": LR, "LA": LA})
 
     df_counts = pd.DataFrame(group_counts)
@@ -223,77 +223,36 @@ def create_engagement_figure(funnel_data, key="", funnel_size="large"):
     )
     return fig
 
-
 def levels_reached_chart(
     app_names=None,
+    cohort_names=None,
     max_plot_level=35,
     title="Levels Reached by App"
 ):
-    """
-    Plot percent of original cohort reaching each level for multiple apps.
-
-    Parameters
-    ----------
-    app_names : list[str]
-        List of app names, e.g. ["CR", "Unity", "StandAloneHindi"].
-        Defaults to ["CR", "Unity"] if not provided.
-
-    max_plot_level : int
-        Maximum level to include on the x-axis (default 35).
-    title : str
-        Chart title.
-    """
     if not app_names:
-        app_names = ["CR", "Unity"]
+        app_names = []
+    if not cohort_names:
+        cohort_names = []
 
     traces = []
 
+    # --- App traces ---
     for app_name in app_names:
-        user_cohort_df, _ = metrics.get_filtered_users(app=app_name, language=["All"], countries_list=["All"],daterange=default_daterange)
-
-        if user_cohort_df is None or user_cohort_df.empty:
+        user_df, _ = metrics.get_filtered_users(app=app_name, language=["All"], countries_list=["All"], daterange=default_daterange)
+        if user_df is None or user_df.empty:
             continue
+        trace = _build_level_trace(user_df, label=app_name, max_plot_level=max_plot_level)
+        if trace:
+            traces.append(trace)
 
-        # Keep only rows with max_user_level >= 1 and not null
-        filtered = user_cohort_df.loc[
-            user_cohort_df["max_user_level"].notnull() 
-            & (user_cohort_df["max_user_level"] >= 1)
-        ]
-
-        # Count users by max_user_level up to the chosen max
-        df = (
-            filtered.query("max_user_level <= @max_plot_level")
-            .groupby("max_user_level", as_index=False)
-            .size()
-            .rename(columns={"size": "count"})
-            .sort_values("max_user_level", ascending=True, ignore_index=True)
-        )
-
-        if df.empty:
+    # --- Cohort traces ---
+    for cohort_name in cohort_names:
+        user_df, _ = metrics.get_filtered_users(app="All", language=["All"], countries_list=["All"], daterange=default_daterange, cohort=cohort_name)
+        if user_df is None or user_df.empty:
             continue
-
-        first_level_count = df["count"].iloc[0]
-        if first_level_count == 0:
-            continue
-
-        df["percent_reached"] = df["count"] / first_level_count * 100.0
-        df["percent_drop"] = df["percent_reached"].diff().fillna(0.0)
-
-        trace = go.Scatter(
-            x=df["max_user_level"],
-            y=df["percent_reached"],
-            mode="lines+markers",
-            name=app_name,
-            customdata=df["percent_drop"],
-            text=[app_name] * len(df),
-            hovertemplate=(
-                "App: %{text}<br>"
-                "Max Level: %{x}<br>"
-                "Percent reached: %{y:.2f}%<br>"
-                "Change from previous: %{customdata:.2f}%%<extra></extra><br>"
-            ),
-        )
-        traces.append(trace)
+        trace = _build_level_trace(user_df, label=cohort_name, max_plot_level=max_plot_level)
+        if trace:
+            traces.append(trace)
 
     layout = go.Layout(
         title=title,
@@ -307,6 +266,45 @@ def levels_reached_chart(
     st.plotly_chart(fig, use_container_width=True)
     return fig
 
+
+def _build_level_trace(user_df, label, max_plot_level):
+    filtered = user_df.loc[
+        user_df["max_user_level"].notnull()
+        & (user_df["max_user_level"] >= 1)
+    ]
+
+    df = (
+        filtered.query("max_user_level <= @max_plot_level")
+        .groupby("max_user_level", as_index=False)
+        .size()
+        .rename(columns={"size": "count"})
+        .sort_values("max_user_level", ascending=True, ignore_index=True)
+    )
+
+    if df.empty:
+        return None
+
+    first_level_count = df["count"].iloc[0]
+    if first_level_count == 0:
+        return None
+
+    df["percent_reached"] = df["count"] / first_level_count * 100.0
+    df["percent_drop"] = df["percent_reached"].diff().fillna(0.0)
+
+    return go.Scatter(
+        x=df["max_user_level"],
+        y=df["percent_reached"],
+        mode="lines+markers",
+        name=label,
+        customdata=df["percent_drop"],
+        text=[label] * len(df),
+        hovertemplate=(
+            "App: %{text}<br>"
+            "Max Level: %{x}<br>"
+            "Percent reached: %{y:.2f}%<br>"
+            "Change from previous: %{customdata:.2f}%%<extra></extra><br>"
+        ),
+    )
 
 def create_engagement_funnel(
     user_df,
@@ -358,7 +356,7 @@ def create_engagement_funnel(
             # Cohort mode or no LR data — total users in filtered set is the LR count
                 count = user_df[user_key].nunique()
         else:
-            count = metrics.get_cohort_totals_by_metric(user_df, stat=stat)
+            count = metrics.get_metric_user_count(user_df, stat=stat)
             
         funnel_step_counts.append(count)
 
@@ -1063,38 +1061,44 @@ def funnel_chart(
     return df
 
 
-def ftm_timeline_plot(df, title="FTM Gameplay Timeline (Success / Failure by Event)"):
+def ftm_timeline_plot(df, page_user_ids=None, x_axis_mode="Timestamp", title="FTM Gameplay Timeline (Success / Failure by Event)"):
     """
     Timeline plot for one or many FTM users, with x-axis toggle and robust outcome logic.
     Expects columns: cr_user_id, event_name, event_timestamp, level_number, puzzle_number,
       success_or_failure, number_of_successful_puzzles, app_language
     """
+
+    # Build user_order from the full page list, not just users with events
+    if page_user_ids:
+        user_order = {str(uid): i + 1 for i, uid in enumerate(page_user_ids)}
+    else:
+        if df.empty:
+            st.info("No data to plot.")
+            return
+        user_order = {uid: i + 1 for i, uid in enumerate(sorted(df["cr_user_id"].unique()))}
+
     if df.empty:
-        st.info("No data to plot.")
+        fig = go.Figure()
+        tickvals = list(user_order.values())
+        fig.update_layout(
+            title=title,
+            height=max(400, 40 * len(user_order)),
+            yaxis=dict(tickmode="array", tickvals=tickvals,
+                       ticktext=[str(i) for i in tickvals], title="User #"),
+            xaxis=dict(title="Timestamp"),
+            autosize=False,
+            margin=dict(l=60, r=20, t=30, b=0),
+            plot_bgcolor="rgba(240,255,240,0.3)",
+        )
+        st.plotly_chart(fig, use_container_width=True)
         return
 
     df["outcome"] = df.apply(derive_ftm_outcome, axis=1)
     df["event_type"] = np.where(df["event_name"].str.contains("puzzle"), "Puzzle", "Level")
     df["marker_key"] = df["outcome"]
-
-    # ───────────────────────────────────────────────
-    # Numeric y-axis for compact layout
-    # ───────────────────────────────────────────────
-    user_order = {uid: i + 1 for i, uid in enumerate(sorted(df["cr_user_id"].unique()))}
-    df["user_number"] = df["cr_user_id"].map(user_order)
-
-    # ───────────────────────────────────────────────
-    # X-axis toggle
-    # ───────────────────────────────────────────────
-    x_axis_mode = st.radio(
-        "X-axis Mode",
-        ["Timestamp", "Level Progression"],
-        index=0, horizontal=True,
-        key="ftm_timeline_x_mode"
-    )
+    df["user_number"] = df["cr_user_id"].astype(str).map(user_order)
 
     if x_axis_mode == "Timestamp":
-        # Jitter for overlapping timestamps
         np.random.seed(42)
         df["user_event_count"] = df.groupby("cr_user_id")["event_timestamp"].transform("count")
         max_jitter, min_jitter = 10, 2
@@ -1133,14 +1137,9 @@ def ftm_timeline_plot(df, title="FTM Gameplay Timeline (Success / Failure by Eve
 
     def make_hover(r):
         outcome = r.get("outcome")
-        if isinstance(outcome, str):
-            display_outcome = outcome.capitalize()
-        else:
-            display_outcome = "Unknown"
-
+        display_outcome = outcome.capitalize() if isinstance(outcome, str) else "Unknown"
         parts = [f"<b>{display_outcome}</b>"]
         parts.append(f"User ID: {r.get('cr_user_id', '')}")
-
         if pd.notna(r.get("level_number")):
             parts.append(f"Level {int(r['level_number'])}")
         if r.get("event_name", "").startswith("puzzle") and pd.notna(r.get("puzzle_number")):
@@ -1151,8 +1150,6 @@ def ftm_timeline_plot(df, title="FTM Gameplay Timeline (Success / Failure by Eve
             parts.append(f"Lang: {r['app_language']}")
         return "<br>".join(parts)
 
-    
-    
     df["hover_text"] = df.apply(make_hover, axis=1).fillna("")
 
     fig = px.scatter(
@@ -1175,13 +1172,14 @@ def ftm_timeline_plot(df, title="FTM Gameplay Timeline (Success / Failure by Eve
 
     tickvals = list(user_order.values())
     ticktext = [str(i) for i in tickvals]
-    chart_height = max(400, 40 * len(user_order))
+    chart_height = max(400, 25 * len(user_order))
+
 
     fig.update_layout(
         height=chart_height,
         yaxis=dict(tickmode="array", tickvals=tickvals, ticktext=ticktext, title="User #"),
         legend_title_text="Outcome / Event Type",
-        margin=dict(l=60, r=20, t=60, b=60),
+        margin=dict(l=60, r=20, t=30, b=0),
         plot_bgcolor="rgba(240,255,240,0.3)",
     )
 

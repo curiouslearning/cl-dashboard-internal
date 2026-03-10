@@ -8,8 +8,8 @@ import datetime as dt
 default_daterange = [dt.datetime(2021, 1, 1).date(), dt.date.today()]
 
 @st.cache_data(ttl="1d", show_spinner=False)
-def get_cohort_totals_by_metric(
-    cohort_df,
+def get_metric_user_count(
+    user_df,
     stat="LR"
 ):
     """
@@ -21,19 +21,19 @@ def get_cohort_totals_by_metric(
     # Stat-specific filters (formerly in filter_user_data)
     if stat == "LA":
         # Learners Acquired: max_user_level >= 1
-        return (cohort_df['max_user_level'] >= 1).sum()
+        return (user_df['max_user_level'] >= 1).sum()
     elif stat == "RA":
         # Readers Acquired: max_user_level >= 25
-        return (cohort_df['max_user_level'] >= 25).sum()
+        return (user_df['max_user_level'] >= 25).sum()
     elif stat == "GC":
         # Game Completed: max_user_level >= 1 AND gpc >= 90
-        return ((cohort_df['max_user_level'] >= 1) & (cohort_df['gpc'] >= 90)).sum()
+        return ((user_df['max_user_level'] >= 1) & (user_df['gpc'] >= 90)).sum()
     elif stat == "LR":
         # Learner Reached: all users in cohort
-        return len(cohort_df)
+        return len(user_df)
 
     # Otherwise: classic funnel by furthest_event
-    furthest = cohort_df["furthest_event"]
+    furthest = user_df["furthest_event"]
 
     download_completed_count = (furthest == "download_completed").sum()
     tapped_start_count      = (furthest == "tapped_start").sum()
@@ -212,7 +212,7 @@ def get_totals_per_month_from_cohort(cohort_df, stat, daterange, date_col="first
         df_month = cohort_df[
             (cohort_df[date_col] >= start) & (cohort_df[date_col] <= end)
         ]
-        total = get_cohort_totals_by_metric(df_month, stat=stat)
+        total = get_metric_user_count(df_month, stat=stat)
 
         # Filter campaigns based on the clipped date range
         df_campaigns = filter_campaigns(df_campaigns_all, clipped_range, cohort_df["app_language"].unique(), cohort_df["country"].unique())
@@ -413,7 +413,7 @@ def funnel_percent_by_group(
         row = {groupby_col: group, "LR": count_LR}
         group_df = cohort_df[cohort_df[groupby_col] == group]
         for step in funnel_steps[1:]:
-            row[step] = get_cohort_totals_by_metric(group_df, stat=step)
+            row[step] = get_metric_user_count(group_df, stat=step)
         records.append(row)
 
     df = pd.DataFrame(records)

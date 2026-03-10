@@ -149,62 +149,45 @@ def rollup_campaign_data(df):
 
 @st.cache_data(ttl="1d", show_spinner=True)
 def build_campaign_table(df_campaigns, session_df, daterange):
-    """
-    df_campaigns: DataFrame with columns ['country', 'app_language', 'cost', ...]
-    session_df: the user cohort DataFrame (already filtered for daterange, apps, etc)
-    daterange: (start, end) date tuple for filtering
-
-    Returns: DataFrame with metrics for each (country, app_language) group
-    """
-    # 1. Get all unique country/language pairs in campaign data
     group_cols = ["country", "app_language"]
-    group_keys = df_campaigns[group_cols].drop_duplicates().values.tolist()
 
-    rows = []
-    for country, app_language in group_keys:
-        # 2. Filter user data for this group (and current date range)
-        cohort_df = metrics.apply_user_filters(
-            session_df=session_df,
-            daterange=daterange,
-            countries_list=[country],
-            languages=[app_language],
-            app=None
-        )
-        # 3. Metrics for this group
-        LR = metrics.get_cohort_totals_by_metric(cohort_df, stat="LR")
-        PC = metrics.get_cohort_totals_by_metric(cohort_df, stat="PC")
-        LA = metrics.get_cohort_totals_by_metric(cohort_df, stat="LA")
-        RA = metrics.get_cohort_totals_by_metric(cohort_df, stat="RA")
-        # 4. Total cost for this country/lang (can groupby sum if multiple campaigns per group)
-        cost = df_campaigns[
-            (df_campaigns["country"] == country) &
-            (df_campaigns["app_language"] == app_language)
-        ]["cost"].sum()
-        # 5. Calculate cost-per-metric and conversion rates
-        row = {
-            "country": country,
-            "app_language": app_language,
-            "cost": cost,
-            "LR": LR,
-            "PC": PC,
-            "LA": LA,
-            "RA": RA,
-            "LRC": (cost / LR) if LR else 0,
-            "PCC": (cost / PC) if PC else 0,
-            "LAC": (cost / LA) if LA else 0,
-            "RAC": (cost / RA) if RA else 0,
-            "PC_LR %": (PC / LR * 100) if LR else 0,
-            "LA_LR %": (LA / LR * 100) if LR else 0,
-            "RA_LR %": (RA / LR * 100) if LR else 0,
-        }
-        rows.append(row)
+    # 1. Apply date filter once upfront
+    start = pd.to_datetime(daterange[0])
+    end = pd.to_datetime(daterange[1])
+    filtered_df = session_df[
+        (session_df["first_open"] >= start) & (session_df["first_open"] <= end)
+    ].copy()
 
-    df = pd.DataFrame(rows)
-    # Optional: round currency columns
-    for col in ["LRC", "PCC", "LAC", "RAC"]:
-        df[col] = df[col].round(2)
-    for col in ["PC_LR %", "LA_LR %", "RA_LR %"]:
-        df[col] = df[col].round(2)
-    df[["cost", "LR", "PC", "LA", "RA"]] = df[["cost", "LR", "PC", "LA", "RA"]].fillna(0)
+    # 2. Limit to only country/language pairs that exist in campaign data
+    campaign_keys = df_campaigns[group_cols].drop_duplicates()
+    filtered_df = filtered_df.merge(campaign_keys, on=group_cols, how="inner")
+
+    # 3. Compute all metrics in one groupby pass
+    def group_metrics(group):
+        return pd.Series({
+            "LR": len(group),
+            "PC": (group["furthest_event"].isin(["puzzle_completed", "level_completed"])).sum(),
+            "LA": (group["max_user_level"] >= 1).sum(),
+            "RA": (group["max_user_level"] >= 25).sum(),
+        })
+
+    metrics_df = filtered_df.groupby(group_cols).apply(group_metrics).reset_index()
+
+    # 4. Aggregate campaign costs
+    cost_df = df_campaigns.groupby(group_cols)["cost"].sum().reset_index()
+
+    # 5. Join metrics and costs
+    df = campaign_keys.merge(metrics_df, on=group_cols, how="left")
+    df = df.merge(cost_df, on=group_cols, how="left")
+    df = df.fillna(0)
+
+    # 6. Calculate derived metrics
+    df["LRC"] = (df["cost"] / df["LR"].replace(0, pd.NA)).round(2).fillna(0)
+    df["PCC"] = (df["cost"] / df["PC"].replace(0, pd.NA)).round(2).fillna(0)
+    df["LAC"] = (df["cost"] / df["LA"].replace(0, pd.NA)).round(2).fillna(0)
+    df["RAC"] = (df["cost"] / df["RA"].replace(0, pd.NA)).round(2).fillna(0)
+    df["PC_LR %"] = (df["PC"] / df["LR"].replace(0, pd.NA) * 100).round(2).fillna(0)
+    df["LA_LR %"] = (df["LA"] / df["LR"].replace(0, pd.NA) * 100).round(2).fillna(0)
+    df["RA_LR %"] = (df["RA"] / df["LR"].replace(0, pd.NA) * 100).round(2).fillna(0)
+
     return df
-

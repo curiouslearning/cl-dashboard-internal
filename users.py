@@ -320,7 +320,7 @@ def get_cohort_list():
     df = st.session_state.get("df_cr_cohorts")
     if df is None or df.empty:
         return []
-    return sorted(df["cohort_name"].dropna().unique().tolist())
+    return sorted(df["cohort_name"].dropna().unique().tolist(), key=str.lower, reverse=True)
 
 
 @st.cache_data(ttl="1d",show_spinner=False)

@@ -4,7 +4,7 @@ from millify import prettify
 import ui_components as uic
 import ui_widgets as ui
 import users
-from metrics import get_filtered_users,get_cohort_totals_by_metric
+from metrics import get_filtered_users,get_metric_user_count
 from settings import initialize,init_campaign_data
 from users import ensure_user_data_initialized
 
@@ -55,7 +55,7 @@ if (len(countries_list)) > 0 and (len(daterange) == 2):
     if is_cr:
         user_cohort_df = user_cohort_df_LR
     
-    LR = get_cohort_totals_by_metric(user_cohort_df,stat="LR")
+    LR = get_metric_user_count(user_cohort_df,stat="LR")
 
     st.metric(label="Total Learners Reached", value=prettify(int(LR)))
       

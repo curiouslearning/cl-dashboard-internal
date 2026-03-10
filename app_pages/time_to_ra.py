@@ -1,74 +1,63 @@
 import streamlit as st
 import ui_widgets as ui
-from metrics import get_filtered_users,calculate_average_metric_per_user
-from users import ensure_user_data_initialized
-from settings import initialize,default_daterange
+from metrics import get_filtered_users, calculate_average_metric_per_user
+from users import ensure_user_data_initialized, get_country_list, get_language_list, get_cohort_list
+from settings import initialize, default_daterange
 
 initialize()
 ensure_user_data_initialized()
 
+countries_list = get_country_list()
+distinct_apps = ui.get_apps()
+distinct_cohorts = get_cohort_list()
+
 col1, col2, col3 = st.columns(3)
 
 with col1:
-    from users import get_country_list
-    countries_list = get_country_list()
-    country = ui.single_selector(
-        countries_list,
-        title="Country Selection",
-        key="la-2",
-    )
-    
-    distinct_apps = ui.get_apps()
-    app = ui.single_selector(distinct_apps, title="Select an App", key="a-10",include_All=False)
-
+    country = ui.single_selector(countries_list, title="Country Selection", key="la-2")
+    filter_mode = st.radio("Filter by", ["App", "Cohort"], key="ra-filter-mode", horizontal=True)
+    if filter_mode == "App":
+        if "ra-cohort" in st.session_state:
+            del st.session_state["ra-cohort"]
+        app = ui.single_selector(distinct_apps, title="Select an App", key="ra-app", include_All=False, index=0)
+        cohort = "All"
+    else:
+        if "ra-app" in st.session_state:
+            del st.session_state["ra-app"]
+        cohort = ui.single_selector(distinct_cohorts, title="Select a Cohort", key="ra-cohort", include_All=False, index=0)
+        app = "All"
     by_months = st.toggle("Show by Months", value=False)
-    
+
 with col2:
-    selected_date, option = ui.calendar_selector(key="SF-1", index=0, title="Select user cohort by date")
-    daterange = ui.convert_date_to_range(selected_date, option)
+    selected_languages = ui.multi_select_all(get_language_list(), title="Select languages", key="fa-1")
 
-with col3:
+if len(selected_languages) > 0:
+    user_df, cr_df_LR = get_filtered_users(app=app, daterange=default_daterange, language=selected_languages, countries_list=country, cohort=cohort)
 
-    from users import get_language_list
-    df = get_language_list()
-    selected_languages = ui.multi_select_all(
-        df,  title="Select languages", key="fa-1"
-    )   
+    average_days_to_ra = calculate_average_metric_per_user(user_df, column_name="days_to_ra")
 
-if (len(selected_languages) > 0 and len(selected_languages) > 0):
-    
-    user_cohort_df, user_cr_df_LR = get_filtered_users(app=app, language=selected_languages, countries_list=countries_list,daterange=default_daterange)
-    
-    average_days_to_ra= calculate_average_metric_per_user(user_cohort_df,column_name="days_to_ra")
-    
     with col1:
         ui.metric_tile(
-        label="Avg Days to RA",
-        value=f"{average_days_to_ra:.2f}",
-        color="#DCEAFB",
-        size="small",
-        width=200     # allows column to control width
-    )
-    
-    start = daterange[0].strftime("%b %d, %Y")
-    end = daterange[1].strftime("%b %d, %Y")
-    st.subheader("Timerange: " + start + " to " + end)  
-    
-    from ui_components import days_to_ra_chart,ra_ecdf_curve,avg_days_to_ra_by_dim_chart,ra_histogram_curve
-    
-    df_ra = user_cohort_df[user_cohort_df['days_to_ra'].notnull()].copy()
+            label="Avg Days to RA",
+            value=f"{average_days_to_ra:.2f}",
+            color="#DCEAFB",
+            size="small",
+            width=200
+        )
+
+    from ui_components import days_to_ra_chart, ra_ecdf_curve, avg_days_to_ra_by_dim_chart, ra_histogram_curve
+
+    df_ra = user_df[user_df['days_to_ra'].notnull()].copy()
     df_ra['months_to_ra'] = df_ra['days_to_ra'] / 30.44
+
     csv = ui.convert_for_download(df_ra)
-    st.sidebar.download_button(label="Download",data=csv,file_name="RAUsers.csv",key="a-12",icon=":material/download:",mime="text/csv")
-    
-    days_to_ra_chart(df_ra,by_months)
-    st.divider()
-    avg_days_to_ra_by_dim_chart(df_ra,app)
-    st.divider()
-    ra_ecdf_curve(df_ra,by_months)
-    st.divider()
-    ra_histogram_curve(df_ra,by_months)
+    st.sidebar.download_button(label="Download", data=csv, file_name="RAUsers.csv", key="a-12", icon=":material/download:", mime="text/csv")
 
-
-    
-    
+    if filter_mode == "App":
+        days_to_ra_chart(df_ra, by_months)
+        st.divider()
+        avg_days_to_ra_by_dim_chart(df_ra, app)
+        st.divider()
+    ra_ecdf_curve(df_ra, by_months)
+    st.divider()
+    ra_histogram_curve(df_ra, by_months)

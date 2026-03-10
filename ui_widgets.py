@@ -510,3 +510,29 @@ def metric_tile(label, value, color="#EEF3FF", size="large", width=900):
         """,
         unsafe_allow_html=True,
     )
+    
+def pagination_controls(page, total_pages, page_user_ids, user_ids_ordered, page_key):
+    pcol1, pcol2, pcol3 = st.columns([1, 2, 1])
+
+    with pcol1:
+        if st.button("◀ Previous", disabled=(page <= 1), key=f"prev::{page_key}", type="primary"):
+            st.session_state[page_key] = page - 1
+            st.rerun()
+
+    with pcol2:
+        st.markdown(
+            f"""
+            <div class="pagination-center">
+                Page {page} of {total_pages}<br>
+                <span class="pagination-sub">
+                    Showing {len(page_user_ids)} of {len(user_ids_ordered)} users
+                </span>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    with pcol3:
+        if st.button("Next ▶", disabled=(page >= total_pages), key=f"next::{page_key}", type="primary"):
+            st.session_state[page_key] = page + 1
+            st.rerun()

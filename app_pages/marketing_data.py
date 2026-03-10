@@ -6,7 +6,7 @@ import ui_widgets as ui
 import datetime as dt
 import campaigns
 import pandas as pd
-from metrics import filter_campaigns,get_totals_per_month_from_cohort,get_all_apps_combined_session_and_cohort_df,apply_user_filters,get_cohort_totals_by_metric,get_cohort_GC_avg,get_cohort_GPP_avg
+from metrics import filter_campaigns,get_totals_per_month_from_cohort,get_all_apps_combined_session_and_cohort_df,apply_user_filters,get_metric_user_count,get_cohort_GC_avg,get_cohort_GPP_avg
 from users import ensure_user_data_initialized,get_language_list,get_country_list
 from settings import initialize,init_campaign_data
 from users import ensure_user_data_initialized
@@ -68,7 +68,7 @@ if len(daterange) == 2 and len(countries_list) > 0:
         stat="LR"
     )
 
-    cohort_df = apply_user_filters(
+    user_df = apply_user_filters(
         session_df=session_df,
         daterange=daterange,
         languages=language,
@@ -77,7 +77,7 @@ if len(daterange) == 2 and len(countries_list) > 0:
 
  # --- COHORT METRICS ---
 
-LR = get_cohort_totals_by_metric(cohort_df=cohort_df, stat="LR")
+LR = get_metric_user_count(user_df=user_df, stat="LR")
 with col1:
     ui.metric_tile(
         label="Learners Reached",
@@ -89,14 +89,14 @@ with col1:
 #******* LA *******
 session_df = get_all_apps_combined_session_and_cohort_df(stat="LA")
 
-cohort_df = apply_user_filters(
+user_df = apply_user_filters(
     session_df=session_df,
     daterange=daterange,
     languages=language,
     countries_list=countries_list,
 )
 
-LA = get_cohort_totals_by_metric(cohort_df=cohort_df, stat="LA")
+LA = get_metric_user_count(user_df=user_df, stat="LA")
 with col2:
     ui.metric_tile(
         label="Learners Acquired",
@@ -105,7 +105,7 @@ with col2:
         size="small"
     )
 
-RA = get_cohort_totals_by_metric(cohort_df=cohort_df, stat="RA")
+RA = get_metric_user_count(user_df=user_df, stat="RA")
 with col3:
     ui.metric_tile(
         label="Readers Acquired",
@@ -114,7 +114,7 @@ with col3:
         size="small"
     )
 
-GC = get_cohort_totals_by_metric(cohort_df=cohort_df, stat="GC")
+GC = get_metric_user_count(user_df=user_df, stat="GC")
 with col1:
     ui.metric_tile(
         label="Games Completed",
@@ -123,7 +123,7 @@ with col1:
         size="small"
     )
 
-GPP = get_cohort_GPP_avg(cohort_df)
+GPP = get_cohort_GPP_avg(user_df)
 with col2:
     ui.metric_tile(
         label="Game Progress Percent",
@@ -132,7 +132,7 @@ with col2:
         size="small"
     )
 
-GC_AVG = get_cohort_GC_avg(cohort_df)
+GC_AVG = get_cohort_GC_avg(user_df)
 with col3:
     ui.metric_tile(
         label="Game Completion Avg",
@@ -170,7 +170,7 @@ with col3:
         size="small"
     )
     
-    csv = ui.convert_for_download(cohort_df) 
+    csv = ui.convert_for_download(user_df) 
     st.download_button(
             label="Download",
             data=csv,
