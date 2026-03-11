@@ -229,7 +229,7 @@ def get_totals_per_month_from_cohort(cohort_df, stat, daterange, date_col="first
     return pd.DataFrame(totals_by_month)
 
 
-def apply_user_filters(
+def     apply_user_filters(
     session_df,
     daterange=None,
     languages=["All"],
@@ -274,7 +274,7 @@ def apply_user_filters(
         df = df[df["app"].isin(apps)]
         
         # --- Cohort filter ---
-    if cohort and cohort not in (["All"], "All") and "cr_user_id" in df.columns:
+    if cohort and "cr_user_id" in df.columns:
         df_cr_cohorts = st.session_state.get("df_cr_cohorts")
         if df_cr_cohorts is not None:
             cohorts = [cohort] if isinstance(cohort, str) else cohort
@@ -342,15 +342,15 @@ def get_all_apps_combined_session_and_cohort_df(stat=None):
 
 
 def get_filtered_users(app, daterange, language, countries_list, cohort=None):
-    """Returns (user_cohort_df, user_cr_df_LR) for app selection."""
-    is_cr = (app == ["CR"] or app == "CR")
-    
-    # LR applies whenever we're working with CR data — either explicit CR app,
-    # or cohort mode (app="All") which is always CR users
     is_cr_data = "Unity" not in app and cohort in ("All", ["All"], None)
 
     user_cr_df_LR = None
-    session_df = select_user_dataframe(app=app)
+    
+    # Cohorts are always CR users — never pull from Unity/All df
+    effective_app = "CR" if cohort else app
+    
+    session_df = select_user_dataframe(app=effective_app)
+    
     user_cohort_df = apply_user_filters(
         session_df=session_df,
         daterange=daterange,
@@ -371,10 +371,11 @@ def get_filtered_users(app, daterange, language, countries_list, cohort=None):
         )
     return user_cohort_df, user_cr_df_LR
 
+
 def funnel_percent_by_group(
     cohort_df,
     cr_df_LR=None,
-    groupby_col="app_language",
+    groupby_col="app_language",    
     app=None,
     min_funnel=False
 ):

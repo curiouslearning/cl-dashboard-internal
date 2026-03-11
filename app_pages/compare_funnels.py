@@ -30,7 +30,7 @@ with col1:
         if "cf-cohort-A" in st.session_state:
             del st.session_state["cf-cohort-A"]
         appA = ui.single_selector(distinct_apps, title="Select an App", key="cf-app-A", include_All=False, index=1)
-        cohortA = "All"
+        cohortA = None
     else:
         if "cf-app-A" in st.session_state:
             del st.session_state["cf-app-A"]
@@ -50,7 +50,7 @@ with col2:
         if "cf-cohort-B" in st.session_state:
             del st.session_state["cf-cohort-B"]
         appB = ui.single_selector(distinct_apps, title="Select an App", key="cf-app-B", include_All=False, index=0)
-        cohortB = "All"
+        cohortB = None
     else:
         if "cf-app-B" in st.session_state:
             del st.session_state["cf-app-B"]
@@ -70,7 +70,7 @@ with col3:
         if "cf-cohort-C" in st.session_state:
             del st.session_state["cf-cohort-C"]
         appC = ui.single_selector(distinct_apps, title="Select an App", key="cf-app-C", include_All=False, index=0)
-        cohortC = "All"
+        cohortC = None
     else:
         if "cf-app-C" in st.session_state:
             del st.session_state["cf-app-C"]

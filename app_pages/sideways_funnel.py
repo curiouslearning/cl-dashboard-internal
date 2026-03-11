@@ -27,7 +27,7 @@ with col2:
         if "sf-cohort" in st.session_state:
             del st.session_state["sf-cohort"]
         app = ui.single_selector(distinct_apps, title="Select an App", key="sf-app", include_All=False, index=0)
-        cohort = "All"
+        cohort = None
     else:
         if "sf-app" in st.session_state:
             del st.session_state["sf-app"]

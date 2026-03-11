@@ -226,7 +226,7 @@ def create_engagement_figure(funnel_data, key="", funnel_size="large"):
 def levels_reached_chart(
     app_names=None,
     cohort_names=None,
-    max_plot_level=35,
+    max_plot_level=80,
     title="Levels Reached by App"
 ):
     if not app_names:
@@ -273,22 +273,32 @@ def _build_level_trace(user_df, label, max_plot_level):
         & (user_df["max_user_level"] >= 1)
     ]
 
-    df = (
-        filtered.query("max_user_level <= @max_plot_level")
+    if filtered.empty:
+        return None
+
+    total_users = len(filtered)  # denominator: ALL users, not just those in plot range
+
+    # Count users at each max_user_level (across ALL levels, not capped)
+    level_counts = (
+        filtered
         .groupby("max_user_level", as_index=False)
         .size()
         .rename(columns={"size": "count"})
         .sort_values("max_user_level", ascending=True, ignore_index=True)
     )
 
+    # "Reached at least level N" = users whose max_user_level >= N
+    # = total_users minus cumulative count of users who stopped before N
+    level_counts["cumulative_stopped"] = level_counts["count"].cumsum().shift(1).fillna(0)
+    level_counts["users_reached"] = total_users - level_counts["cumulative_stopped"]
+    level_counts["percent_reached"] = level_counts["users_reached"] / total_users * 100.0
+
+    # Now cap for plotting
+    df = level_counts[level_counts["max_user_level"] <= max_plot_level].copy()
+
     if df.empty:
         return None
 
-    first_level_count = df["count"].iloc[0]
-    if first_level_count == 0:
-        return None
-
-    df["percent_reached"] = df["count"] / first_level_count * 100.0
     df["percent_drop"] = df["percent_reached"].diff().fillna(0.0)
 
     return go.Scatter(
@@ -305,7 +315,6 @@ def _build_level_trace(user_df, label, max_plot_level):
             "Change from previous: %{customdata:.2f}%%<extra></extra><br>"
         ),
     )
-
 def create_engagement_funnel(
     user_df,
     key_prefix="",

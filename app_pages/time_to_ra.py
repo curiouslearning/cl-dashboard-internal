@@ -20,7 +20,7 @@ with col1:
         if "ra-cohort" in st.session_state:
             del st.session_state["ra-cohort"]
         app = ui.single_selector(distinct_apps, title="Select an App", key="ra-app", include_All=False, index=0)
-        cohort = "All"
+        cohort = None
     else:
         if "ra-app" in st.session_state:
             del st.session_state["ra-app"]

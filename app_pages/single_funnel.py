@@ -50,7 +50,7 @@ with col1:
             include_All=False,
             index=0,
         )
-        cohort = "All"
+        cohort = None
         st.caption("App filter is active. Cohort filter is not being applied.")
 
     else:
