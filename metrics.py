@@ -287,8 +287,6 @@ def     apply_user_filters(
 
 
 
-
-@st.cache_data(ttl="1d", show_spinner=False)
 def calculate_average_metric_per_user(user_cohort_df, column_name):
     """
     Calculate average for column_name for users in the already-filtered cohort_df.
@@ -314,16 +312,31 @@ def calculate_average_metric_per_user(user_cohort_df, column_name):
 
 @st.cache_data(ttl="1d", show_spinner="Calculating metrics")
 def get_engagement_metrics(user_cohort_df):
+    if user_cohort_df.empty:
+        zero = {k: 0 for k in ["Avg Level Reached", "Avg # Sessions / User",
+                                "Avg Total Play Time / User", "Avg Session Length / User",
+                                "Active Span / User", "Avg Days to RA"]}
+        return zero
+
+    base = user_cohort_df[user_cohort_df["max_user_level"] >= 1]
+
+    cols = ["max_user_level", "engagement_event_count", "total_time_minutes",
+            "avg_session_length_minutes", "active_span"]
+
+    # Single agg pass for non-nullable columns
+    means = base[[c for c in cols if c in base.columns]].mean()
+
+    # days_to_ra needs null filter — separate but cheap
+    days_to_ra = base["days_to_ra"].dropna().mean() if "days_to_ra" in base.columns else 0
 
     return {
-        "Avg Level Reached": calculate_average_metric_per_user(user_cohort_df=user_cohort_df,column_name="max_user_level"),
-        "Avg # Sessions / User": calculate_average_metric_per_user(user_cohort_df=user_cohort_df,column_name="engagement_event_count"),
-        "Avg Total Play Time / User": calculate_average_metric_per_user(user_cohort_df=user_cohort_df,column_name="total_time_minutes"),
-        "Avg Session Length / User": calculate_average_metric_per_user(user_cohort_df=user_cohort_df,column_name="avg_session_length_minutes"),
-        "Active Span / User": calculate_average_metric_per_user(user_cohort_df=user_cohort_df,column_name="active_span"),
-        "Avg Days to RA":     calculate_average_metric_per_user(user_cohort_df=user_cohort_df,column_name="days_to_ra")
+        "Avg Level Reached":          means.get("max_user_level", 0),
+        "Avg # Sessions / User":      means.get("engagement_event_count", 0),
+        "Avg Total Play Time / User": means.get("total_time_minutes", 0),
+        "Avg Session Length / User":  means.get("avg_session_length_minutes", 0),
+        "Active Span / User":         means.get("active_span", 0),
+        "Avg Days to RA":             days_to_ra if not pd.isna(days_to_ra) else 0,
     }
-
 
 def get_all_apps_combined_session_and_cohort_df(stat=None):
     session_dfs = []
