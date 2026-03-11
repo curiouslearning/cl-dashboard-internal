@@ -58,7 +58,7 @@ with col1:
             distinct_cohorts,
             title="Select a cohort",
             key="s7",
-            include_All=True,
+            include_All=False,
             index=0,
         )
         app = "All"
