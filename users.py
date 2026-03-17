@@ -55,6 +55,11 @@ def load_cr_cohorts_from_gcs():
     return load_parquet_from_gcs(
         "user_data_parquet_cache/cr_cohorts/run_date=*/cr_cohorts_*.parquet"
     )
+    
+def load_cr_book_user_book_summary_from_gcs():
+    return load_parquet_from_gcs(
+        "user_data_parquet_cache/cr_book_user_book_summary/run_date=*/cr_book_user_book_summary_*.parquet"
+    )
 
 def ensure_user_data_initialized():
     import traceback
@@ -70,7 +75,7 @@ def ensure_user_data_initialized():
 
 def init_user_data():
     if st.session_state.get("user_data_initialized"):
-        return  # already initialized this session
+        return
     with st.spinner("Loading User Data", show_time=True):
         from pyinstrument import Profiler
         from pyinstrument.renderers.console import ConsoleRenderer
@@ -78,53 +83,48 @@ def init_user_data():
 
         profiler = Profiler(async_mode="disabled")
         with profiler:
-            # Cached fast parquet loads
             df_cr_users = load_cr_user_progress_from_gcs()
-
             df_unity_users = load_unity_user_progress_from_gcs()
             df_cr_app_launch = load_cr_app_launch_from_gcs()
             df_cr_book_user_cohorts = load_cr_book_user_cohorts_from_gcs()
             df_cr_cohorts = load_cr_cohorts_from_gcs()
+            df_cr_book_user_book_summary = load_cr_book_user_book_summary_from_gcs()  # NEW
 
-            # Validation
             if df_cr_users.empty or df_unity_users.empty or df_cr_app_launch.empty:
                 raise ValueError("❌ One or more dataframes were empty after loading.")
-            
 
-            # Fix dates and clean
             df_cr_users = fix_date_columns(df_cr_users, ["first_open", "last_event_date"])
             df_unity_users = fix_date_columns(df_unity_users, ["first_open", "la_date", "last_event_date"])
             df_cr_app_launch = fix_date_columns(df_cr_app_launch, ["first_open"])
             df_cr_book_user_cohorts = fix_date_columns(df_cr_book_user_cohorts, ["first_access_date", "last_access_date"])
-            
-            
+            df_cr_book_user_book_summary = fix_date_columns(  # NEW
+                df_cr_book_user_book_summary,
+                ["first_access_date", "last_access_date"]
+            )
+
             max_level_indices = df_unity_users.groupby("user_pseudo_id")["max_user_level"].idxmax()
             df_unity_users = df_unity_users.loc[max_level_indices].reset_index(drop=True)
 
             df_cr_app_launch["app_language"] = clean_language_column(df_cr_app_launch)
             df_cr_users["app_language"] = clean_language_column(df_cr_users)
 
-          #  missing_users = df_cr_users[~df_cr_users["cr_user_id"].isin(df_cr_app_launch["cr_user_id"])]
-          #  df_cr_users = df_cr_users[~df_cr_users["cr_user_id"].isin(missing_users["cr_user_id"])]
-
             df_cr_app_launch, df_cr_users = clean_cr_users_to_single_language(df_cr_app_launch, df_cr_users)
-            
-            #active_span can be negative when users start the game in offline mode and have a first_open date later 
-            # than last_event_date.  Set those to zero
+
             df_cr_users["active_span"] = df_cr_users["active_span"].clip(lower=0)
-            
-            # Assign to session state
+
             st.session_state["df_cr_users"] = df_cr_users
             st.session_state["df_unity_users"] = df_unity_users
             st.session_state["df_cr_app_launch"] = df_cr_app_launch
             st.session_state["df_cr_book_user_cohorts"] = df_cr_book_user_cohorts
-            st.session_state["user_data_initialized"] = True
             st.session_state["df_cr_cohorts"] = df_cr_cohorts
-        # Log the profile only once
+            st.session_state["df_cr_book_user_book_summary"] = df_cr_book_user_book_summary  # NEW
+            st.session_state["user_data_initialized"] = True
+
         settings.get_logger().debug(
             profiler.output(ConsoleRenderer(show_all=False, timeline=True, color=True, unicode=True, short_mode=False))
         )
-
+        
+        
 # Language cleanup
 def clean_language_column(df):
     return df["app_language"].replace({

@@ -13,6 +13,13 @@ Derives engagement signals (active days, first/last access) and parses:
 
 Adds:
 - book_language: canonical language name aligned to FTM naming (e.g. IsiZulu -> Zulu)
+- stickiness: per-book engagement level based on active_days_for_book
+    Bounced  = 1 active day  (opened once, never returned)
+    Returned = 2 active days (came back at least once)
+    Hooked   = 3+ active days (sustained engagement)
+
+NOTE: All metrics reflect ONLINE sessions only. Offline reading activity
+is not captured in GA4/Firebase events.
 
 Grain: One row per (cr_user_id, book_id)
 ===============================================================================
@@ -112,7 +119,7 @@ WITH
         WHEN language_code = 'CVCreole' THEN 'Creole'
         WHEN language_code = 'Nep' THEN 'Nepali'
         WHEN language_code = 'Ukr' THEN 'Ukrainian'
-        WHEN language_code = 'Lug' THEN 'Luganda'   -- FIX
+        WHEN language_code = 'Lug' THEN 'Luganda'
         ELSE language_code
       END AS book_language,
 
@@ -128,4 +135,11 @@ WITH
       cr_user_id, book_id, base_book_id, language_code, book_language, book_level
   )
 
-SELECT * FROM user_book;
+SELECT
+  *,
+  CASE
+    WHEN active_days_for_book >= 3 THEN 'Hooked'
+    WHEN active_days_for_book = 2  THEN 'Returned'
+    ELSE                                'Bounced'
+  END AS stickiness
+FROM user_book;

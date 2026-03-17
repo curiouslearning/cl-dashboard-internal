@@ -61,3 +61,13 @@ if len(selected_languages) > 0:
     ra_ecdf_curve(df_ra, by_months)
     st.divider()
     ra_histogram_curve(df_ra, by_months)
+    
+    csv = ui.convert_for_download(df_ra)
+    st.download_button(
+        label="Download",
+        data=csv,
+        file_name="df_ra.csv",
+        key="s6",
+        icon=":material/download:",
+        mime="text/csv",
+    )
