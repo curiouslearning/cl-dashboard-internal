@@ -1,82 +1,84 @@
-
 [[pages]]
 name = "Funnel Analysis"
-icon = ":large_brown_circle:"
+icon = "📊"
 is_section = true
 
 [[pages]]
 path = "app_pages/single_funnel.py"
 name = "Single Funnel"
-icon = ":small_orange_diamond:"
+icon = "🔽"
 
 [[pages]]
 path = "app_pages/compare_funnels.py"
 name = "Compare App Funnels"
-icon = ":small_orange_diamond:"
+icon = "↔️"
 
 [[pages]]
 path = "app_pages/sideways_funnel.py"
 name = "Sideways Funnel by Language"
-icon = ":small_orange_diamond:"
+icon = "🌐"
 
 [[pages]]
 path = "app_pages/best_languages.py"
 name = "Top/Bottom Performing Languages"
-icon = ":small_orange_diamond:"
+icon = "🏆"
 
 [[pages]]
 name = "Metrics"
-icon = ":house:"
+icon = "📈"
 is_section = true
 
 [[pages]]
 path = "app_pages/time_to_ra.py"
 name = "Readers Acquired"
-icon = ":small_orange_diamond:"
+icon = "⭐"
 
 [[pages]]
 path = "app_pages/levels_reached.py"
 name = "Levels"
-icon = ":small_orange_diamond:"
-
+icon = "🎯"
 
 [[pages]]
 path = "app_pages/acquisition.py"
 name = "Acquisition"
-icon = ":small_orange_diamond:"
+icon = "📥"
 
 [[pages]]
 path = "app_pages/difficulty_by_language.py"
 name = "Language Difficulty"
-icon = ":small_orange_diamond:"
+icon = "🧠"
 
 [[pages]]
 path = "app_pages/marketing_data.py"
 name = "Marketing Data"
-icon = ":small_orange_diamond:"
+icon = "📣"
 
 [[pages]]
 name = "Books"
-icon = ":large_brown_circle:"
+icon = "📚"
 is_section = true
 
 [[pages]]
 path = "app_pages/books.py"
-name = "Books"
-icon = ":small_orange_diamond:"
+name = "Book Engagement Overview"
+icon = "📖"
+
+[[pages]]
+path = "app_pages/book_details.py"
+name = "Book Detail & Stickiness"
+icon = "🔖"
 
 [[pages]]
 name = "Users"
-icon = ":large_brown_circle:"
+icon = "👥"
 is_section = true
 
 [[pages]]
 path = "app_pages/user_details.py"
 name = "User Lookup"
-icon = ":small_orange_diamond:"
+icon = "🔍"
 
 [[pages]]
 path = "app_pages/cohort_history.py"
 name = "FTM Gameplay Timeline (Cohort Only)"
-icon = ":small_orange_diamond:"
-
+icon = "🎬"
