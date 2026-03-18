@@ -1,4 +1,5 @@
 import streamlit as st
+import pandas as pd
 
 import ui_widgets as ui
 from users import ensure_user_data_initialized
@@ -13,6 +14,54 @@ ensure_user_data_initialized()
 df_book_summary    = st.session_state["df_cr_book_user_book_summary"]
 df_cr_book_cohorts = st.session_state["df_cr_book_user_cohorts"]
 df_cr_users        = st.session_state["df_cr_users"]
+
+# -------------------------------------------------------
+# Helper: definition expander
+# -------------------------------------------------------
+HIDE_INDEX_CSS = """
+    <style>
+    thead tr th:first-child {display:none}
+    tbody th {display:none}
+    </style>
+"""
+
+def display_definitions_table(title, def_df):
+    expander = st.expander(title)
+    st.markdown(HIDE_INDEX_CSS, unsafe_allow_html=True)
+    expander.table(def_df)
+
+
+# -------------------------------------------------------
+# Page-level notes expander
+# -------------------------------------------------------
+page_notes = pd.DataFrame(
+    [
+        ["Universe",
+         "All users who have opened at least one book in the selected language(s), "
+         "sourced from cr_book_user_book_summary (one row per user × book)."],
+        ["Online sessions only",
+         "All book metrics are based on GA4/Firebase events. Offline reading is not "
+         "captured — users who read entirely offline will appear as Bounced even if "
+         "they engaged deeply with the content."],
+        ["Stickiness",
+         "Per-book engagement level based on how many distinct days a user opened "
+         "that specific book online: Bounced = 1 day, Returned = 2 days, Hooked = 3+ days."],
+        ["Reader Tier vs Stickiness",
+         "Reader Tier (0–3) measures overall book engagement across ALL books. "
+         "Stickiness measures engagement with ONE specific book. A Tier 3 user can "
+         "Bounce on a specific book if they simply preferred other titles."],
+        ["FTM Outcomes",
+         "FTM progression metrics (avg level, % RA) are restricted to LA users "
+         "(learners who completed Level 1) in the mapped language universe. "
+         "The relationship between book engagement and FTM outcomes is associative — "
+         "causality has not been established."],
+        ["100 reader minimum",
+         "The stickiness chart excludes books with fewer than 100 readers to avoid "
+         "misleading percentages from small samples."],
+    ],
+    columns=["Note", "Description"],
+)
+display_definitions_table("ℹ️ About this page", page_notes)
 
 # -------------------------------------------------------
 # Language selector
@@ -74,8 +123,8 @@ show_dual_metric_tiles(
 )
 
 st.caption(
-    "Stickiness is based on online sessions only. Offline reading is not captured. "
-    "Bounced = opened 1 day only · Returned = 2 days · Hooked = 3+ days."
+    "Bounced = opened 1 day only · Returned = 2 days · Hooked = 3+ days. "
+    "Online sessions only — offline reading is not captured."
 )
 
 # -------------------------------------------------------
@@ -84,27 +133,30 @@ st.caption(
 st.divider()
 st.header("Book stickiness")
 
+stickiness_notes = pd.DataFrame(
+    [
+        ["Bounced",  "User opened this book on only 1 distinct day online."],
+        ["Returned", "User opened this book on exactly 2 distinct days online."],
+        ["Hooked",   "User opened this book on 3 or more distinct days online."],
+        ["Sort order", "Books are sorted by Hooked % descending — "
+                       "highest repeat engagement at the top."],
+        ["100 reader minimum", "Books with fewer than 100 readers are excluded from "
+                               "this chart to avoid misleading percentages."],
+    ],
+    columns=["Term", "Definition"],
+)
+display_definitions_table("ℹ️ Stickiness definitions", stickiness_notes)
+
 df_popularity = bdh.build_book_popularity(df_filtered)
 
-c1, c2 = st.columns(2)
-with c1:
-    min_readers = st.slider(
-        "Minimum readers to show", 1, 100, 10, key="book-details-min-readers"
-    )
-with c2:
-    sort_by = st.selectbox(
-        "Sort by", ["Hooked", "Returned", "Bounced"], key="book-details-sort"
-    )
-
 fig_stickiness = bdh.build_stickiness_chart(
-    df_popularity, min_readers=min_readers, sort_by=sort_by
+    df_popularity, min_readers=100, sort_by="Hooked"
 )
 st.plotly_chart(fig_stickiness, use_container_width=True)
 
 st.caption(
-    "Books with a high Hooked % are pulling readers back repeatedly. "
-    "Books with a high Bounced % may have content or accessibility issues — "
-    "though offline reading means some 'Bounced' users may have continued reading offline."
+    "Books at the top have the highest share of Hooked readers. "
+    "High Bounced % may reflect content issues or simply that most reading happens offline."
 )
 
 # -------------------------------------------------------
@@ -112,6 +164,25 @@ st.caption(
 # -------------------------------------------------------
 st.divider()
 st.header("FTM outcomes by book (LA users)")
+
+ftm_notes = pd.DataFrame(
+    [
+        ["Book",          "Book title (language suffix removed)."],
+        ["Readers",       "Number of users at the selected stickiness level who read this book."],
+        ["Avg Level",     "Average FTM level reached by readers of this book (LA users only)."],
+        ["Avg Level (others)", "Average FTM level reached by all other users at the same "
+                               "stickiness level who did NOT read this book."],
+        ["Level Lift",    "Difference in avg level: readers minus others. "
+                          "Positive = readers progressed further in FTM."],
+        ["% RA",          "Percentage of readers who reached Reader Acquired (FTM level 25+)."],
+        ["% RA (others)", "Percentage of non-readers who reached RA."],
+        ["RA Lift",       "Difference in RA rate: readers minus others."],
+        ["Caution",       "Books with small reader counts (e.g. <200) show high lift but "
+                          "are less statistically reliable than books with thousands of readers."],
+    ],
+    columns=["Column", "Description"],
+)
+display_definitions_table("ℹ️ Column definitions", ftm_notes)
 
 c1, c2 = st.columns(2)
 with c1:
@@ -135,21 +206,35 @@ df_outcomes = bdh.build_book_ftm_outcomes(
 if df_outcomes.empty:
     st.info(f"No books have readers at stickiness level: {stickiness_filter}")
 else:
+    # Rename columns to short display names and drop index
+    df_display = df_outcomes.rename(columns={
+        "base_book_id":         "Book",
+        "readers":              "Readers",
+        "avg_level_readers":    "Avg Level",
+        "avg_level_others":     "Avg Level (others)",
+        "lift_avg_level":       "Level Lift",
+        "pct_ra_readers":       "% RA",
+        "pct_ra_others":        "% RA (others)",
+        "lift_pct_ra":          "RA Lift",
+    })
+
     st.dataframe(
-        df_outcomes.style.format({
-            "readers":           "{:,.0f}",
-            "avg_level_readers": "{:.2f}",
-            "avg_level_others":  "{:.2f}",
-            "lift_avg_level":    "{:+.2f}",
-            "pct_ra_readers":    "{:.1%}",
-            "pct_ra_others":     "{:.1%}",
-            "lift_pct_ra":       "{:+.1%}",
-        }),
+        df_display.style
+            .format({
+                "Readers":            "{:,.0f}",
+                "Avg Level":          "{:.2f}",
+                "Avg Level (others)": "{:.2f}",
+                "Level Lift":         "{:+.2f}",
+                "% RA":               "{:.1%}",
+                "% RA (others)":      "{:.1%}",
+                "RA Lift":            "{:+.1%}",
+            })
+            .hide(axis="index"),
         use_container_width=True,
     )
     st.caption(
-        f"'Others' = all other {stickiness_filter} readers in the mapped universe who did not read this book. "
-        "Positive lift means readers of this book show stronger FTM progression."
+        f"Comparing {stickiness_filter} readers of each book vs other {stickiness_filter} "
+        "readers who did not read that book. Positive lift = stronger FTM progression."
     )
 
 # -------------------------------------------------------
@@ -157,6 +242,20 @@ else:
 # -------------------------------------------------------
 st.divider()
 st.header("Book drill-down")
+
+drilldown_notes = pd.DataFrame(
+    [
+        ["Reader tier × stickiness",
+         "Cross-tab of overall reader tier (rows) vs stickiness for this specific book (columns). "
+         "A Tier 3 user who Bounced chose not to return to this book despite being broadly engaged."],
+        ["Readers by book level",
+         "Some books have multiple difficulty levels (Lv1, Lv2, ...). "
+         "This table shows reader counts and stickiness per level. "
+         "A sharp drop between levels may indicate difficulty or disinterest at that level."],
+    ],
+    columns=["Section", "Description"],
+)
+display_definitions_table("ℹ️ Drill-down guide", drilldown_notes)
 
 available_books = sorted(
     df_filtered["base_book_id"]
@@ -185,11 +284,6 @@ if selected_book:
             st.info("No data for this book.")
         else:
             st.dataframe(df_crosstab, use_container_width=True)
-            st.caption(
-                "Rows = overall book engagement tier (user-level). "
-                "Columns = stickiness for this specific book. "
-                "A Tier 3 user who Bounced on this book chose not to return despite being an engaged reader overall."
-            )
 
     # --- Level breakdown ---
     with c2:
@@ -201,18 +295,25 @@ if selected_book:
         if df_levels.empty:
             st.info("No level data for this book.")
         else:
+            df_levels_display = df_levels.rename(columns={
+                "book_level":      "Level",
+                "unique_readers":  "Readers",
+                "total_events":    "Events",
+                "avg_active_days": "Avg Days",
+                "n_bounced":       "Bounced",
+                "n_returned":      "Returned",
+                "n_hooked":        "Hooked",
+            })
             st.dataframe(
-                df_levels.style.format({
-                    "unique_readers":  "{:,.0f}",
-                    "total_events":    "{:,.0f}",
-                    "avg_active_days": "{:.2f}",
-                    "n_bounced":       "{:,.0f}",
-                    "n_returned":      "{:,.0f}",
-                    "n_hooked":        "{:,.0f}",
-                }),
+                df_levels_display.style
+                    .format({
+                        "Readers":  "{:,.0f}",
+                        "Events":   "{:,.0f}",
+                        "Avg Days": "{:.2f}",
+                        "Bounced":  "{:,.0f}",
+                        "Returned": "{:,.0f}",
+                        "Hooked":   "{:,.0f}",
+                    })
+                    .hide(axis="index"),
                 use_container_width=True,
-            )
-            st.caption(
-                "Some books have multiple levels (Lv1, Lv2, ...). "
-                "Higher levels typically have fewer readers — a sharp drop may indicate difficulty or disinterest."
             )
