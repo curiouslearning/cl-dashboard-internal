@@ -306,6 +306,12 @@ def build_book_tier_crosstab(
         .fillna(0)
         .astype(int)
     )
+    # Exclude tier 0 — users who appear as non-book-users overall should not appear
+    # in a per-book cross-tab since they are actual readers of this specific book.
+    # Tier 0 in this context means the cohort table join returned no match or tier data.
+    merged = merged[merged["book_engagement_tier"] > 0]
+    if merged.empty:
+        return pd.DataFrame()
     merged["tier_label"] = merged["book_engagement_tier"].map(TIER_LABELS).fillna("Unknown")
 
     crosstab = (
@@ -342,6 +348,11 @@ def build_book_level_breakdown(
 
     book_rows = df[df["base_book_id"] == base_book_id].copy()
 
+    if book_rows.empty:
+        return pd.DataFrame()
+
+    # Filter to rows that actually have a level — books without Lv# suffix have null book_level
+    book_rows = book_rows[book_rows["book_level"].notna()]
     if book_rows.empty:
         return pd.DataFrame()
 

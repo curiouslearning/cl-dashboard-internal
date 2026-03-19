@@ -55,8 +55,8 @@ page_notes = pd.DataFrame(
          "(learners who completed Level 1) in the mapped language universe. "
          "The relationship between book engagement and FTM outcomes is associative — "
          "causality has not been established."],
-        ["100 reader minimum",
-         "The stickiness chart excludes books with fewer than 100 readers to avoid "
+        ["500 reader minimum",
+         "The stickiness chart excludes books with fewer than 500 readers to avoid "
          "misleading percentages from small samples."],
     ],
     columns=["Note", "Description"],
@@ -140,7 +140,7 @@ stickiness_notes = pd.DataFrame(
         ["Hooked",   "User opened this book on 3 or more distinct days online."],
         ["Sort order", "Books are sorted by Hooked % descending — "
                        "highest repeat engagement at the top."],
-        ["100 reader minimum", "Books with fewer than 100 readers are excluded from "
+        ["500 reader minimum", "Books with fewer than 100 readers are excluded from "
                                "this chart to avoid misleading percentages."],
     ],
     columns=["Term", "Definition"],
@@ -257,12 +257,15 @@ drilldown_notes = pd.DataFrame(
 )
 display_definitions_table("ℹ️ Drill-down guide", drilldown_notes)
 
+# Build popularity once (already computed above) and filter to min 100 readers
+_book_reader_counts = (
+    df_filtered.copy()
+    .assign(base_book_id=lambda d: d["base_book_id"].fillna(d["book_id"]))
+    .groupby("base_book_id")["cr_user_id"]
+    .nunique()
+)
 available_books = sorted(
-    df_filtered["base_book_id"]
-    .fillna(df_filtered["book_id"])
-    .dropna()
-    .unique()
-    .tolist()
+    _book_reader_counts[_book_reader_counts >= 100].index.tolist()
 )
 
 selected_book = st.selectbox(
@@ -270,50 +273,50 @@ selected_book = st.selectbox(
 )
 
 if selected_book:
-    c1, c2 = st.columns(2)
-
     # --- Cross-tab: user tier × stickiness ---
-    with c1:
-        st.subheader("Reader tier × stickiness")
-        df_crosstab = bdh.build_book_tier_crosstab(
-            df_filtered=df_filtered,
-            df_cr_book_user_cohorts=df_cr_book_cohorts,
-            base_book_id=selected_book,
-        )
-        if df_crosstab.empty:
-            st.info("No data for this book.")
-        else:
-            st.dataframe(df_crosstab, use_container_width=True)
+    st.subheader("Reader tier × stickiness")
+    df_crosstab = bdh.build_book_tier_crosstab(
+        df_filtered=df_filtered,
+        df_cr_book_user_cohorts=df_cr_book_cohorts,
+        base_book_id=selected_book,
+    )
+    if df_crosstab.empty:
+        st.info("No data for this book.")
+    else:
+        st.dataframe(df_crosstab, use_container_width=True)
 
     # --- Level breakdown ---
-    with c2:
-        st.subheader("Readers by book level")
-        df_levels = bdh.build_book_level_breakdown(
-            df_filtered=df_filtered,
-            base_book_id=selected_book,
+    st.subheader("Readers by book level")
+    df_levels = bdh.build_book_level_breakdown(
+        df_filtered=df_filtered,
+        base_book_id=selected_book,
+    )
+    if df_levels.empty:
+        st.info(
+            "This book has no level variants — it exists as a single version "
+            "with no Lv1/Lv2/... suffix in the book ID."
         )
-        if df_levels.empty:
-            st.info("No level data for this book.")
-        else:
-            df_levels_display = df_levels.rename(columns={
-                "book_level":      "Level",
-                "unique_readers":  "Readers",
-                "total_events":    "Events",
-                "avg_active_days": "Avg Days",
-                "n_bounced":       "Bounced",
-                "n_returned":      "Returned",
-                "n_hooked":        "Hooked",
-            })
-            st.dataframe(
-                df_levels_display.style
-                    .format({
-                        "Readers":  "{:,.0f}",
-                        "Events":   "{:,.0f}",
-                        "Avg Days": "{:.2f}",
-                        "Bounced":  "{:,.0f}",
-                        "Returned": "{:,.0f}",
-                        "Hooked":   "{:,.0f}",
-                    })
-                    .hide(axis="index"),
-                use_container_width=True,
-            )
+    else:
+        df_levels["book_level"] = df_levels["book_level"].astype(int)
+        df_levels_display = df_levels.rename(columns={
+            "book_level":      "Level",
+            "unique_readers":  "Readers",
+            "total_events":    "Events",
+            "avg_active_days": "Avg Days",
+            "n_bounced":       "Bounced",
+            "n_returned":      "Returned",
+            "n_hooked":        "Hooked",
+        })
+        st.dataframe(
+            df_levels_display.style
+                .format({
+                    "Readers":  "{:,.0f}",
+                    "Events":   "{:,.0f}",
+                    "Avg Days": "{:.2f}",
+                    "Bounced":  "{:,.0f}",
+                    "Returned": "{:,.0f}",
+                    "Hooked":   "{:,.0f}",
+                })
+                .hide(axis="index"),
+            use_container_width=True,
+        )
