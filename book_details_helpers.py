@@ -105,6 +105,17 @@ def build_book_popularity(df_filtered: pd.DataFrame) -> pd.DataFrame:
         .sort_values("unique_readers", ascending=False)
     )
 
+    # Build comma-separated language list per book
+    lang_agg = (
+        df.dropna(subset=["book_language"])
+        .groupby("base_book_id")["book_language"]
+        .agg(lambda s: ", ".join(sorted(s.unique())))
+        .reset_index()
+        .rename(columns={"book_language": "languages"})
+    )
+    agg = agg.merge(lang_agg, on="base_book_id", how="left")
+    agg["languages"] = agg["languages"].fillna("Unknown")
+
     total = agg["unique_readers"]
     agg["pct_bounced"]  = agg["n_bounced"]  / total
     agg["pct_returned"] = agg["n_returned"] / total
@@ -152,11 +163,12 @@ def build_stickiness_chart(
             x=df[col],
             orientation="h",
             marker_color=STICKINESS_COLORS[stick],
-            customdata=df[[n_col, "unique_readers"]].values,
+            customdata=df[[n_col, "unique_readers", "languages"]].values,
             hovertemplate=(
                 f"<b>{stick}</b><br>"
                 "%{x:.1%} of readers<br>"
                 "%{customdata[0]:,} / %{customdata[1]:,} users<br>"
+                "Languages: %{customdata[2]}<br>"
                 f"<i>{STICKINESS_DEFS[stick]}</i>"
                 "<extra></extra>"
             ),
