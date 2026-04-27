@@ -152,7 +152,7 @@ df_popularity = bdh.build_book_popularity(df_filtered)
 fig_stickiness = bdh.build_stickiness_chart(
     df_popularity, min_readers=100, sort_by="Hooked"
 )
-st.plotly_chart(fig_stickiness, use_container_width=True)
+st.plotly_chart(fig_stickiness, width="stretch")
 
 st.caption(
     "Books at the top have the highest share of Hooked readers. "
@@ -230,7 +230,7 @@ else:
                 "RA Lift":            "{:+.1%}",
             })
             .hide(axis="index"),
-        use_container_width=True,
+        width="stretch",
     )
     st.caption(
         f"Comparing {stickiness_filter} readers of each book vs other {stickiness_filter} "
@@ -283,7 +283,7 @@ if selected_book:
     if df_crosstab.empty:
         st.info("No data for this book.")
     else:
-        st.dataframe(df_crosstab, use_container_width=True)
+        st.dataframe(df_crosstab, width="stretch")
 
     # --- Level breakdown ---
     st.subheader("Readers by book level")
@@ -318,5 +318,5 @@ if selected_book:
                     "Hooked":   "{:,.0f}",
                 })
                 .hide(axis="index"),
-            use_container_width=True,
+            width="stretch",
         )

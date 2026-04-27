@@ -90,4 +90,4 @@ if (len(cr_user_id) > 0):
     # Drop cr_user_id only if it exists
     display_df = user_ftm_df.drop(columns=["cr_user_id"], errors="ignore")
     styled_df = display_df.style.apply(highlight_success, axis=1)
-    st.dataframe(styled_df, use_container_width=True)
+    st.dataframe(styled_df, width="stretch")

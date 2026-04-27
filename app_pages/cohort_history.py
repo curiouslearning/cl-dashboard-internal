@@ -144,7 +144,7 @@ book_summary_df = get_book_summary_for_cohort(book_user_ids)
 if book_summary_df.empty:
     st.info("No book interactions found for this selection.")
 else:
-    st.dataframe(book_summary_df, use_container_width=True)
+    st.dataframe(book_summary_df, width="stretch")
     st.markdown("#### View books read by a single user")
     user_choices = book_summary_df["cr_user_id"].astype(str).tolist()
     colA, colB = st.columns([2, 3])
@@ -155,4 +155,4 @@ else:
     if show_btn and selected_user:
         user_books_df = get_books_for_user(selected_user)
         with st.expander(f"Books read by {selected_user}", expanded=True):
-            st.dataframe(user_books_df, use_container_width=True)
+            st.dataframe(user_books_df, width="stretch")

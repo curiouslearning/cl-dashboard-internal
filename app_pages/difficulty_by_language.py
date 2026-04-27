@@ -232,7 +232,7 @@ fig_lang = px.line(
 
 assign_hover(fig_lang, df_lang, "language", language_cols, "Language")
 fig_lang = style_line_chart(fig_lang, "Language")
-st.plotly_chart(fig_lang, use_container_width=True)
+st.plotly_chart(fig_lang, width="stretch")
 st.caption("Each line shows difficulty progression across levels for selected languages.")
 
 # =========================================================
@@ -258,7 +258,7 @@ fig_hard = px.bar(
 
 assign_hover(fig_hard, df_hard, "language", language_cols, "Language")
 fig_hard = style_bar_chart(fig_hard, "Language")
-st.plotly_chart(fig_hard, use_container_width=True)
+st.plotly_chart(fig_hard, width="stretch")
 st.caption("Bars highlight toughest levels across selected languages.")
 
 

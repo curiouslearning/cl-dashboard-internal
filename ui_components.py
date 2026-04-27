@@ -50,7 +50,7 @@ def LR_LA_line_chart_over_time(
         title=title,
     )
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
     return grouped_df
 
 
@@ -129,7 +129,7 @@ def lrc_scatter_chart(option, display_category, df_campaigns, daterange, session
             },
         )
 
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
     else:
         st.write("No data for selected period")
         
@@ -263,7 +263,7 @@ def levels_reached_chart(
     )
 
     fig = go.Figure(data=traces, layout=layout)
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
     return fig
 
 
@@ -401,7 +401,7 @@ def create_engagement_funnel(
         funnel_size=funnel_size,
     )
 
-    st.plotly_chart(fig, use_container_width=True, key=f"{key_prefix}-6")
+    st.plotly_chart(fig, width="stretch", key=f"{key_prefix}-6")
 
 
 @st.cache_data(ttl="1d", show_spinner="Computing chart")    
@@ -460,7 +460,7 @@ def lr_lrc_bar_chart(df_totals_per_month):
     )
 
     # Show the figure
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 
 @st.cache_data(ttl="1d", show_spinner="Computing chart")    
 def engagement_over_time_chart(df_list_with_labels, metric="Avg Total Time (minutes)"):
@@ -521,7 +521,7 @@ def engagement_over_time_chart(df_list_with_labels, metric="Avg Total Time (minu
  
     )
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 
     
 def days_to_ra_chart(df_ra,by_months):
@@ -582,7 +582,7 @@ def days_to_ra_chart(df_ra,by_months):
         yaxis_title='App Language',
         xaxis_title=x_label,
     )
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 
 def ra_ecdf_curve(df_ra,by_months):
 
@@ -627,7 +627,7 @@ def ra_ecdf_curve(df_ra,by_months):
         yaxis_title="Total Users",
         xaxis_title=x_label
     )
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
     
 def avg_days_to_ra_by_dim_chart(df_ra,app=["CR"]):
 
@@ -677,7 +677,7 @@ def avg_days_to_ra_by_dim_chart(df_ra,app=["CR"]):
         xaxis={'categoryorder':'total ascending'},
         showlegend=False
     )
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
     
 
 
@@ -715,7 +715,7 @@ def ra_histogram_curve(df_ra, by_months):
         xaxis_title=x_label
     )
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 
 def show_dual_metric_table(title, home_metrics):
 
@@ -877,7 +877,7 @@ def funnel_chart(
         font=dict(size=14),
     )
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
     return df
 
 @st.cache_data(ttl="1d", show_spinner="Calculating")
@@ -1066,7 +1066,7 @@ def funnel_chart(
         font=dict(size=14),
     )
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
     return df
 
 
@@ -1099,7 +1099,7 @@ def ftm_timeline_plot(df, page_user_ids=None, x_axis_mode="Timestamp", title="FT
             margin=dict(l=60, r=20, t=30, b=0),
             plot_bgcolor="rgba(240,255,240,0.3)",
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
         return
 
     df["outcome"] = df.apply(derive_ftm_outcome, axis=1)
@@ -1192,7 +1192,7 @@ def ftm_timeline_plot(df, page_user_ids=None, x_axis_mode="Timestamp", title="FT
         plot_bgcolor="rgba(240,255,240,0.3)",
     )
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 
 def display_metrics_for_users(df_users):
     metric_display_names = [
@@ -1240,7 +1240,7 @@ def display_metrics_for_users(df_users):
         margin=dict(l=40, r=20, t=50, b=40),
     )
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 
 def show_dual_metric_tiles(title, home_metrics, colors=None, size="small", formats=None):
 

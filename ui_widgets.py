@@ -308,7 +308,7 @@ def paginated_dataframe(df, keys, sort_col="campaign_name"):
 
     pages = split_frame(df, batch_size)
     pagination.dataframe(
-        hide_index=True, data=pages[current_page - 1], use_container_width=True
+        hide_index=True, data=pages[current_page - 1], width="stretch"
     )
 
 

@@ -211,7 +211,7 @@ fig_book_tier_pie.update_layout(
     legend_title_text="Tier",
     margin=dict(l=20, r=20, t=55, b=20),
 )
-st.plotly_chart(fig_book_tier_pie, use_container_width=True)
+st.plotly_chart(fig_book_tier_pie, width="stretch")
 st.caption(
     "Engagement tiers are based on active reading days and breadth/depth of book usage. "
     "'No book use' means the user is in an eligible language but has no recorded book activity."
@@ -285,7 +285,7 @@ st.dataframe(
             "% Reach L25":        "{:.1%}",
         })
         .hide(axis="index"),
-    use_container_width=True,
+    width="stretch",
 )
 
 # -------------------------------------------------------
@@ -302,7 +302,7 @@ df_survival, fig_survival = build_survival_curve_by_tier(
     include_overall_baseline=True,
 )
 
-st.plotly_chart(fig_survival, use_container_width=True)
+st.plotly_chart(fig_survival, width="stretch")
 st.caption(
     "Each line shows the % of LA users in the mapped universe reaching each level. "
     "Early separation suggests reduced friction; tail separation suggests long-term persistence."
@@ -316,4 +316,4 @@ st.subheader("Average days to RA by book engagement tier")
 
 agg_df = bh.build_days_to_ra_by_tier(df_cr_users, df_cr_book_user_cohorts)
 fig = plot_days_to_ra_by_tier(agg_df)
-st.plotly_chart(fig, use_container_width=True)
+st.plotly_chart(fig, width="stretch")
