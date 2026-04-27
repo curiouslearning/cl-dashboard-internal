@@ -66,9 +66,11 @@ def get_book_summary_for_language(
     """
     if not languages:
         return pd.DataFrame()
-    return df_book_summary[
+    df = df_book_summary[
         df_book_summary["book_language"].isin(languages)
     ].copy()
+    df["base_book_id"] = df["base_book_id"].fillna(df["book_id"])
+    return df
 
 
 # ============================================================
@@ -91,7 +93,6 @@ def build_book_popularity(df_filtered: pd.DataFrame) -> pd.DataFrame:
         return pd.DataFrame()
 
     df = df_filtered.copy()
-    df["base_book_id"] = df["base_book_id"].fillna(df["book_id"])
 
     agg = (
         df.groupby("base_book_id", as_index=False)
@@ -213,7 +214,6 @@ def build_book_ftm_outcomes(
         return pd.DataFrame()
 
     df = df_filtered.copy()
-    df["base_book_id"] = df["base_book_id"].fillna(df["book_id"])
 
     # LA users in the mapped universe
     ftm = df_cr_users[df_cr_users["la_flag"] == 1][
@@ -284,7 +284,6 @@ def build_book_tier_crosstab(
       values  = user count
     """
     df = df_filtered.copy()
-    df["base_book_id"] = df["base_book_id"].fillna(df["book_id"])
 
     book_rows = df[df["base_book_id"] == base_book_id][
         ["cr_user_id", "stickiness"]
@@ -342,7 +341,6 @@ def build_book_level_breakdown(
     Useful for seeing if users engage with higher-level versions of the same book.
     """
     df = df_filtered.copy()
-    df["base_book_id"] = df["base_book_id"].fillna(df["book_id"])
 
     book_rows = df[df["base_book_id"] == base_book_id].copy()
 
