@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import streamlit as st
+from metrics import is_ra_series
 
 
 # ============================================================
@@ -208,10 +209,7 @@ def build_ftm_compare_la_only(
     )
 
     # Robust RA definition (offline-safe)
-    df_base["is_ra"] = (
-        (pd.to_numeric(df_base["max_user_level"], errors="coerce") >= ra_level_threshold)
-        | (df_base["ra_flag"].fillna(0).astype(int) == 1)
-    )
+    df_base["is_ra"] = is_ra_series(df_base, ra_level_threshold)
 
     # -------------------------------------------------------
     # Aggregation helpers

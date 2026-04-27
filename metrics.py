@@ -7,6 +7,14 @@ import datetime as dt
 
 default_daterange = [dt.datetime(2021, 1, 1).date(), dt.date.today()]
 
+
+def is_ra_series(df: pd.DataFrame, ra_level_threshold: int = 25) -> pd.Series:
+    return (
+        (pd.to_numeric(df["max_user_level"], errors="coerce") >= ra_level_threshold)
+        | (df["ra_flag"].fillna(0).astype(int) == 1)
+    )
+
+
 @st.cache_data(ttl="1d", show_spinner=False)
 def get_metric_user_count(
     user_df,

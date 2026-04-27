@@ -5,6 +5,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 
 from colors import PALETTE
+from metrics import is_ra_series
 
 # ============================================================
 # Constants
@@ -218,10 +219,7 @@ def build_book_ftm_outcomes(
     ftm = df_cr_users[df_cr_users["la_flag"] == 1][
         ["cr_user_id", "max_user_level", "ra_flag"]
     ].copy()
-    ftm["is_ra"] = (
-        (pd.to_numeric(ftm["max_user_level"], errors="coerce") >= ra_level_threshold)
-        | (ftm["ra_flag"].fillna(0).astype(int) == 1)
-    )
+    ftm["is_ra"] = is_ra_series(ftm, ra_level_threshold)
 
     all_reader_ids = set(
         df[df["stickiness"] == stickiness_filter]["cr_user_id"].unique()
