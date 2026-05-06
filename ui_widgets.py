@@ -520,12 +520,20 @@ def pagination_controls(page, total_pages, page_user_ids, user_ids_ordered, page
             st.rerun()
 
     with pcol2:
+        total = len(user_ids_ordered)
+        shown = len(page_user_ids)
+        if total == 0 or shown == 0:
+            range_text = "No users"
+        else:
+            end = total if page >= total_pages else page * shown
+            start = end - shown + 1
+            range_text = f"Showing users {start}–{end} of {total}"
         st.markdown(
             f"""
             <div class="pagination-center">
                 Page {page} of {total_pages}<br>
                 <span class="pagination-sub">
-                    Showing {len(page_user_ids)} of {len(user_ids_ordered)} users
+                    {range_text}
                 </span>
             </div>
             """,

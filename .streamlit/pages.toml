@@ -80,5 +80,5 @@ icon = "🔍"
 
 [[pages]]
 path = "app_pages/cohort_history.py"
-name = "FTM Gameplay Timeline (Cohort Only)"
+name = "FTM Cohort Timeline"
 icon = "🎬"

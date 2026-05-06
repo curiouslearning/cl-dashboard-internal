@@ -115,11 +115,8 @@ x_axis_mode = st.radio(
     key="ftm_timeline_x_mode"
 )
 
-if subset.empty:
-    st.info("No events found for this page.")
-else:
-    ftm_timeline_plot(subset, page_user_ids=page_user_ids, x_axis_mode=x_axis_mode)
-    ui.pagination_controls(page, total_pages, page_user_ids, user_ids_ordered, page_key)
+ftm_timeline_plot(subset, page_user_ids=page_user_ids, x_axis_mode=x_axis_mode)
+ui.pagination_controls(page, total_pages, page_user_ids, user_ids_ordered, page_key)
 
 st.divider()
 st.subheader("Individual metrics (this page)")

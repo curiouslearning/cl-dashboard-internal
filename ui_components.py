@@ -1077,29 +1077,18 @@ def ftm_timeline_plot(df, page_user_ids=None, x_axis_mode="Timestamp", title="FT
       success_or_failure, number_of_successful_puzzles, app_language
     """
 
-    # Build user_order from the full page list, not just users with events
+    # Show every user on the page, including those with no puzzle/level events,
+    # so the row exists and we can mark them as "No progress" below.
+    users_with_events = set(df["cr_user_id"].astype(str).unique()) if not df.empty else set()
     if page_user_ids:
-        user_order = {str(uid): i + 1 for i, uid in enumerate(page_user_ids)}
+        ordered_users = [str(uid) for uid in page_user_ids]
     else:
-        if df.empty:
-            st.info("No data to plot.")
-            return
-        user_order = {uid: i + 1 for i, uid in enumerate(sorted(df["cr_user_id"].unique()))}
+        ordered_users = sorted(users_with_events)
+    user_order = {uid: i + 1 for i, uid in enumerate(ordered_users)}
+    no_progress_users = [u for u in ordered_users if u not in users_with_events]
 
-    if df.empty:
-        fig = go.Figure()
-        tickvals = list(user_order.values())
-        fig.update_layout(
-            title=title,
-            height=max(400, 40 * len(user_order)),
-            yaxis=dict(tickmode="array", tickvals=tickvals,
-                       ticktext=[str(i) for i in tickvals], title="User #"),
-            xaxis=dict(title="Timestamp"),
-            autosize=False,
-            margin=dict(l=60, r=20, t=30, b=0),
-            plot_bgcolor="rgba(240,255,240,0.3)",
-        )
-        st.plotly_chart(fig, width="stretch")
+    if not user_order:
+        st.info("No users to plot.")
         return
 
     df["outcome"] = df.apply(derive_ftm_outcome, axis=1)
@@ -1125,11 +1114,30 @@ def ftm_timeline_plot(df, page_user_ids=None, x_axis_mode="Timestamp", title="FT
             lvl["level_number"] + puzzle_offset,
             lvl["level_number"] + 0.5
         )
-        if lvl.empty:
-            st.warning("No level data for Level Progression mode.")
-            return
         df = lvl
         x_label = "Level (with small offsets)"
+
+    # Synthetic "No progress" markers at level 0 for users with no puzzle/level
+    # events on this page. Only meaningful in Level Progression mode.
+    if no_progress_users and x_axis_mode != "Timestamp":
+        np_rows = pd.DataFrame({
+            "cr_user_id": no_progress_users,
+            "user_number": [user_order[u] for u in no_progress_users],
+            "x_axis_value": [0] * len(no_progress_users),
+            "outcome": ["no progress"] * len(no_progress_users),
+            "event_type": ["No progress"] * len(no_progress_users),
+            "marker_key": ["No progress"] * len(no_progress_users),
+            "level_number": [None] * len(no_progress_users),
+            "puzzle_number": [None] * len(no_progress_users),
+            "event_name": [""] * len(no_progress_users),
+            "number_of_successful_puzzles": [None] * len(no_progress_users),
+            "app_language": [None] * len(no_progress_users),
+        })
+        df = pd.concat([df, np_rows], ignore_index=True)
+
+    if df.empty:
+        st.warning("No data to plot in this mode.")
+        return
 
     # ───────────────────────────────────────────────
     # Colors, symbols, hover
@@ -1141,8 +1149,9 @@ def ftm_timeline_plot(df, page_user_ids=None, x_axis_mode="Timestamp", title="FT
         "Failure – Level": "darkred",
         "Unknown – Puzzle": "gray",
         "Unknown – Level": "lightgray",
+        "No progress": "#9aa0a6",
     }
-    symbol_map = {"Puzzle": "circle", "Level": "diamond"}
+    symbol_map = {"Puzzle": "circle", "Level": "diamond", "No progress": "square"}
 
     def make_hover(r):
         outcome = r.get("outcome")
@@ -1171,7 +1180,7 @@ def ftm_timeline_plot(df, page_user_ids=None, x_axis_mode="Timestamp", title="FT
         symbol_map=symbol_map,
         hover_data={"hover_text": True},
         title=title,
-        labels={"x_axis_value": x_label, "user_number": "User #"},
+        labels={"x_axis_value": x_label, "user_number": "User"},
     )
     fig.update_traces(
         hovertemplate="%{customdata[0]}<extra></extra>",
@@ -1180,13 +1189,24 @@ def ftm_timeline_plot(df, page_user_ids=None, x_axis_mode="Timestamp", title="FT
     fig.for_each_trace(lambda t: t.update(name=t.name.split(",")[0]))
 
     tickvals = list(user_order.values())
-    ticktext = [str(i) for i in tickvals]
+    label_width = 12
+    ticktext = [
+        ((uid[:10] + "…") if len(uid) > 10 else uid).ljust(label_width, " ")
+        for uid in user_order.keys()
+    ]
     chart_height = max(400, 25 * len(user_order))
 
 
     fig.update_layout(
         height=chart_height,
-        yaxis=dict(tickmode="array", tickvals=tickvals, ticktext=ticktext, title="User #"),
+        yaxis=dict(
+            tickmode="array",
+            tickvals=tickvals,
+            ticktext=ticktext,
+            title="User",
+            tickfont=dict(family="monospace"),
+            automargin=True,
+        ),
         legend_title_text="Outcome / Event Type",
         margin=dict(l=60, r=20, t=30, b=0),
         plot_bgcolor="rgba(240,255,240,0.3)",
