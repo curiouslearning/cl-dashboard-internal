@@ -202,12 +202,13 @@ def clean_cr_users_to_single_language(df_app_launch, df_cr_users):
     # ✅ Map event to numeric rank
     df_cr_users["event_rank"] = df_cr_users["furthest_event"].map(event_rank)
 
-    # ✅ Flag whether event is "level_completed" - this means we switch to level number to determine furthest progress
-    df_cr_users["is_level_completed"] = df_cr_users["furthest_event"] == "level_completed"
-
-    # ✅ Ensure a single row per user across country & language
-    df_cr_users = df_cr_users.sort_values(["cr_user_id", "is_level_completed", "max_user_level", "event_rank"], 
-                                          ascending=[True, False, False, False])
+    # Furthest progress wins: highest max_user_level first, then funnel event rank as tiebreak
+    # (event_rank tiebreak handles users who haven't completed a level yet — all have max_user_level=0)
+    df_cr_users = df_cr_users.sort_values(
+        ["cr_user_id", "max_user_level", "event_rank"],
+        ascending=[True, False, False],
+        na_position="last",
+    )
 
     df_cr_users = df_cr_users.drop_duplicates(subset=["cr_user_id"], keep="first")  # ✅ Keep only best progress row
 
