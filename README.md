@@ -10,7 +10,5 @@ Streamlit Dashboard for Internal Analysis
 5. streamlit run main.py
 
 
-docker build  --no-cache --platform linux/amd64  -t gcr.io/dataexploration-193817/cl-dashboard-internal:latest . 
+docker build  --no-cache --platform linux/amd64  -t gcr.io/dataexploration-193817/cl-dashboard-internal:latest .
 docker push gcr.io/dataexploration-193817/cl-dashboard-internal:latest
-
-#
