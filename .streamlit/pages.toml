@@ -49,11 +49,6 @@ name = "Language Difficulty"
 icon = "🧠"
 
 [[pages]]
-path = "app_pages/marketing_data.py"
-name = "Marketing Data"
-icon = "📣"
-
-[[pages]]
 name = "Books"
 icon = "📚"
 is_section = true

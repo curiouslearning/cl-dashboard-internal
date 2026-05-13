@@ -5,12 +5,10 @@ import ui_components as uic
 import ui_widgets as ui
 import users
 from metrics import get_filtered_users,get_metric_user_count
-from settings import initialize,init_campaign_data
 from users import ensure_user_data_initialized
 
-initialize()
+
 ensure_user_data_initialized()
-init_campaign_data()
 
 ensure_user_data_initialized()
 
