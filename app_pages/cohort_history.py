@@ -70,6 +70,18 @@ cohort_ids = get_cohort_user_ids(cohort_name=cohort)
 df_users_all = st.session_state["df_cr_users"].copy()
 cohort_users_df = df_users_all[df_users_all["cr_user_id"].isin(cohort_ids)].copy()
 
+# Include cohort members with no cr_user_progress row (reached the app but never
+# produced FTM gameplay — e.g. the offline Firebase-init failure) as empty rows,
+# so all members appear in the timeline rather than only the gameplay subset.
+# They have no events, so they render as "No progress" and sort to the bottom.
+present_ids = set(cohort_users_df["cr_user_id"].astype(str))
+missing_ids = [uid for uid in cohort_ids if str(uid) not in present_ids]
+if missing_ids:
+    cohort_users_df = pd.concat(
+        [cohort_users_df, pd.DataFrame({"cr_user_id": missing_ids})],
+        ignore_index=True,
+    )
+
 sort_options = {
     "User ID (A→Z)": ("cr_user_id", True),
     "Max Level (high→low)": ("max_user_level", False),

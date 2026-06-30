@@ -84,9 +84,10 @@ if len(countries_list) and len(daterange) == 2:
 
     metrics_home = metrics.get_engagement_metrics(user_cohort_df)
 
-    if app == "CR":
+    app_name = app[0] if isinstance(app, list) and app else app
+    if app_name == "CR":
         funnel_size = "large"
-    else:        
+    else:
         funnel_size = "compact"
 
     # --- Output Section ---

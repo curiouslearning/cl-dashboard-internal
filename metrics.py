@@ -39,6 +39,12 @@ def get_metric_user_count(
     elif stat == "LR":
         # Learner Reached: all users in cohort
         return len(user_df)
+    elif stat == "FTMI":
+        # FTM Interacted: produced at least one FTM event (i.e. has a gameplay
+        # row in cr_user_progress). Counted against the gameplay df, so the
+        # LR -> FTMI drop surfaces learners who were reached but never got into
+        # Feed the Monster (e.g. the offline Firebase-init failure).
+        return len(user_df)
 
     # Otherwise: classic funnel by furthest_event
     furthest = user_df["furthest_event"]
@@ -390,6 +396,16 @@ def get_filtered_users(app, daterange, language, countries_list, cohort=None):
             app=app,
             cohort=cohort
         )
+    elif cohort not in ("All", ["All"], None):
+        # Cohort mode: LR = full cohort membership (the "new" LR, matching the
+        # cohorts dashboard). This includes seeded learners who never produced an
+        # FTM gameplay row, so the gameplay subset (user_cohort_df) becomes FTMI
+        # downstream and the LR -> FTMI drop is visible. Membership carries no
+        # language/country/date, so those filters apply to FTMI+ but not LR.
+        df_cohorts = st.session_state.get("df_cr_cohorts")
+        if df_cohorts is not None and "cohort_name" in df_cohorts.columns:
+            sel = cohort if isinstance(cohort, (list, tuple, set)) else [cohort]
+            user_cr_df_LR = df_cohorts[df_cohorts["cohort_name"].isin(sel)]
     return user_cohort_df, user_cr_df_LR
 
 
@@ -412,20 +428,26 @@ def funnel_percent_by_group(
     is_cr = app_name in ("CR", "All")
 
     user_key = "cr_user_id"
-    funnel_steps = ["LR", "PC", "LA", "RA", "GC"]
+    funnel_steps = ["LR", "FTMI", "PC", "LA", "RA", "GC"]
 
     if is_cr and not min_funnel:
-        funnel_steps = ["LR", "DC", "TS", "SL", "PC", "LA", "RA", "GC"]
+        funnel_steps = ["LR", "FTMI", "DC", "TS", "SL", "PC", "LA", "RA", "GC"]
     elif app_name == "Unity":
         user_key = "user_pseudo_id"
+        # FTM Interacted doesn't apply to Unity (native app, not the FTM web layer)
+        funnel_steps = ["LR", "PC", "LA", "RA", "GC"]
+
+    # cr_df_LR can be a cohort-membership df (no group column) — only group by it
+    # when the column exists; otherwise fall back to the gameplay df for LR.
+    lr_has_group = cr_df_LR is not None and groupby_col in getattr(cr_df_LR, "columns", [])
 
     group_vals = set(cohort_df[groupby_col].dropna().unique())
-    if cr_df_LR is not None:
+    if lr_has_group:
         group_vals = group_vals | set(cr_df_LR[groupby_col].dropna().unique())
 
     records = []
     for group in sorted(group_vals):
-        if is_cr and cr_df_LR is not None:
+        if is_cr and lr_has_group:
             group_LR = cr_df_LR[cr_df_LR[groupby_col] == group]
             count_LR = group_LR[user_key].nunique() if user_key in group_LR else len(group_LR)
         else:

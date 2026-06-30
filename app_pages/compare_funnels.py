@@ -93,22 +93,30 @@ if (
     labelB = cohortB[0] if filter_modeB == "Cohort" else appB[0]
     labelC = cohortC[0] if filter_modeC == "Cohort" else appC[0]
 
-    funnel_size = "compact" if any(app == "Unity" for app in [appA, appB, appC]) else "large"
+    # Always compact here: app comparison only needs the shared steps
+    # (LR, FTMI, PC, LA, RA, GC), not CR's intermediate DC/TS/SL stages.
+    funnel_size = "compact"
+
+    # FTM Interacted has no meaning for Unity, so if any column is Unity drop it
+    # from every column to keep the comparison aligned.
+    def _is_unity(a):
+        return ("Unity" in a) if isinstance(a, (list, tuple)) else (a == "Unity")
+    show_ftmi = not any(_is_unity(a) for a in [appA, appB, appC])
 
     with col1:
-        create_engagement_funnel(user_df=user_dfA, cr_df_LR=cr_df_LR_A, key_prefix="cf-11", funnel_size=funnel_size, app=appA)
+        create_engagement_funnel(user_df=user_dfA, cr_df_LR=cr_df_LR_A, key_prefix="cf-11", funnel_size=funnel_size, app=appA, show_ftmi=show_ftmi)
         show_dual_metric_tiles(labelA, home_metrics=metrics_A, size="small")
         csvA = ui.convert_for_download(user_dfA)
         st.download_button(label="Download", data=csvA, file_name="user_cohort_listA.csv", key="cf-12", icon=":material/download:", mime="text/csv")
 
     with col2:
-        create_engagement_funnel(user_df=user_dfB, cr_df_LR=cr_df_LR_B, key_prefix="cf-13", funnel_size=funnel_size, app=appB)
+        create_engagement_funnel(user_df=user_dfB, cr_df_LR=cr_df_LR_B, key_prefix="cf-13", funnel_size=funnel_size, app=appB, show_ftmi=show_ftmi)
         show_dual_metric_tiles(labelB, home_metrics=metrics_B, size="small")
         csvB = ui.convert_for_download(user_dfB)
         st.download_button(label="Download", data=csvB, file_name="user_cohort_listB.csv", key="cf-14", icon=":material/download:", mime="text/csv")
 
     with col3:
-        create_engagement_funnel(user_df=user_dfC, cr_df_LR=cr_df_LR_C, key_prefix="cf-15", funnel_size=funnel_size, app=appC)
+        create_engagement_funnel(user_df=user_dfC, cr_df_LR=cr_df_LR_C, key_prefix="cf-15", funnel_size=funnel_size, app=appC, show_ftmi=show_ftmi)
         show_dual_metric_tiles(labelC, home_metrics=metrics_C, size="small")
         csvC = ui.convert_for_download(user_dfC)
         st.download_button(label="Download", data=csvC, file_name="user_cohort_listC.csv", key="cf-16", icon=":material/download:", mime="text/csv")

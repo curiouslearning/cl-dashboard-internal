@@ -321,19 +321,20 @@ def create_engagement_funnel(
     funnel_size="medium",
     cr_df_LR=None,
     app=None,
+    show_ftmi=True,
 ):
 
     funnel_variants = {
         "compact": {
-            "stats": ["LR", "PC", "LA", "RA", "GC"],
+            "stats": ["LR", "FTMI", "PC", "LA", "RA", "GC"],
             "titles": [
-                "Learner Reached", "Puzzle Completed", "Learners Acquired", "Readers Acquired", "Game Completed"
+                "Learner Reached", "FTM Interacted", "Puzzle Completed", "Learners Acquired", "Readers Acquired", "Game Completed"
             ]
         },
         "large": {
-            "stats": ["LR", "DC", "TS", "SL", "PC", "LA", "RA", "GC"],
+            "stats": ["LR", "FTMI", "DC", "TS", "SL", "PC", "LA", "RA", "GC"],
             "titles": [
-                "Learner Reached", "Download Completed", "Tapped Start",
+                "Learner Reached", "FTM Interacted", "Download Completed", "Tapped Start",
                 "Selected Level", "Puzzle Completed", "Learners Acquired", "Readers Acquired", "Game Completed"
             ]
         },
@@ -347,14 +348,22 @@ def create_engagement_funnel(
     }
 
     variant = funnel_variants.get(funnel_size, funnel_variants["medium"])
-    stats = variant["stats"]
-    titles = variant["titles"]
+    stats = list(variant["stats"])
+    titles = list(variant["titles"])
 
     # Determine user key for LR (top)
-    if app == "Unity" or (isinstance(app, list) and "Unity" in app):
+    is_unity = app == "Unity" or (isinstance(app, list) and "Unity" in app)
+    if is_unity:
         user_key = "user_pseudo_id"
     else:
         user_key = "cr_user_id"
+
+    # FTM Interacted doesn't apply to Unity (native app, not the FTM web layer);
+    # callers can also force it off (e.g. comparing against a Unity app).
+    if (is_unity or not show_ftmi) and "FTMI" in stats:
+        i = stats.index("FTMI")
+        stats.pop(i)
+        titles.pop(i)
 
     funnel_step_counts = []
     for stat in stats:
