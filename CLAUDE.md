@@ -36,11 +36,11 @@ Pages are declared in `.streamlit/pages.toml` and routed by `st.navigation()`.
 
 | File | Purpose |
 |---|---|
-| `single_funnel.py` | Single-cohort funnel view — LR → DC → TS → SL → PC → LA → RA |
+| `single_funnel.py` | Single-cohort funnel view — LR → FTMI → DC → TS → SL → PC → LA → RA → GC (CR); LR → FTMI → PC → LA → RA → GC (other) |
 | `engagement_over_time.py` | Multi-cohort engagement trends (total time, session count) |
 | `levels_reached.py` | Level distribution across apps and cohorts via `st.pills` |
 | `time_to_ra.py` | Days-to-RA distribution, ECDF, histogram for RA users |
-| `cohort_history.py` | Per-user FTM event timeline with pagination; book access summary |
+| `cohort_history.py` | Per-user FTM event timeline with pagination; book access summary. Lists **all** cohort members (members with no `cr_user_progress` row are added as empty rows → render as "No progress") |
 
 ---
 
@@ -95,15 +95,23 @@ Funnel counting and user filtering.
 
 **Funnel stages** (`get_metric_user_count(user_df, stat)`):
 ```
-LR  Learner Reached     — all users in cohort
-DC  Download Completed
-TS  Tapped Start
-SL  Selected Level
-PC  Puzzle Completed
-LA  Learner Acquired    — max_user_level >= 1
-RA  Reader Acquired     — max_user_level >= 25
-GC  Game Completed      — max_user_level >= 1 AND gpc >= 90
+LR   Learner Reached     — reached source: app_launch (CR) / unity table (Unity) /
+                           full cr_cohorts membership (cohort mode). NOT len(df_cr_users).
+FTMI FTM Interacted       — produced an FTM gameplay event (count of the gameplay df).
+                           LR → FTMI drop = opened the app but FTM never ran (offline-init bug).
+DC   Download Completed
+TS   Tapped Start
+SL   Selected Level
+PC   Puzzle Completed
+LA   Learner Acquired    — max_user_level >= 1
+RA   Reader Acquired     — max_user_level >= 25
+GC   Game Completed      — max_user_level >= 1 AND gpc >= 90
 ```
+FTMI is **omitted for Unity** (native app, not the FTM web layer) and can be forced
+off via `create_engagement_funnel(show_ftmi=False)` — Compare App Funnels does this
+for every column when any compared app is Unity. Cohort mode sources LR from
+`df_cr_cohorts` so reached-but-no-gameplay members are counted; that membership df
+has no language/country, so the gap can't render in the language-grouped Sideways view.
 
 **Key functions**:
 - `get_filtered_users(app, daterange, language, countries_list, cohort)` → `(user_cohort_df, cr_df_LR)` — primary filtering entry point for pages
@@ -133,7 +141,7 @@ Reusable Streamlit input widgets and display utilities.
 Plotly chart builders and complex composite display functions.
 
 **Funnel / engagement**:
-- `create_engagement_funnel(user_df, cr_df_LR, key_prefix, funnel_size, app)` — main funnel visualization
+- `create_engagement_funnel(user_df, cr_df_LR, key_prefix, funnel_size, app, show_ftmi=True)` — main funnel visualization (`show_ftmi=False` or `app=Unity` drops the FTMI step)
 - `show_dual_metric_tiles(title, home_metrics, size)` — renders engagement KPI tiles in grid
 - `display_metrics_for_users(user_page_df)` — per-user metrics table
 
@@ -188,6 +196,8 @@ TILE_METRIC_COLORS    # keyed by engagement metric label (KPI tiles)
 
 ### Funnel Flags
 Columns on `df_cr_users`: `lr_flag`, `la_flag`, `ra_flag`, `gc_flag`, `gpc`
+`lr_flag == 1` for every row in `df_cr_users` (it means "has a gameplay row"), so it
+drives the **FTMI** step — not LR. LR comes from a reached source (see Funnel stages).
 
 ### RA Definition
 Reader Acquired = `max_user_level >= 25` **OR** `ra_flag == 1`. Both conditions are checked wherever RA is computed (see `build_ftm_compare_la_only`, `build_book_ftm_outcomes`).
