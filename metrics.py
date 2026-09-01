@@ -397,16 +397,85 @@ def get_filtered_users(app, daterange, language, countries_list, cohort=None):
             cohort=cohort
         )
     elif cohort not in ("All", ["All"], None):
-        # Cohort mode: LR = full cohort membership (the "new" LR, matching the
-        # cohorts dashboard). This includes seeded learners who never produced an
-        # FTM gameplay row, so the gameplay subset (user_cohort_df) becomes FTMI
-        # downstream and the LR -> FTMI drop is visible. Membership carries no
-        # language/country/date, so those filters apply to FTMI+ but not LR.
-        df_cohorts = st.session_state.get("df_cr_cohorts")
-        if df_cohorts is not None and "cohort_name" in df_cohorts.columns:
-            sel = cohort if isinstance(cohort, (list, tuple, set)) else [cohort]
-            user_cr_df_LR = df_cohorts[df_cohorts["cohort_name"].isin(sel)]
+        # Cohort mode: LR = cohort membership (the "new" LR, matching the cohorts
+        # dashboard). This includes seeded learners who never produced an FTM
+        # gameplay row, so the gameplay subset (user_cohort_df) becomes FTMI
+        # downstream and the LR -> FTMI drop is visible.
+        user_cr_df_LR = get_cohort_lr_users(
+            cohort=cohort,
+            daterange=daterange,
+            languages=language,
+            countries_list=countries_list,
+        )
     return user_cohort_df, user_cr_df_LR
+
+
+@st.cache_data(ttl="1d", show_spinner=False)
+def get_user_attributes():
+    """
+    One row per cr_user_id with the attributes the funnel filters on
+    (first_open / country / app_language), preferring the app_launch row and
+    falling back to the gameplay row for users who have no launch event.
+
+    cr_cohorts stores only (cr_user_id, cohort_name), so cohort membership has to
+    be joined to this to be filterable at all.
+    """
+    attr_cols = ["cr_user_id", "first_open", "country", "app_language"]
+    frames = []
+    # app_launch first: drop_duplicates(keep="first") makes it win the join.
+    for key in ("df_cr_app_launch", "df_cr_users"):
+        df = st.session_state.get(key)
+        if df is None or df.empty:
+            continue
+        cols = [c for c in attr_cols if c in df.columns]
+        if "cr_user_id" in cols:
+            frames.append(df[cols])
+
+    if not frames:
+        return pd.DataFrame(columns=attr_cols)
+
+    attrs = pd.concat(frames, ignore_index=True)
+    return attrs.drop_duplicates(subset="cr_user_id", keep="first")
+
+
+def get_cohort_lr_users(cohort, daterange=None, languages=None, countries_list=None):
+    """
+    Cohort-mode LR: members of `cohort`, joined to their attributes and then cut
+    by the same language / country / date filters as the rest of the funnel.
+
+    Members with no attribute row anywhere (seeded IDs that never launched the
+    app) have nothing to match on, so an active filter excludes them — they are
+    only counted while that filter is off.
+    """
+    df_cohorts = st.session_state.get("df_cr_cohorts")
+    if df_cohorts is None or "cohort_name" not in df_cohorts.columns:
+        return None
+
+    sel = cohort if isinstance(cohort, (list, tuple, set)) else [cohort]
+    members = df_cohorts[df_cohorts["cohort_name"].isin(sel)]
+
+    df = members.merge(get_user_attributes(), on="cr_user_id", how="left")
+
+    if countries_list and list(countries_list) != ["All"] and "country" in df.columns:
+        df = df[df["country"].isin(countries_list)]
+
+    if languages and list(languages) != ["All"] and "app_language" in df.columns:
+        df = df[df["app_language"].isin(languages)]
+
+    # "All time" spans the whole dataset, so treat it as no date filter at all —
+    # otherwise members with an unknown first_open would drop out of every view.
+    if (
+        daterange is not None
+        and len(daterange) == 2
+        and list(daterange) != list(default_daterange)
+        and "first_open" in df.columns
+    ):
+        start = pd.to_datetime(daterange[0])
+        end = pd.to_datetime(daterange[1])
+        first_open = pd.to_datetime(df["first_open"], errors="coerce")
+        df = df[first_open.between(start, end)]
+
+    return df
 
 
 def funnel_percent_by_group(

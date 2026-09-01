@@ -80,8 +80,10 @@ st.session_state["df_cr_book_user_book_summary"] # Per-user × per-book summary
 **BigQuery helpers** (`@st.cache_data(ttl="1d")`):
 - `get_language_list()` → from `user_data.language_max_level`
 - `get_country_list()` → from `user_data.active_countries`
-- `get_cohort_list()` → from `st.session_state["df_cr_cohorts"]`
-- `get_cohort_user_ids(cohort_name)` → from `user_data.cr_cohorts`
+- `get_cohort_list()` → **not BigQuery** — reads `st.session_state["df_cr_cohorts"]`, the nightly
+  GCS Parquet snapshot. The dropdown therefore lags the `cr_cohorts` table (see Common Pitfalls).
+- `get_cohort_user_ids(cohort_name)` → live query on `user_data.cr_cohorts`, so *membership* is
+  always current even when the *name list* above is stale.
 - `get_users_ftm_event_timeline(cr_user_id_list)` → from `user_data.ftm_event_timeline_all`
 - `get_book_summary_for_cohort(cohort_ids)` → parameterized query on `cr_book_user_cohorts`
 - `get_books_for_user(cr_user_id)` → per-book detail from `cr_book_user_book_summary`
@@ -110,8 +112,10 @@ GC   Game Completed      — max_user_level >= 1 AND gpc >= 90
 FTMI is **omitted for Unity** (native app, not the FTM web layer) and can be forced
 off via `create_engagement_funnel(show_ftmi=False)` — Compare App Funnels does this
 for every column when any compared app is Unity. Cohort mode sources LR from
-`df_cr_cohorts` so reached-but-no-gameplay members are counted; that membership df
-has no language/country, so the gap can't render in the language-grouped Sideways view.
+`df_cr_cohorts` so reached-but-no-gameplay members are counted. `cr_cohorts` holds only
+`(cr_user_id, cohort_name)`, so `get_cohort_lr_users()` joins each member to their
+`first_open`/`country`/`app_language` (via `get_user_attributes()`: app_launch row first,
+gameplay row as fallback) before applying the page filters — otherwise LR ignores them.
 
 **Key functions**:
 - `get_filtered_users(app, daterange, language, countries_list, cohort)` → `(user_cohort_df, cr_df_LR)` — primary filtering entry point for pages
@@ -268,4 +272,34 @@ Then access DataFrames via `st.session_state["df_cr_users"]` etc.
 - **`base_book_id`** groups leveled book variants (e.g., `book_lv1`, `book_lv2`) under a shared ID. Always `fillna(book_id)` when `base_book_id` may be null: `df["base_book_id"] = df["base_book_id"].fillna(df["book_id"])`.
 - **Unity users** are deduplicated to a single row by `max_user_level` during init — do not re-deduplicate downstream.
 - **`days_to_ra`** is only present for RA users — always filter `df[df["days_to_ra"].notna()]` before computing time-to-RA metrics.
+- **Cohort-mode LR members with no attributes.** ~30% of a study cohort can be seeded IDs with
+  no app_launch *and* no gameplay row, so they have no country/language/first_open to match.
+  They count toward LR only while the corresponding filter is off; "All time" is treated as no
+  date filter (it equals `default_daterange`) so they aren't silently dropped from every view.
 - **Language normalization typos** (`ukranian`, `malgache`, `arabictest`, `farsitest`) are corrected in `clean_language_column()` during init — do not re-correct downstream.
+- **A new cohort will not appear in the dropdown the day it is created.** `get_cohort_list()` reads the
+  nightly Parquet snapshot, not BigQuery. A cohort added to `user_data.cr_cohorts` today shows up only
+  after that night's export, and then only once the `ttl="1d"` cache on `load_parquet_from_gcs()` /
+  `get_cohort_list()` expires — a running container may need a restart. Before debugging code, check
+  whether the row is simply newer than the latest `run_date=` partition. The cohort tracker dashboard
+  (`cl-dashboard-cohorts`) queries `cr_cohorts` live, so a cohort visible there but missing here is
+  the expected symptom of this lag, not a bug.
+
+## Upstream Pipeline
+
+Dashboard SQL is **not** in this repo. All of it lives in `cl-data-dashboard/queries/` (single
+source of truth as of 2026-08-27); that repo's README covers deployment. These files define
+BigQuery **scheduled queries** — editing a file does not deploy it.
+
+The nightly chain feeding the cohort dropdown, in dependency order (times UTC):
+
+| UTC | Step |
+|---|---|
+| 01:15 | BUILD `cr_user_progress`, `cr_app_launch2` |
+| 01:30 | BUILD `cr_study_cohort` |
+| 01:40 | MERGE `cr_cohorts` (sticky, insert-only — never deletes) |
+| 01:50 | EXPORT `cr_cohorts` → `user_data_parquet_cache/cr_cohorts/run_date=…` |
+
+Ordering is enforced only by these wall-clock times — there is no dependency graph. Before changing
+any schedule, check the whole chain; it ran inverted (export → merge → build) until 2026-08-27,
+which silently served day-old cohorts. Only `cr_cohorts_nightly.sql` may write to `cr_cohorts`.
