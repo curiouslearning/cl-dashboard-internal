@@ -7,6 +7,7 @@ from settings import get_gcp_credentials
 from ui_widgets import derive_ftm_outcome
 from google.cloud import bigquery
 import re
+from cohort_aliases import display_name
 
 
 RUN_DATE_RE = re.compile(r"/run_date=\d{4}-\d{2}-\d{2}/")
@@ -321,7 +322,10 @@ def get_cohort_list():
     df = st.session_state.get("df_cr_cohorts")
     if df is None or df.empty:
         return []
-    return sorted(df["cohort_name"].dropna().unique().tolist(), key=str.lower, reverse=True)
+    # Sort by the label the user actually sees, matching the Cohort Tracker.
+    # Sorting raw cohort_name grouped by the app:/program:/study: prefix, which
+    # is invisible once display_name() strips it.
+    return sorted(df["cohort_name"].dropna().unique().tolist(), key=display_name)
 
 
 @st.cache_data(ttl="1d",show_spinner=False)
