@@ -3,6 +3,7 @@ import ui_widgets as ui
 from metrics import get_filtered_users, calculate_average_metric_per_user
 from users import ensure_user_data_initialized, get_country_list, get_language_list, get_cohort_list
 from settings import initialize, default_daterange
+from cohort_aliases import display_name
 
 initialize()
 ensure_user_data_initialized()
@@ -24,7 +25,7 @@ with col1:
     else:
         if "ra-app" in st.session_state:
             del st.session_state["ra-app"]
-        cohort = ui.single_selector(distinct_cohorts, title="Select a Cohort", key="ra-cohort", include_All=False, index=0)
+        cohort = ui.single_selector(distinct_cohorts, title="Select a Cohort", key="ra-cohort", include_All=False, index=0, format_func=display_name)
         app = "All"
     by_months = st.toggle("Show by Months", value=False)
 

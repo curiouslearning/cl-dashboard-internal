@@ -4,6 +4,7 @@ import ui_widgets as ui
 from metrics import get_filtered_users
 from users import ensure_user_data_initialized, get_country_list, get_language_list, get_cohort_list
 from settings import initialize
+from cohort_aliases import display_name
 
 initialize()
 ensure_user_data_initialized()
@@ -31,7 +32,7 @@ with col2:
     else:
         if "sf-app" in st.session_state:
             del st.session_state["sf-app"]
-        cohort = ui.single_selector(distinct_cohorts, title="Select a Cohort", key="sf-cohort", include_All=False, index=0)
+        cohort = ui.single_selector(distinct_cohorts, title="Select a Cohort", key="sf-cohort", include_All=False, index=0, format_func=display_name)
         app = "All"
 
 with col3:

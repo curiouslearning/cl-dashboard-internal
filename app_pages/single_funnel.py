@@ -6,6 +6,7 @@ import ui_widgets as ui
 import metrics
 from users import ensure_user_data_initialized, get_cohort_list, get_language_list, get_country_list
 from settings import initialize
+from cohort_aliases import display_name
 
 initialize()
 ensure_user_data_initialized()
@@ -60,6 +61,7 @@ with col1:
             key="s7",
             include_All=False,
             index=0,
+            format_func=display_name,
         )
         app = "All"
         st.caption("Cohort filter is active. App filter is not being applied.")

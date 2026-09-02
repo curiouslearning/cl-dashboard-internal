@@ -213,7 +213,10 @@ def colorize_multiselect_options() -> None:
 
 
 # Restricts selection to a single country
-def single_selector(selections,  title="", key="key", include_All=True,index=0):
+def single_selector(selections,  title="", key="key", include_All=True,index=0,format_func=str):
+    """format_func only changes the label shown; the value returned is the raw
+    option, so callers keep passing real cohort_name / app / country values into
+    their queries. Cohort selectors pass cohort_aliases.display_name."""
     options = list(selections)  # Defensive copy
 
     if include_All:
@@ -227,6 +230,7 @@ def single_selector(selections,  title="", key="key", include_All=True,index=0):
         label=title,
         options=options,
         key=key,
+        format_func=format_func,
     )
 
     return [selection]

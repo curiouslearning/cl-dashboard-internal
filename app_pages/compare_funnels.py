@@ -4,6 +4,7 @@ import ui_widgets as ui
 from metrics import get_filtered_users, get_engagement_metrics
 from users import ensure_user_data_initialized, get_language_list, get_country_list, get_cohort_list
 from settings import initialize
+from cohort_aliases import display_name
 
 initialize()
 ensure_user_data_initialized()
@@ -34,7 +35,7 @@ with col1:
     else:
         if "cf-app-A" in st.session_state:
             del st.session_state["cf-app-A"]
-        cohortA = ui.single_selector(distinct_cohorts, title="Select a Cohort", key="cf-cohort-A", include_All=False, index=0)
+        cohortA = ui.single_selector(distinct_cohorts, title="Select a Cohort", key="cf-cohort-A", include_All=False, index=0, format_func=display_name)
         appA = "All"
 
 with col2:
@@ -54,7 +55,7 @@ with col2:
     else:
         if "cf-app-B" in st.session_state:
             del st.session_state["cf-app-B"]
-        cohortB = ui.single_selector(distinct_cohorts, title="Select a Cohort", key="cf-cohort-B", include_All=False, index=0)
+        cohortB = ui.single_selector(distinct_cohorts, title="Select a Cohort", key="cf-cohort-B", include_All=False, index=0, format_func=display_name)
         appB = "All"
 
 with col3:
@@ -74,7 +75,7 @@ with col3:
     else:
         if "cf-app-C" in st.session_state:
             del st.session_state["cf-app-C"]
-        cohortC = ui.single_selector(distinct_cohorts, title="Select a Cohort", key="cf-cohort-C", include_All=False, index=0)
+        cohortC = ui.single_selector(distinct_cohorts, title="Select a Cohort", key="cf-cohort-C", include_All=False, index=0, format_func=display_name)
         appC = "All"
 
 if (

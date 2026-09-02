@@ -16,6 +16,7 @@ from ui_components import (
     display_metrics_for_users,
 )
 from metrics import get_engagement_metrics
+from cohort_aliases import display_name
 
 st.markdown(
     """
@@ -63,7 +64,7 @@ def _coerce_ts(df: pd.DataFrame) -> pd.DataFrame:
 col1, col2 = st.columns([1, 2])
 
 cohorts = get_cohort_list()
-cohort = col1.selectbox("Select a cohort", cohorts)
+cohort = col1.selectbox("Select a cohort", cohorts, format_func=display_name)
 
 cohort_ids = get_cohort_user_ids(cohort_name=cohort)
 
